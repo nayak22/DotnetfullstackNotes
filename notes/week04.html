@@ -1,0 +1,1235 @@
+<title>.NET Notes · Week 4</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 4</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">List · Dictionary · HashSet</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Queue · Stack · Sorted</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Generics</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">IEnumerable &amp; yield</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Comparers &amp; frozen</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: repository</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Month-1 revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 1 · Week 4 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">C# 12</span><span class="chip">~18 hrs</span><span class="chip">Library refactor</span></div>
+  <h1>Week 4 — Collections and generics</h1>
+  <p>Almost every method you write will take or return a collection. This week you'll learn which collection fits which problem and what it costs, how to write your own generic types, how foreach and yield really work, and how to control sorting and equality. Sunday wraps up the first month with a full revision.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>List, Dictionary and HashSet</h3><p>Everyday collections, TryGetValue, comparers, set operations, Big-O.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>Queue, Stack, LinkedList, sorted collections</h3><p>FIFO, LIFO, PriorityQueue, LRU idea, choosing the right collection.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Generics and constraints</h3><p>Generic classes and methods, constraints, default(T), variance.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>IEnumerable, IList and yield</h3><p>Collection interfaces, how foreach works, iterators, deferred execution.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Comparers, equality and frozen collections</h3><p>IComparable vs IComparer, IEqualityComparer, immutable vs frozen.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Library refactor: generic repository</h3><p>IRepository&lt;T&gt;, indexes, reservations queue, regression check.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Revise Weeks 1–4</h3><p>Checklist, cheat sheet, mixed quiz, mock interview, your own notes.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>List&lt;T&gt;, Dictionary&lt;TKey,TValue&gt; and HashSet&lt;T&gt;</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Use the three collections you'll write every day, know their costs, and pick the right one for lookups, ordering and uniqueness.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Collection</dt><dd>An object that stores and manages a group of items.</dd></div><div class="def"><dt>Generic collection</dt><dd>A collection typed by a parameter, e.g. <code>List&lt;Order&gt;</code>, giving type safety with no boxing.</dd></div><div class="def"><dt>List&lt;T&gt;</dt><dd>An ordered, index-accessible, resizable array.</dd></div><div class="def"><dt>Capacity</dt><dd>The size of a List's internal array; it doubles when full. Count is how many items are actually stored.</dd></div><div class="def"><dt>Dictionary&lt;TKey,TValue&gt;</dt><dd>A hash table mapping unique keys to values with near-constant-time lookup.</dd></div><div class="def"><dt>KeyValuePair&lt;TKey,TValue&gt;</dt><dd>The element type you get when iterating a dictionary.</dd></div><div class="def"><dt>HashSet&lt;T&gt;</dt><dd>An unordered collection of unique items with fast Contains, plus set operations.</dd></div><div class="def"><dt>Hash table</dt><dd>Structure that uses an item's hash code to jump straight to a bucket instead of scanning.</dd></div><div class="def"><dt>Bucket</dt><dd>A slot in a hash table holding items whose hash codes map to it.</dd></div><div class="def"><dt>Collision</dt><dd>Two different items landing in the same bucket; resolved by comparing with Equals.</dd></div><div class="def"><dt>Big-O</dt><dd>Notation for how cost grows with size: O(1) constant, O(n) linear, O(log n) logarithmic.</dd></div><div class="def"><dt>Comparer</dt><dd>An object that defines equality or order, e.g. <code>StringComparer.OrdinalIgnoreCase</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>List = ordered and indexed; Dictionary = lookup by key; HashSet = uniqueness and membership.</li><li><code>list.Contains</code> is O(n); <code>set.Contains</code> and <code>dict.ContainsKey</code> are O(1) on average.</li><li>Use <code>TryGetValue</code> instead of ContainsKey + indexer (one lookup instead of two).</li><li>The dictionary indexer throws on a missing key when reading, but adds or overwrites when writing.</li><li>Pass <code>StringComparer.OrdinalIgnoreCase</code> for case-insensitive string keys.</li><li>Don't add or remove items while looping over a collection with foreach.</li></ul></div>
+
+<h3>1. Why generic collections?</h3>
+<div class="code nofile"><pre><code class="language-csharp">int[] fixedSize = new int[3];             // arrays can't grow
+var old = new System.Collections.ArrayList { 1, "two", 3.0 };   // object-based: boxing, no type safety
+int x = (int)old[1]!;                     // compiles, crashes at runtime: InvalidCastException
+
+var ids = new List&lt;int&gt; { 1, 2, 3 };      // typed, growable, no boxing
+// ids.Add("four");                       // ❌ compile error — caught early</code></pre></div>
+
+<h3>2. List&lt;T&gt;</h3>
+<div class="code"><div class="fname">ListDemo.cs</div><pre><code class="language-csharp">var cart = new List&lt;string&gt; { "Pen", "Notebook" };
+List&lt;string&gt; tags = ["dotnet", "csharp"];          // collection expression (C# 12)
+
+cart.Add("Stapler");                    // end:    O(1) amortised
+cart.Insert(0, "Bag");                  // front:  O(n) — shifts everything
+cart.AddRange(["Ink", "Ruler"]);
+cart.Remove("Ink");                     // first match, O(n)
+cart.RemoveAt(0);
+cart.RemoveAll(i =&gt; i.StartsWith('R')); // removes every match
+
+Console.WriteLine(cart.Count);          // 3
+Console.WriteLine(cart[1]);             // Notebook — O(1) by index
+Console.WriteLine(cart.Contains("Pen"));// True — O(n) scan
+Console.WriteLine(cart.IndexOf("Stapler"));
+
+string? found = cart.Find(i =&gt; i.Length &gt; 5);       // first match or null
+List&lt;string&gt; longOnes = cart.FindAll(i =&gt; i.Length &gt; 3);
+cart.Sort();                            // in place, alphabetical
+cart.Reverse();
+
+// Capacity vs Count
+var big = new List&lt;int&gt;(capacity: 10_000);   // pre-size when you know roughly how many → fewer resizes</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Modifying a list inside its own foreach throws <code>InvalidOperationException: Collection was modified</code>. Use <code>RemoveAll</code>, loop backwards with for, or build a new list.</div>
+
+<h3>3. Dictionary&lt;TKey,TValue&gt;</h3>
+<div class="code"><div class="fname">DictionaryDemo.cs</div><pre><code class="language-csharp">var stock = new Dictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase)
+{
+    ["SKU-PEN"] = 120,
+    ["SKU-NB"]  = 40
+};
+
+stock.Add("SKU-INK", 15);               // throws if the key already exists
+stock["SKU-PEN"] = 100;                 // indexer SET: adds or overwrites
+bool added = stock.TryAdd("SKU-NB", 99);// false — key exists, nothing changes
+
+// ✓ The right way to read
+if (stock.TryGetValue("sku-nb", out int qty))     // case-insensitive thanks to the comparer
+    Console.WriteLine($"Notebooks: {qty}");
+
+int ruler = stock.GetValueOrDefault("SKU-RULER");   // 0 when missing
+// int bad = stock["SKU-RULER"];                     // ❌ KeyNotFoundException
+
+stock.Remove("SKU-INK");
+
+foreach (var (sku, count) in stock)                 // deconstruct KeyValuePair
+    Console.WriteLine($"{sku,-10} {count,5}");
+
+Console.WriteLine(string.Join(", ", stock.Keys));</code></pre></div>
+<h4>Classic use: counting and grouping</h4>
+<div class="code nofile"><pre><code class="language-csharp">string text = "the quick brown fox jumps over the lazy dog the end";
+var wordCounts = new Dictionary&lt;string, int&gt;();
+
+foreach (string word in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+{
+    wordCounts.TryGetValue(word, out int current);   // 0 if missing
+    wordCounts[word] = current + 1;
+}
+Console.WriteLine(wordCounts["the"]);   // 3
+
+// Group orders by customer: Dictionary&lt;string, List&lt;T&gt;&gt;
+var ordersByCustomer = new Dictionary&lt;string, List&lt;int&gt;&gt;();
+void AddOrder(string customer, int orderId)
+{
+    if (!ordersByCustomer.TryGetValue(customer, out var list))
+    {
+        list = [];
+        ordersByCustomer[customer] = list;
+    }
+    list.Add(orderId);
+}</code></pre></div>
+
+<h3>4. HashSet&lt;T&gt;</h3>
+<div class="code"><div class="fname">HashSetDemo.cs</div><pre><code class="language-csharp">var emails = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase);
+Console.WriteLine(emails.Add("asha@example.com"));   // True
+Console.WriteLine(emails.Add("ASHA@example.com"));   // False — already present
+Console.WriteLine(emails.Contains("asha@EXAMPLE.com")); // True, O(1)
+
+// Deduplicate a list in one line
+List&lt;int&gt; withDupes = [5, 3, 5, 1, 3];
+var unique = new HashSet&lt;int&gt;(withDupes);            // {5, 3, 1}
+
+// Set operations — e.g. compare skills
+var required  = new HashSet&lt;string&gt; { "C#", "SQL", "Azure", "Docker" };
+var candidate = new HashSet&lt;string&gt; { "C#", "SQL", "React" };
+
+var missing = new HashSet&lt;string&gt;(required);
+missing.ExceptWith(candidate);         // Azure, Docker
+var overlap = new HashSet&lt;string&gt;(required);
+overlap.IntersectWith(candidate);      // C#, SQL
+Console.WriteLine(candidate.IsSubsetOf(required));   // False</code></pre></div>
+
+<h3>5. How hashing makes lookups fast</h3>
+<ol>
+<li><code>GetHashCode()</code> turns the key into an int.</li>
+<li>The int picks a bucket (roughly <code>hash % bucketCount</code>).</li>
+<li>Only items in that bucket are compared with <code>Equals</code>.</li>
+<li>With a good hash, buckets hold about one item, so lookup is O(1) regardless of size.</li>
+</ol>
+<p>This is why last week's Equals/GetHashCode rules matter: a bad or mutable hash code breaks Dictionary and HashSet.</p>
+
+<h3>6. Cost cheat sheet</h3>
+<div class="tbl"><table><tr><th>Operation</th><th>List&lt;T&gt;</th><th>Dictionary</th><th>HashSet&lt;T&gt;</th></tr><tr><td>Add</td><td>O(1)*</td><td>O(1)*</td><td>O(1)*</td></tr><tr><td>Lookup by index</td><td>O(1)</td><td>—</td><td>—</td></tr><tr><td>Lookup by key / Contains</td><td>O(n)</td><td>O(1)</td><td>O(1)</td></tr><tr><td>Remove</td><td>O(n)</td><td>O(1)</td><td>O(1)</td></tr><tr><td>Keeps insertion order</td><td>Yes</td><td>Not guaranteed</td><td>No</td></tr><tr><td>Duplicates</td><td>Allowed</td><td>Unique keys</td><td>Not allowed</td></tr></table></div>
+<p class="muted">* amortised: occasionally O(n) when the internal array grows.</p>
+
+<h3>Common mistakes</h3><ul><li>Using <code>List.Contains</code> inside a loop over another list → O(n²). Put one side in a HashSet.</li><li>Reading <code>dict[key]</code> without checking; use TryGetValue.</li><li>Calling ContainsKey then the indexer (two lookups).</li><li>Relying on Dictionary enumeration order.</li><li>Forgetting a case-insensitive comparer for emails, SKUs or usernames.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Read a paragraph and print the 5 most frequent words (ignore case and punctuation) using a Dictionary.</li><li>Given two lists of 100,000 random ints, find common numbers with nested loops vs a HashSet. Time both with Stopwatch.</li><li>Build <code>Dictionary&lt;string, List&lt;decimal&gt;&gt;</code> of expenses per category and print totals.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does the dictionary indexer do on a missing key?</summary>Reading throws KeyNotFoundException; assigning adds the key.</details><details><summary>Why is HashSet.Contains faster than List.Contains?</summary>HashSet uses hashing to go straight to one bucket (O(1) average); List compares every element until it finds a match (O(n)).</details><details><summary>What's the difference between Count and Capacity?</summary>Count is the number of elements stored; Capacity is the size of the internal array, which grows (doubles) when Count reaches it.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between an array and a List&lt;T&gt;?</summary><div>An array has a fixed length set at creation. List&lt;T&gt; wraps an array and resizes it automatically, adding methods like Add, Remove, Insert and Find. Both give O(1) index access.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How does a Dictionary work internally?</summary><div>It's a hash table: the key's GetHashCode selects a bucket, and Equals resolves collisions within it. With well-distributed hashes, add, lookup and remove are O(1) on average.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When would you use a HashSet?</summary><div>When you need uniqueness or fast membership tests: deduplicating, tracking visited items, checking permissions, or set operations like union and intersection.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why prefer TryGetValue over ContainsKey + indexer?</summary><div>It does one hash lookup instead of two and avoids the race in concurrent scenarios where the key could be removed between the two calls.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the time complexity of List.Insert(0, x) and why?</summary><div>O(n): every existing element must shift one position right in the underlying array. Prefer adding at the end, or use LinkedList/Queue/Deque-like structures when you need fast front insertion.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you make a Dictionary with case-insensitive string keys?</summary><div>Pass a comparer to the constructor: <code>new Dictionary&lt;string, T&gt;(StringComparer.OrdinalIgnoreCase)</code>. The comparer supplies both GetHashCode and Equals for keys.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Queue, Stack, LinkedList, SortedDictionary and choosing the right collection</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Recognise FIFO, LIFO, priority and sorted problems, and reach for the matching collection instead of forcing everything into a List.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Queue&lt;T&gt;</dt><dd>First-in, first-out (FIFO) collection: Enqueue at the back, Dequeue from the front.</dd></div><div class="def"><dt>Stack&lt;T&gt;</dt><dd>Last-in, first-out (LIFO) collection: Push on top, Pop from the top.</dd></div><div class="def"><dt>PriorityQueue&lt;TElement,TPriority&gt;</dt><dd>.NET 6+ queue that always dequeues the item with the lowest priority value.</dd></div><div class="def"><dt>Peek</dt><dd>Look at the next item without removing it.</dd></div><div class="def"><dt>LinkedList&lt;T&gt;</dt><dd>Doubly linked list of nodes; O(1) insert/remove when you hold the node, no index access.</dd></div><div class="def"><dt>LinkedListNode&lt;T&gt;</dt><dd>A node with Value, Next and Previous.</dd></div><div class="def"><dt>SortedDictionary&lt;K,V&gt;</dt><dd>Key-value pairs kept sorted by key, backed by a red-black tree (O(log n)).</dd></div><div class="def"><dt>SortedList&lt;K,V&gt;</dt><dd>Sorted key-value pairs in two arrays; less memory, slower inserts, index access.</dd></div><div class="def"><dt>SortedSet&lt;T&gt;</dt><dd>Unique items kept in sorted order, with range queries like GetViewBetween.</dd></div><div class="def"><dt>Deque</dt><dd>Double-ended queue (add/remove at both ends); .NET has no built-in one, LinkedList can serve.</dd></div><div class="def"><dt>FIFO / LIFO</dt><dd>Processing order: first in first out (queues) vs last in first out (stacks).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Queue for jobs processed in arrival order; Stack for undo, backtracking and nested structures.</li><li>PriorityQueue when "most urgent first" matters more than arrival order.</li><li>Use the Try* methods (TryDequeue, TryPop, TryPeek) to avoid exceptions on empty collections.</li><li>LinkedList only wins when you keep node references and insert/remove in the middle often.</li><li>Need sorted keys? SortedDictionary for frequent inserts, SortedList for mostly-read data.</li><li>When unsure, start with List or Dictionary and change only if profiling shows a need.</li></ul></div>
+
+<h3>1. Queue&lt;T&gt; — first come, first served</h3>
+<div class="code"><div class="fname">SupportQueue.cs</div><pre><code class="language-csharp">public record SupportTicket(int Id, string Customer, string Issue);
+
+var tickets = new Queue&lt;SupportTicket&gt;();
+tickets.Enqueue(new(1, "Asha",  "Can't log in"));
+tickets.Enqueue(new(2, "Ravi",  "Refund status"));
+tickets.Enqueue(new(3, "Meena", "Wrong item delivered"));
+
+Console.WriteLine(tickets.Peek().Customer);      // Asha — next up, not removed
+while (tickets.TryDequeue(out var t))            // safe: stops when empty
+    Console.WriteLine($"Handling #{t.Id} for {t.Customer}: {t.Issue}");
+
+// tickets.Dequeue();                            // ❌ InvalidOperationException: Queue empty</code></pre></div>
+
+<h3>2. PriorityQueue — most urgent first</h3>
+<div class="code"><div class="fname">Triage.cs</div><pre><code class="language-csharp">// Lower priority number = served first
+var triage = new PriorityQueue&lt;string, int&gt;();
+triage.Enqueue("Sprained ankle", 3);
+triage.Enqueue("Chest pain", 1);
+triage.Enqueue("Fever", 2);
+triage.Enqueue("Cardiac arrest", 0);
+
+while (triage.TryDequeue(out string? patient, out int priority))
+    Console.WriteLine($"P{priority}: {patient}");
+// P0: Cardiac arrest
+// P1: Chest pain
+// P2: Fever
+// P3: Sprained ankle</code></pre></div>
+<div class="note warn"><b>Note.</b> PriorityQueue is not stable: two items with the same priority may come out in any order. Add a tie-breaker (e.g. a tuple priority <code>(severity, arrivalNumber)</code>) if order matters.</div>
+
+<h3>3. Stack&lt;T&gt; — last in, first out</h3>
+<div class="code"><div class="fname">StackDemo.cs</div><pre><code class="language-csharp">// Undo for a text editor
+var history = new Stack&lt;string&gt;();
+string doc = "";
+
+void Type(string text) { history.Push(doc); doc += text; }
+void Undo() { if (history.TryPop(out var previous)) doc = previous; }
+
+Type("Hello");
+Type(", world");
+Type("!!!");
+Undo();
+Console.WriteLine(doc);     // Hello, world
+
+// Bracket matching — classic interview problem
+static bool IsBalanced(string s)
+{
+    var open = new Stack&lt;char&gt;();
+    foreach (char c in s)
+    {
+        if (c is '(' or '[' or '{') { open.Push(c); continue; }
+        if (c is ')' or ']' or '}')
+        {
+            if (!open.TryPop(out char top)) return false;
+            if ((top, c) is not (('(', ')') or ('[', ']') or ('{', '}'))) return false;
+        }
+    }
+    return open.Count == 0;
+}
+
+Console.WriteLine(IsBalanced("var x = list[(a + b)];"));   // True
+Console.WriteLine(IsBalanced("if (x &gt; 0] {"));             // False</code></pre></div>
+
+<h3>4. LinkedList&lt;T&gt;</h3>
+<div class="code"><div class="fname">Playlist.cs</div><pre><code class="language-csharp">var playlist = new LinkedList&lt;string&gt;();
+var first = playlist.AddLast("Intro");
+var chorus = playlist.AddLast("Chorus");
+playlist.AddLast("Outro");
+
+playlist.AddAfter(first, "Verse 1");        // O(1) — we hold the node
+playlist.AddBefore(chorus, "Pre-chorus");
+playlist.Remove(chorus);                     // O(1) with the node
+
+for (var node = playlist.First; node is not null; node = node.Next)
+    Console.Write($"{node.Value} → ");       // Intro → Verse 1 → Pre-chorus → Outro →
+
+// playlist[2]                               // ❌ no indexer: reaching the nth item is O(n)</code></pre></div>
+<p>In practice LinkedList is rare: List is usually faster because its items sit next to each other in memory (CPU cache friendly). It's the building block for an <b>LRU cache</b> (Dictionary + LinkedList), a common interview design question.</p>
+
+<h3>5. Sorted collections</h3>
+<div class="code nofile"><pre><code class="language-csharp">// Leaderboard sorted by score (key)
+var leaderboard = new SortedDictionary&lt;int, string&gt;(Comparer&lt;int&gt;.Create((a, b) =&gt; b.CompareTo(a)))   // descending
+{
+    [870] = "Neha",
+    [990] = "Rohit",
+    [915] = "Imran"
+};
+foreach (var (score, name) in leaderboard)
+    Console.WriteLine($"{score} {name}");       // 990 Rohit, 915 Imran, 870 Neha
+
+// SortedSet with range queries
+var prices = new SortedSet&lt;decimal&gt; { 499, 1299, 89, 2499, 799 };
+Console.WriteLine(prices.Min);                   // 89
+Console.WriteLine(string.Join(", ", prices.GetViewBetween(500, 2000)));   // 799, 1299</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>SortedDictionary</th><th>SortedList</th><th>Dictionary + sort when needed</th></tr><tr><td>Insert</td><td>O(log n)</td><td>O(n)</td><td>O(1)</td></tr><tr><td>Lookup</td><td>O(log n)</td><td>O(log n)</td><td>O(1)</td></tr><tr><td>Memory</td><td>Higher (tree nodes)</td><td>Lower (arrays)</td><td>Medium</td></tr><tr><td>Index access</td><td>No</td><td>Yes (Keys[i])</td><td>No</td></tr><tr><td>Best when</td><td>Frequent inserts, always sorted</td><td>Built once, read many times</td><td>Sorting is occasional</td></tr></table></div>
+
+<h3>6. Choosing the right collection</h3>
+<div class="tbl"><table><tr><th>You need…</th><th>Use</th></tr><tr><td>Ordered items, access by position</td><td><code>List&lt;T&gt;</code></td></tr><tr><td>Fixed-size, performance-critical buffer</td><td><code>T[]</code></td></tr><tr><td>Look up by a key</td><td><code>Dictionary&lt;K,V&gt;</code></td></tr><tr><td>Uniqueness / fast "have I seen this?"</td><td><code>HashSet&lt;T&gt;</code></td></tr><tr><td>Process in arrival order</td><td><code>Queue&lt;T&gt;</code></td></tr><tr><td>Most urgent first</td><td><code>PriorityQueue&lt;T,P&gt;</code></td></tr><tr><td>Undo, backtracking, nested parsing</td><td><code>Stack&lt;T&gt;</code></td></tr><tr><td>Always sorted by key, frequent changes</td><td><code>SortedDictionary&lt;K,V&gt;</code></td></tr><tr><td>Sorted unique values + range queries</td><td><code>SortedSet&lt;T&gt;</code></td></tr><tr><td>Many middle inserts with node references</td><td><code>LinkedList&lt;T&gt;</code></td></tr><tr><td>Shared across threads</td><td><code>ConcurrentDictionary</code>, <code>ConcurrentQueue</code> (Week 7)</td></tr><tr><td>Never changes after startup, read constantly</td><td><code>FrozenDictionary</code> / <code>FrozenSet</code> (Friday)</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Using List with <code>RemoveAt(0)</code> as a queue (O(n) each time).</li><li>Calling Dequeue/Pop/Peek without checking Count; use the Try* methods.</li><li>Choosing LinkedList "for performance" without measuring.</li><li>Expecting PriorityQueue to preserve arrival order for equal priorities.</li><li>Using SortedList for data that's inserted constantly.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Simulate a bank counter: customers arrive into a Queue, two tellers serve them, print who served whom.</li><li>Implement browser Back/Forward with two Stacks.</li><li>Use a PriorityQueue to schedule tasks by (priority, dueDate) and print the order.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does Peek do?</summary>Returns the next item (front of a queue, top of a stack) without removing it; throws if empty, so prefer TryPeek.</details><details><summary>When is LinkedList better than List?</summary>When you frequently insert or remove in the middle and already hold the node reference, making it O(1). Otherwise List is usually faster.</details><details><summary>What does PriorityQueue dequeue first?</summary>The element with the smallest priority according to the priority comparer (a min-heap by default).</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between a Queue and a Stack?</summary><div>A Queue is FIFO: the first item added is the first removed (Enqueue/Dequeue). A Stack is LIFO: the last item added is the first removed (Push/Pop). Queues model waiting lines; stacks model undo history and nested calls.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Give real-world uses for Stack&lt;T&gt;.</summary><div>Undo/redo, browser back navigation, matching brackets or HTML tags, depth-first search, evaluating expressions, and the call stack itself.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a PriorityQueue and how is it implemented?</summary><div>A queue that dequeues by priority rather than arrival order. .NET's PriorityQueue is an array-backed min-heap (quaternary heap) with O(log n) enqueue/dequeue.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>SortedDictionary vs SortedList vs Dictionary?</summary><div>Dictionary: unordered, O(1) average. SortedDictionary: red-black tree, sorted, O(log n) insert/lookup. SortedList: sorted arrays, O(log n) lookup but O(n) insert, less memory and index access. Pick by insert frequency and whether you need order.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you design an LRU cache in C#?</summary><div>Combine Dictionary&lt;K, LinkedListNode&lt;(K, V)&gt;&gt; for O(1) lookup with a LinkedList ordered by recent use. On get, move the node to the front; on put, add to the front and, if over capacity, remove the last node and its dictionary entry.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why can List outperform LinkedList even for some inserts?</summary><div>List stores elements contiguously, so it's CPU-cache friendly and memory-light. LinkedList allocates a node per item scattered around the heap, causing cache misses and GC pressure; finding the insertion point is O(n) anyway unless you hold the node.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Generics: classes, methods and constraints</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Write your own reusable, type-safe generic types and methods, and restrict type parameters with constraints so the compiler can help you.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Generics</dt><dd>Writing types and methods with type parameters, filled in by the caller: <code>List&lt;T&gt;</code>.</dd></div><div class="def"><dt>Type parameter</dt><dd>The placeholder, conventionally <code>T</code>, <code>TKey</code>, <code>TResult</code>.</dd></div><div class="def"><dt>Type argument</dt><dd>The real type supplied: in <code>List&lt;Order&gt;</code>, Order is the type argument.</dd></div><div class="def"><dt>Open vs closed type</dt><dd><code>List&lt;T&gt;</code> is open; <code>List&lt;int&gt;</code> is closed (all arguments supplied).</dd></div><div class="def"><dt>Generic method</dt><dd>A method with its own type parameters: <code>T Max&lt;T&gt;(T a, T b)</code>.</dd></div><div class="def"><dt>Type inference</dt><dd>The compiler working out type arguments from the method arguments.</dd></div><div class="def"><dt>Constraint</dt><dd>A <code>where</code> clause limiting what types are allowed and unlocking their members.</dd></div><div class="def"><dt>default(T)</dt><dd>The default value of T: null for references, zero for value types.</dd></div><div class="def"><dt>Reification</dt><dd>In .NET, generic types exist at runtime with their real type arguments (unlike Java's erasure).</dd></div><div class="def"><dt>Covariance (out)</dt><dd>Allows <code>IEnumerable&lt;Derived&gt;</code> to be used as <code>IEnumerable&lt;Base&gt;</code>.</dd></div><div class="def"><dt>Contravariance (in)</dt><dd>Allows <code>IComparer&lt;Base&gt;</code> to be used as <code>IComparer&lt;Derived&gt;</code>.</dd></div><div class="def"><dt>Invariance</dt><dd>Neither: <code>List&lt;Derived&gt;</code> is not a <code>List&lt;Base&gt;</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Generics give you reuse without giving up type safety or performance.</li><li>Without constraints you can only use members of <code>object</code> on T.</li><li>Add the minimum constraints needed; each one narrows who can use your code.</li><li>Static fields are per closed type: <code>Cache&lt;int&gt;</code> and <code>Cache&lt;string&gt;</code> don't share them.</li><li>Generic methods usually don't need explicit type arguments; inference handles it.</li><li>List&lt;Derived&gt; isn't List&lt;Base&gt;, but IEnumerable&lt;Derived&gt; is IEnumerable&lt;Base&gt;.</li></ul></div>
+
+<h3>1. The problem generics solve</h3>
+<div class="code nofile"><pre><code class="language-csharp">// Without generics: one class per type, or `object` and casting
+public class IntBox    { public int Value { get; set; } }
+public class StringBox { public string Value { get; set; } = ""; }
+public class ObjectBox { public object? Value { get; set; } }   // boxing + casts + runtime errors
+
+// With generics: one definition, any type, fully typed
+public class Box&lt;T&gt;
+{
+    public T Value { get; set; }
+    public Box(T value) =&gt; Value = value;
+}
+
+var price = new Box&lt;decimal&gt;(499m);
+decimal p = price.Value;          // no cast, no boxing
+var name = new Box&lt;string&gt;("Pen");</code></pre></div>
+
+<h3>2. Generic classes you'll actually write</h3>
+<div class="code"><div class="fname">GenericTypes.cs</div><pre><code class="language-csharp">// A result type (you wrote a non-generic flavour in Week 2)
+public readonly record struct Result&lt;T&gt;(bool IsSuccess, T? Value, string? Error)
+{
+    public static Result&lt;T&gt; Ok(T value) =&gt; new(true, value, null);
+    public static Result&lt;T&gt; Fail(string error) =&gt; new(false, default, error);
+
+    public TOut Match&lt;TOut&gt;(Func&lt;T, TOut&gt; onOk, Func&lt;string, TOut&gt; onFail) =&gt;
+        IsSuccess ? onOk(Value!) : onFail(Error!);
+}
+
+// Paging for APIs (Week 18)
+public record PagedResult&lt;T&gt;(IReadOnlyList&lt;T&gt; Items, int Page, int PageSize, int TotalCount)
+{
+    public int TotalPages =&gt; (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasNext =&gt; Page &lt; TotalPages;
+}
+
+// Two type parameters
+public record Pair&lt;TFirst, TSecond&gt;(TFirst First, TSecond Second);</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">Result&lt;decimal&gt; r = Result&lt;decimal&gt;.Ok(1180m);
+string msg = r.Match(v =&gt; $"Total {v:N2}", err =&gt; $"Error: {err}");
+
+var page = new PagedResult&lt;string&gt;(["a", "b"], Page: 1, PageSize: 2, TotalCount: 5);
+Console.WriteLine($"{page.TotalPages} pages, next? {page.HasNext}");   // 3 pages, next? True</code></pre></div>
+
+<h3>3. Generic methods and inference</h3>
+<div class="code"><div class="fname">Util.cs</div><pre><code class="language-csharp">public static class Util
+{
+    public static void Swap&lt;T&gt;(ref T a, ref T b) =&gt; (a, b) = (b, a);
+
+    public static T FirstOr&lt;T&gt;(IEnumerable&lt;T&gt; items, T fallback)
+    {
+        foreach (var item in items) return item;
+        return fallback;
+    }
+
+    public static Dictionary&lt;TKey, List&lt;T&gt;&gt; GroupBy&lt;T, TKey&gt;(IEnumerable&lt;T&gt; items, Func&lt;T, TKey&gt; keyOf)
+        where TKey : notnull
+    {
+        var groups = new Dictionary&lt;TKey, List&lt;T&gt;&gt;();
+        foreach (var item in items)
+        {
+            var key = keyOf(item);
+            if (!groups.TryGetValue(key, out var list)) groups[key] = list = [];
+            list.Add(item);
+        }
+        return groups;
+    }
+}
+
+int x = 1, y = 2;
+Util.Swap(ref x, ref y);                         // T inferred as int
+string first = Util.FirstOr(new string[0], "none");
+var byLength = Util.GroupBy(["C#", "SQL", "Go", "Rust"], w =&gt; w.Length);   // {2: [C#, Go], 3: [SQL], 4: [Rust]}</code></pre></div>
+
+<h3>4. Constraints</h3>
+<p>Without constraints, T could be anything, so the compiler only lets you use <code>object</code> members. Constraints promise more, unlocking more.</p>
+<div class="code nofile"><pre><code class="language-csharp">// ❌ Won't compile: the compiler doesn't know T can be compared
+// static T Max&lt;T&gt;(T a, T b) =&gt; a &gt; b ? a : b;
+
+// ✓ Constrain T to things that know how to compare themselves
+static T Max&lt;T&gt;(T a, T b) where T : IComparable&lt;T&gt; =&gt; a.CompareTo(b) &gt;= 0 ? a : b;
+
+Console.WriteLine(Max(3, 7));                 // 7
+Console.WriteLine(Max("apple", "mango"));     // mango
+Console.WriteLine(Max(new DateOnly(2026, 1, 1), new DateOnly(2025, 6, 1)));</code></pre></div>
+<div class="tbl"><table><tr><th>Constraint</th><th>Means</th><th>Unlocks</th></tr><tr><td><code>where T : class</code></td><td>Reference type</td><td>T can be null; use <code>as</code></td></tr><tr><td><code>where T : class?</code></td><td>Nullable reference type allowed</td><td></td></tr><tr><td><code>where T : struct</code></td><td>Non-nullable value type</td><td><code>T?</code> means Nullable&lt;T&gt;</td></tr><tr><td><code>where T : notnull</code></td><td>Non-nullable type (ref or value)</td><td>Safe dictionary keys</td></tr><tr><td><code>where T : unmanaged</code></td><td>Struct with no references</td><td>Pointers, stackalloc, raw memory</td></tr><tr><td><code>where T : new()</code></td><td>Has a public parameterless constructor</td><td><code>new T()</code></td></tr><tr><td><code>where T : BaseClass</code></td><td>Is or derives from BaseClass</td><td>BaseClass members</td></tr><tr><td><code>where T : IInterface</code></td><td>Implements the interface</td><td>Interface members</td></tr><tr><td><code>where T : U</code></td><td>T is or derives from another type parameter U</td><td></td></tr></table></div>
+<div class="code"><div class="fname">Repository.cs</div><pre><code class="language-csharp">public interface IEntity { int Id { get; } }
+
+// Several constraints: class first, new() last
+public class Repository&lt;T&gt; where T : class, IEntity, new()
+{
+    private readonly Dictionary&lt;int, T&gt; _items = new();
+
+    public T Create() =&gt; new T();                     // needs new()
+    public void Save(T item) =&gt; _items[item.Id] = item; // needs IEntity
+    public T? Find(int id) =&gt; _items.GetValueOrDefault(id); // T? is null for missing, thanks to `class`
+}</code></pre></div>
+
+<h3>5. default(T), static members and runtime types</h3>
+<div class="code nofile"><pre><code class="language-csharp">static T GetOrDefault&lt;T&gt;(T[] items, int index) =&gt;
+    index &gt;= 0 &amp;&amp; index &lt; items.Length ? items[index] : default!;   // null or 0
+
+Console.WriteLine(GetOrDefault(new[] { 1, 2 }, 5));      // 0
+Console.WriteLine(GetOrDefault(new[] { "a" }, 5) ?? "null");
+
+public class Counter&lt;T&gt;
+{
+    public static int Instances;                  // one per CLOSED type
+    public Counter() =&gt; Instances++;
+}
+new Counter&lt;int&gt;(); new Counter&lt;int&gt;(); new Counter&lt;string&gt;();
+Console.WriteLine(Counter&lt;int&gt;.Instances);        // 2
+Console.WriteLine(Counter&lt;string&gt;.Instances);     // 1
+
+Console.WriteLine(typeof(List&lt;int&gt;));             // System.Collections.Generic.List`1[System.Int32]</code></pre></div>
+
+<h3>6. Variance (in / out)</h3>
+<div class="code nofile"><pre><code class="language-csharp">IEnumerable&lt;string&gt; names = ["Asha", "Ravi"];
+IEnumerable&lt;object&gt; objects = names;          // ✓ covariance: IEnumerable&lt;out T&gt;
+
+List&lt;string&gt; nameList = ["Asha"];
+// List&lt;object&gt; objList = nameList;           // ❌ invariant: you could then Add(42) to a List&lt;string&gt;
+
+IComparer&lt;object&gt; byHash = Comparer&lt;object&gt;.Create((a, b) =&gt; a.GetHashCode().CompareTo(b.GetHashCode()));
+IComparer&lt;string&gt; forStrings = byHash;        // ✓ contravariance: IComparer&lt;in T&gt;
+
+Func&lt;object&gt; makeObj = () =&gt; "hi";
+Func&lt;string&gt; makeStr = () =&gt; "hi";
+makeObj = makeStr;                            // ✓ Func&lt;out TResult&gt;</code></pre></div>
+<p>Rule of thumb: <code>out T</code> means T only comes <i>out</i> (returned), so a more derived T is safe. <code>in T</code> means T only goes <i>in</i> (parameters), so a more general T is safe.</p>
+
+<h3>Common mistakes</h3><ul><li>Using <code>object</code> parameters where a generic method would keep type safety.</li><li>Over-constraining (e.g. adding <code>new()</code> you never use).</li><li>Expecting <code>List&lt;Dog&gt;</code> to be assignable to <code>List&lt;Animal&gt;</code>.</li><li>Forgetting that static fields aren't shared across different closed generic types.</li><li>Writing <code>T? Find()</code> without a <code>class</code> or <code>struct</code> constraint and being surprised it doesn't return null for value types.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a generic <code>Stack&lt;T&gt;</code> of your own (array-backed, grows when full) with Push, Pop, Peek, TryPop and Count.</li><li>Write <code>static T MaxBy&lt;T, TKey&gt;(IEnumerable&lt;T&gt; items, Func&lt;T, TKey&gt; key) where TKey : IComparable&lt;TKey&gt;</code> and find the most expensive product.</li><li>Create <code>Cache&lt;TKey, TValue&gt;</code> with a fixed capacity that evicts the oldest entry (use a Dictionary and a Queue).</li></ol>
+<h3>Self-check questions</h3><details><summary>Why can't you use &gt; on an unconstrained T?</summary>The compiler doesn't know T supports comparison. Constrain to IComparable&lt;T&gt; and use CompareTo, or (in .NET 7+) to IComparisonOperators.</details><details><summary>What does the new() constraint allow?</summary>Calling <code>new T()</code> inside the generic code, because T must have a public parameterless constructor.</details><details><summary>Are generics in C# erased at runtime like Java?</summary>No. .NET keeps full type information at runtime; value-type instantiations get specialised native code, so List&lt;int&gt; has no boxing.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What are generics and what are their benefits?</summary><div>Generics let you define classes, interfaces and methods with type parameters. Benefits: compile-time type safety, code reuse across types, and performance (no boxing or casting for value types).</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What are generic constraints? Name some.</summary><div>where clauses restricting type arguments: class, struct, notnull, unmanaged, new(), a base class, an interface, or another type parameter. They let the generic code use the members those constraints guarantee.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is default(T)?</summary><div>The default value for whatever T is: null for reference types, 0/false/zeroed struct for value types. Useful as a 'not found' return or initial value.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain covariance and contravariance with examples.</summary><div>Covariance (out T) lets a generic type with a derived argument be used where a base argument is expected: IEnumerable&lt;string&gt; as IEnumerable&lt;object&gt;. Contravariance (in T) is the reverse for inputs: IComparer&lt;object&gt; as IComparer&lt;string&gt;. Only interfaces and delegates support variance, and List&lt;T&gt; is invariant.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does .NET implement generics at runtime?</summary><div>Generic types are reified. For reference-type arguments the JIT shares one native code instance (all references are pointer-sized); for each value-type argument it generates specialised code, so List&lt;int&gt; and List&lt;double&gt; are each optimised without boxing.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why are static fields in a generic class not shared across type arguments?</summary><div>Each closed constructed type (Counter&lt;int&gt;, Counter&lt;string&gt;) is a distinct type at runtime with its own static storage. This is sometimes used deliberately as a per-type cache.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>IEnumerable, ICollection, IList and yield return</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Understand the collection interfaces, how foreach really works, and write lazy sequences with yield return — the foundation of LINQ next week.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>IEnumerable&lt;T&gt;</dt><dd>The most basic sequence: something you can iterate once with foreach. Exposes GetEnumerator().</dd></div><div class="def"><dt>IEnumerator&lt;T&gt;</dt><dd>The cursor over a sequence: MoveNext(), Current, Dispose().</dd></div><div class="def"><dt>IReadOnlyCollection&lt;T&gt;</dt><dd>An enumerable that also knows its Count.</dd></div><div class="def"><dt>ICollection&lt;T&gt;</dt><dd>Adds Count, Add, Remove, Contains, Clear, CopyTo.</dd></div><div class="def"><dt>IReadOnlyList&lt;T&gt;</dt><dd>Count plus read-only index access.</dd></div><div class="def"><dt>IList&lt;T&gt;</dt><dd>ICollection plus index get/set, Insert, RemoveAt, IndexOf.</dd></div><div class="def"><dt>Iterator</dt><dd>A method or property using <code>yield return</code> to produce a sequence lazily.</dd></div><div class="def"><dt>yield return</dt><dd>Returns the next element and pauses the method until the caller asks for another.</dd></div><div class="def"><dt>yield break</dt><dd>Ends the sequence early.</dd></div><div class="def"><dt>Lazy / deferred execution</dt><dd>Work happens only when the sequence is enumerated, one element at a time.</dd></div><div class="def"><dt>Multiple enumeration</dt><dd>Iterating the same lazy sequence twice, repeating all its work (and side effects).</dd></div><div class="def"><dt>Materialise</dt><dd>Forcing a lazy sequence to run and store results, e.g. ToList() or ToArray().</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>foreach works on anything with GetEnumerator(); IEnumerable&lt;T&gt; is the standard way to offer it.</li><li>Accept the most general type you need (IEnumerable&lt;T&gt;), return the most useful read-only type (IReadOnlyList&lt;T&gt;).</li><li>yield return turns a method into a lazy state machine; nothing runs until you iterate.</li><li>Lazy sequences can be infinite; take only what you need.</li><li>Argument validation in an iterator is deferred too — split into a wrapper method.</li><li>Call ToList() once if you'll iterate a lazy sequence more than once.</li></ul></div>
+
+<h3>1. The collection interface hierarchy</h3>
+<pre class="mermaid">
+flowchart TB
+  IE["IEnumerable#lt;T#gt;&lt;br/&gt;foreach"] --> IRC["IReadOnlyCollection#lt;T#gt;&lt;br/&gt;+ Count"]
+  IE --> IC["ICollection#lt;T#gt;&lt;br/&gt;+ Count, Add, Remove, Contains"]
+  IRC --> IRL["IReadOnlyList#lt;T#gt;&lt;br/&gt;+ this[i] get"]
+  IC --> IL["IList#lt;T#gt;&lt;br/&gt;+ this[i] get/set, Insert, RemoveAt"]
+  IC --> ISet["ISet#lt;T#gt;&lt;br/&gt;+ set operations"]
+  IC --> ID["IDictionary#lt;K,V#gt;"]
+  IL --> L["List#lt;T#gt;, T[]"]
+  IRL --> L
+</pre>
+<div class="tbl"><table><tr><th>Interface</th><th>Can iterate</th><th>Count</th><th>Index</th><th>Modify</th></tr><tr><td><code>IEnumerable&lt;T&gt;</code></td><td>✓</td><td></td><td></td><td></td></tr><tr><td><code>IReadOnlyCollection&lt;T&gt;</code></td><td>✓</td><td>✓</td><td></td><td></td></tr><tr><td><code>IReadOnlyList&lt;T&gt;</code></td><td>✓</td><td>✓</td><td>read</td><td></td></tr><tr><td><code>ICollection&lt;T&gt;</code></td><td>✓</td><td>✓</td><td></td><td>Add/Remove</td></tr><tr><td><code>IList&lt;T&gt;</code></td><td>✓</td><td>✓</td><td>read/write</td><td>Add/Remove/Insert</td></tr></table></div>
+<h4>Choosing parameter and return types</h4>
+<div class="code nofile"><pre><code class="language-csharp">// Parameters: ask for the LEAST you need, so callers can pass anything
+public decimal Total(IEnumerable&lt;OrderLine&gt; lines) { /* ... */ return 0; }
+
+// Returns: give the MOST useful read-only view, so callers can Count and index without copying
+public IReadOnlyList&lt;Order&gt; RecentOrders() =&gt; _orders.TakeLast(10).ToList();</code></pre></div>
+
+<h3>2. How foreach really works</h3>
+<div class="code nofile"><pre><code class="language-csharp">var cities = new List&lt;string&gt; { "Pune", "Kochi", "Indore" };
+
+foreach (var city in cities) Console.WriteLine(city);
+
+// …is compiled roughly into:
+using (IEnumerator&lt;string&gt; e = cities.GetEnumerator())
+{
+    while (e.MoveNext())
+    {
+        var city = e.Current;
+        Console.WriteLine(city);
+    }
+}</code></pre></div>
+
+<h3>3. Implementing IEnumerable&lt;T&gt; yourself</h3>
+<div class="code"><div class="fname">DateSpan.cs</div><pre><code class="language-csharp">using System.Collections;
+
+public class DateSpan : IEnumerable&lt;DateOnly&gt;
+{
+    private readonly DateOnly _start, _end;
+    public DateSpan(DateOnly start, DateOnly end)
+    {
+        if (end &lt; start) throw new ArgumentException("End before start");
+        (_start, _end) = (start, end);
+    }
+
+    // yield return builds the enumerator for us
+    public IEnumerator&lt;DateOnly&gt; GetEnumerator()
+    {
+        for (var d = _start; d &lt;= _end; d = d.AddDays(1))
+            yield return d;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() =&gt; GetEnumerator();   // non-generic version, required
+}
+
+var week = new DateSpan(new DateOnly(2026, 11, 9), new DateOnly(2026, 11, 15));
+foreach (var d in week)
+    if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+        Console.Write($"{d:ddd dd} ");   // Mon 09 Tue 10 Wed 11 Thu 12 Fri 13</code></pre></div>
+
+<h3>4. yield return: lazy sequences</h3>
+<div class="code"><div class="fname">YieldDemo.cs</div><pre><code class="language-csharp">static IEnumerable&lt;int&gt; CountTo(int n)
+{
+    Console.WriteLine("  [start]");
+    for (int i = 1; i &lt;= n; i++)
+    {
+        Console.WriteLine($"  [yield {i}]");
+        yield return i;                   // pause here, hand i to the caller
+    }
+    Console.WriteLine("  [end]");
+}
+
+var seq = CountTo(3);                     // NOTHING printed yet — deferred
+Console.WriteLine("Before loop");
+foreach (int x in seq)
+    Console.WriteLine($"got {x}");
+
+// Before loop
+//   [start]
+//   [yield 1]
+// got 1
+//   [yield 2]
+// got 2
+//   [yield 3]
+// got 3
+//   [end]</code></pre></div>
+<h4>Infinite sequences and yield break</h4>
+<div class="code nofile"><pre><code class="language-csharp">static IEnumerable&lt;long&gt; Fibonacci()
+{
+    long a = 0, b = 1;
+    while (true)                          // infinite — safe because it's lazy
+    {
+        yield return a;
+        (a, b) = (b, a + b);
+    }
+}
+
+foreach (long f in Fibonacci())
+{
+    if (f &gt; 100) break;
+    Console.Write($"{f} ");               // 0 1 1 2 3 5 8 13 21 34 55 89
+}
+
+static IEnumerable&lt;string&gt; ReadUntilBlank(IEnumerable&lt;string&gt; lines)
+{
+    foreach (var line in lines)
+    {
+        if (string.IsNullOrWhiteSpace(line)) yield break;   // stop the sequence
+        yield return line.Trim();
+    }
+}</code></pre></div>
+<h4>Streaming a large file</h4>
+<div class="code nofile"><pre><code class="language-csharp">// Reads one line at a time — memory stays flat even for a 5 GB log
+static IEnumerable&lt;string&gt; ErrorLines(string path)
+{
+    foreach (string line in File.ReadLines(path))     // File.ReadLines is itself lazy
+        if (line.Contains("ERROR", StringComparison.Ordinal))
+            yield return line;
+}</code></pre></div>
+
+<h3>5. Iterator pitfalls</h3>
+<div class="code nofile"><pre><code class="language-csharp">// ❌ Validation is deferred: no exception until someone iterates
+static IEnumerable&lt;int&gt; Range(int start, int count)
+{
+    if (count &lt; 0) throw new ArgumentOutOfRangeException(nameof(count));
+    for (int i = 0; i &lt; count; i++) yield return start + i;
+}
+var r = Range(1, -5);        // no error here!
+// foreach (var i in r) {}   // error only now, far from the cause
+
+// ✓ Split: eager validation + private lazy iterator
+static IEnumerable&lt;int&gt; SafeRange(int start, int count)
+{
+    ArgumentOutOfRangeException.ThrowIfNegative(count);   // runs immediately
+    return Iterate();
+
+    IEnumerable&lt;int&gt; Iterate()
+    {
+        for (int i = 0; i &lt; count; i++) yield return start + i;
+    }
+}
+
+// ❌ Multiple enumeration repeats the work
+IEnumerable&lt;string&gt; errors = ErrorLines("app.log");
+int count = errors.Count();          // reads the whole file
+var first = errors.First();          // reads it AGAIN
+
+// ✓ Materialise once
+List&lt;string&gt; errorList = ErrorLines("app.log").ToList();</code></pre></div>
+<div class="note tip"><b>Tip.</b> Next week's LINQ methods (<code>Where</code>, <code>Select</code>, <code>Take</code>) are mostly yield-based iterators like these. Understanding today makes deferred execution obvious.</div>
+
+<h3>Common mistakes</h3><ul><li>Returning <code>List&lt;T&gt;</code> from public methods so callers can modify your internal data.</li><li>Accepting <code>List&lt;T&gt;</code> parameters when <code>IEnumerable&lt;T&gt;</code> would do.</li><li>Enumerating a lazy sequence several times without realising it re-runs.</li><li>Putting validation inside iterator methods.</li><li>Calling <code>ToList()</code> on an infinite sequence.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write <code>IEnumerable&lt;DateOnly&gt; WorkingDays(DateOnly from, DateOnly to, ISet&lt;DateOnly&gt; holidays)</code> with yield.</li><li>Write <code>IEnumerable&lt;T[]&gt; Chunk&lt;T&gt;(IEnumerable&lt;T&gt; source, int size)</code> that yields batches (validate size eagerly).</li><li>Write a lazy <code>Primes()</code> sequence and print the first 20 primes.</li></ol>
+<h3>Self-check questions</h3><details><summary>What must a type have for foreach to work?</summary>A public GetEnumerator() method returning something with MoveNext() and Current. Implementing IEnumerable&lt;T&gt; is the standard way.</details><details><summary>When does the code in a yield method run?</summary>Only when the caller starts enumerating, and only up to the next yield each time MoveNext() is called.</details><details><summary>Why return IReadOnlyList&lt;T&gt; rather than IEnumerable&lt;T&gt;?</summary>It tells callers the data is already materialised, gives them Count and indexing, and avoids accidental multiple enumeration.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between IEnumerable and IList?</summary><div>IEnumerable only supports forward iteration. IList adds Count, index-based get/set, Add, Insert, Remove and RemoveAt. Accept IEnumerable when you only need to loop; use IList when you need positional modification.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does yield return do?</summary><div>It makes the method an iterator: each yield return hands one element to the caller and pauses; execution resumes from that point on the next MoveNext. The compiler generates a state machine class implementing IEnumerable/IEnumerator.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is deferred execution?</summary><div>The sequence's work isn't done when it's defined, only when it's enumerated. Results reflect the source data at enumeration time, and each enumeration redoes the work.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the multiple-enumeration problem?</summary><div>Enumerating a deferred sequence more than once repeats its work — re-reading files, re-querying databases, re-running side effects — and may return different results. Materialise with ToList() when you need it more than once.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why does argument validation in an iterator behave unexpectedly?</summary><div>Because the whole method body, including validation, only runs at the first MoveNext. Exceptions surface far from the call site. Fix by validating in a non-iterator wrapper that returns a local iterator function.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>IEnumerable vs IQueryable?</summary><div>IEnumerable executes in memory with delegates (LINQ to Objects). IQueryable builds expression trees that a provider (like EF Core) translates to SQL and runs in the database. You'll study this in Weeks 5 and 15.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>IComparable, IComparer, IEquatable and immutable/frozen collections</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Control how your types sort and compare, plug custom comparers into collections, and pick read-only, immutable or frozen collections for safety and speed.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>IComparable&lt;T&gt;</dt><dd>A type's natural order, implemented by the type itself via CompareTo.</dd></div><div class="def"><dt>IComparer&lt;T&gt;</dt><dd>An external ordering strategy; lets the same type sort many ways.</dd></div><div class="def"><dt>Comparer&lt;T&gt;.Create</dt><dd>Builds an IComparer from a lambda.</dd></div><div class="def"><dt>IEquatable&lt;T&gt;</dt><dd>A type's strongly typed equality.</dd></div><div class="def"><dt>IEqualityComparer&lt;T&gt;</dt><dd>External equality strategy (Equals + GetHashCode) for dictionaries, sets and Distinct.</dd></div><div class="def"><dt>StringComparer</dt><dd>Built-in comparers for strings: Ordinal, OrdinalIgnoreCase, CurrentCulture…</dd></div><div class="def"><dt>Stable sort</dt><dd>Equal elements keep their original order. List.Sort is unstable; LINQ OrderBy is stable.</dd></div><div class="def"><dt>Read-only collection</dt><dd>A view that hides mutating methods, but the underlying data can still change.</dd></div><div class="def"><dt>Immutable collection</dt><dd>System.Collections.Immutable: can never change; 'changes' return a new collection sharing structure.</dd></div><div class="def"><dt>Builder</dt><dd>A mutable helper (ImmutableList.CreateBuilder) for efficiently constructing an immutable collection.</dd></div><div class="def"><dt>Frozen collection</dt><dd>.NET 8 FrozenDictionary/FrozenSet: built once, optimised for very fast reads.</dd></div><div class="def"><dt>Ordinal comparison</dt><dd>Compares raw character codes; fast and culture-independent.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>IComparable = the one natural order; IComparer = any other order you need.</li><li>CompareTo returns negative (before), zero (same), positive (after).</li><li>Use <code>Comparer&lt;T&gt;.Create</code> or LINQ OrderBy/ThenBy instead of writing comparer classes by hand.</li><li>IEqualityComparer lets a Dictionary or HashSet use your definition of 'same' without changing the type.</li><li>Read-only ≠ immutable: a ReadOnlyCollection wraps a list someone else can still change.</li><li>FrozenDictionary for lookup tables that never change after startup.</li></ul></div>
+
+<h3>1. IComparable&lt;T&gt; — natural order</h3>
+<div class="code"><div class="fname">Version.cs</div><pre><code class="language-csharp">public record Version(int Major, int Minor, int Patch) : IComparable&lt;Version&gt;
+{
+    public int CompareTo(Version? other)
+    {
+        if (other is null) return 1;
+        int c = Major.CompareTo(other.Major);
+        if (c != 0) return c;
+        c = Minor.CompareTo(other.Minor);
+        return c != 0 ? c : Patch.CompareTo(other.Patch);
+    }
+
+    public static Version Parse(string s)
+    {
+        var p = s.Split('.').Select(int.Parse).ToArray();
+        return new(p[0], p[1], p[2]);
+    }
+
+    public override string ToString() =&gt; $"{Major}.{Minor}.{Patch}";
+}
+
+var versions = new List&lt;Version&gt; { Version.Parse("8.0.11"), Version.Parse("9.0.0"), Version.Parse("8.0.2") };
+versions.Sort();
+Console.WriteLine(string.Join(", ", versions));   // 8.0.2, 8.0.11, 9.0.0 (string sort would give 8.0.11 first)</code></pre></div>
+
+<h3>2. IComparer&lt;T&gt; — many orders for one type</h3>
+<div class="code"><div class="fname">Comparers.cs</div><pre><code class="language-csharp">public record Product(string Sku, string Name, decimal Price, int Rating);
+
+var products = new List&lt;Product&gt;
+{
+    new("P1", "Mouse", 799m, 4),
+    new("P2", "Keyboard", 1499m, 5),
+    new("P3", "Headset", 1499m, 3),
+    new("P4", "Webcam", 2499m, 4)
+};
+
+// A comparer class
+public sealed class PriceThenRatingDesc : IComparer&lt;Product&gt;
+{
+    public int Compare(Product? x, Product? y)
+    {
+        if (x is null || y is null) return Comparer&lt;Product?&gt;.Default.Compare(x, y);
+        int byPrice = x.Price.CompareTo(y.Price);
+        return byPrice != 0 ? byPrice : y.Rating.CompareTo(x.Rating);   // higher rating first
+    }
+}
+products.Sort(new PriceThenRatingDesc());
+
+// Or a lambda comparer
+products.Sort(Comparer&lt;Product&gt;.Create((a, b) =&gt; string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase)));
+
+// Or LINQ (stable, returns a new sequence) — usually the most readable
+var sorted = products.OrderBy(p =&gt; p.Price).ThenByDescending(p =&gt; p.Rating).ToList();
+
+// Comparers plug into sorted collections too
+var bySku = new SortedSet&lt;Product&gt;(Comparer&lt;Product&gt;.Create((a, b) =&gt; string.CompareOrdinal(a.Sku, b.Sku)));</code></pre></div>
+
+<h3>3. IEqualityComparer&lt;T&gt; — your own definition of "same"</h3>
+<p>Gmail ignores dots and anything after <code>+</code> in the local part. To treat <code>s.nayak+jobs@gmail.com</code> and <code>snayak@gmail.com</code> as one user, give the set a comparer instead of changing <code>string</code>.</p>
+<div class="code"><div class="fname">GmailAddressComparer.cs</div><pre><code class="language-csharp">public sealed class GmailAddressComparer : IEqualityComparer&lt;string&gt;
+{
+    public bool Equals(string? x, string? y) =&gt;
+        string.Equals(Normalize(x), Normalize(y), StringComparison.Ordinal);
+
+    public int GetHashCode(string obj) =&gt; Normalize(obj)?.GetHashCode() ?? 0;
+
+    private static string? Normalize(string? email)
+    {
+        if (email is null) return null;
+        var parts = email.Trim().ToLowerInvariant().Split('@');
+        if (parts is not [var local, "gmail.com"]) return email.Trim().ToLowerInvariant();
+        local = local.Split('+')[0].Replace(".", "");
+        return $"{local}@gmail.com";
+    }
+}
+
+var signups = new HashSet&lt;string&gt;(new GmailAddressComparer())
+{
+    "snayak@gmail.com",
+    "s.nayak+jobs@gmail.com",     // same person → not added
+    "S.Nayak@Gmail.com"           // same person → not added
+};
+Console.WriteLine(signups.Count);   // 1
+
+var distinct = new[] { "a.b@gmail.com", "ab@gmail.com" }.Distinct(new GmailAddressComparer()).Count();   // 1</code></pre></div>
+<div class="note tip"><b>Tip.</b> Equality comparers must obey the same rule as GetHashCode on types: if Equals says two values match, GetHashCode must return the same number for both.</div>
+
+<h3>4. Read-only vs immutable vs frozen</h3>
+<div class="code"><div class="fname">CollectionsDemo.cs</div><pre><code class="language-csharp">using System.Collections.Frozen;
+using System.Collections.Immutable;
+
+var source = new List&lt;string&gt; { "IN", "US" };
+
+// Read-only VIEW: can't modify through it, but it reflects changes to `source`
+IReadOnlyList&lt;string&gt; view = source.AsReadOnly();
+source.Add("UK");
+Console.WriteLine(view.Count);              // 3 — changed underneath you
+
+// Immutable: truly can't change; "modifying" returns a new collection
+ImmutableList&lt;string&gt; imm = ["IN", "US"];
+ImmutableList&lt;string&gt; imm2 = imm.Add("UK");
+Console.WriteLine($"{imm.Count} {imm2.Count}");   // 2 3
+
+// Build large immutable collections efficiently
+var builder = ImmutableDictionary.CreateBuilder&lt;string, decimal&gt;();
+builder.Add("GST", 0.18m);
+builder.Add("TDS", 0.10m);
+ImmutableDictionary&lt;string, decimal&gt; rates = builder.ToImmutable();
+
+// Frozen (.NET 8): slower to create, fastest to read
+FrozenDictionary&lt;string, string&gt; stateCodes = new Dictionary&lt;string, string&gt;
+{
+    ["KA"] = "Karnataka", ["MH"] = "Maharashtra", ["TN"] = "Tamil Nadu", ["DL"] = "Delhi"
+}.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+
+FrozenSet&lt;string&gt; blockedPins = new[] { "000000", "999999" }.ToFrozenSet();
+
+Console.WriteLine(stateCodes["ka"]);         // Karnataka</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>ReadOnlyCollection / IReadOnlyList</th><th>ImmutableList / ImmutableDictionary</th><th>FrozenDictionary / FrozenSet</th></tr><tr><td>Can the data change?</td><td>Yes, via the original</td><td>Never</td><td>Never</td></tr><tr><td>"Add" returns</td><td>Not available</td><td>A new collection</td><td>Not available</td></tr><tr><td>Read speed</td><td>Same as the list</td><td>Slower (tree-based)</td><td>Fastest</td></tr><tr><td>Creation cost</td><td>Almost free</td><td>Medium</td><td>Highest (optimises layout)</td></tr><tr><td>Thread safe for reads</td><td>Only if nobody writes the source</td><td>Yes</td><td>Yes</td></tr><tr><td>Use for</td><td>Exposing internal lists safely</td><td>Shared state that evolves by snapshots</td><td>Lookup tables built once at startup</td></tr></table></div>
+
+<h3>5. Putting it together: a product catalogue lookup</h3>
+<div class="code"><div class="fname">Catalog.cs</div><pre><code class="language-csharp">public sealed class Catalog
+{
+    private readonly FrozenDictionary&lt;string, Product&gt; _bySku;
+    private readonly IReadOnlyList&lt;Product&gt; _byPrice;
+
+    public Catalog(IEnumerable&lt;Product&gt; products)
+    {
+        var list = products.ToList();
+        _bySku = list.ToFrozenDictionary(p =&gt; p.Sku, StringComparer.OrdinalIgnoreCase);
+        _byPrice = list.OrderBy(p =&gt; p.Price).ThenBy(p =&gt; p.Name).ToList().AsReadOnly();
+    }
+
+    public Product? Find(string sku) =&gt; _bySku.GetValueOrDefault(sku);
+    public IReadOnlyList&lt;Product&gt; CheapestFirst =&gt; _byPrice;
+}</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>CompareTo that isn't consistent (A &lt; B and B &lt; A both true) — Sort can throw or loop.</li><li>Sorting strings with culture-sensitive comparison for keys/IDs; use Ordinal.</li><li>Thinking <code>AsReadOnly()</code> makes data immutable.</li><li>Using ImmutableList for hot, frequently read data when a frozen or plain list would be faster.</li><li>An IEqualityComparer whose GetHashCode disagrees with its Equals.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Make <code>Employee</code> implement <code>IComparable&lt;Employee&gt;</code> by Id, then sort by department then salary descending with a comparer.</li><li>Write a case- and whitespace-insensitive <code>IEqualityComparer&lt;string&gt;</code> for city names and use it in a HashSet.</li><li>Build a <code>FrozenDictionary</code> of PIN-code prefixes to states and look up 10 PIN codes.</li></ol>
+<h3>Self-check questions</h3><details><summary>What should CompareTo return?</summary>A negative number if this comes before other, zero if they're equal in order, positive if it comes after.</details><details><summary>Is List.Sort stable?</summary>No (it uses introsort). Enumerable.OrderBy is stable.</details><details><summary>When would you choose a FrozenDictionary?</summary>For data created once (often at startup) and read very frequently, like configuration maps, country codes or routing tables.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between IComparable and IComparer?</summary><div>IComparable&lt;T&gt; is implemented by the type itself to define its single natural order (CompareTo). IComparer&lt;T&gt; is a separate object defining an ordering, so you can sort the same type in many ways without changing it.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is IEqualityComparer used for?</summary><div>To supply custom equality (Equals + GetHashCode) to hash-based collections and LINQ methods like Distinct, without modifying the element type — e.g. case-insensitive strings or normalised emails.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Read-only vs immutable collection?</summary><div>A read-only collection only prevents modification through that reference; the underlying collection may still change. An immutable collection can never change after creation; operations return new instances.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are frozen collections and when do they help?</summary><div>.NET 8's FrozenDictionary and FrozenSet analyse the data at creation to choose an optimal lookup strategy, making reads faster than Dictionary at the cost of slower construction. Ideal for static lookup tables read on hot paths.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do immutable collections stay efficient?</summary><div>They use persistent data structures (balanced trees) that share most of their structure between versions, so adding an item creates O(log n) new nodes rather than copying everything. Builders allow efficient batch construction.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why prefer ordinal string comparison for identifiers?</summary><div>Ordinal compares raw char values: it's faster, predictable and culture-independent. Culture-aware comparison can give different results on different machines (e.g. Turkish i), which breaks keys and sorting of codes.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Refactor the library project around a generic repository</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Replace the Week 2 catalog with a generic repository, add indexes with Dictionary and HashSet, and add reservations with Queue — without changing the business rules. Budget: about 4 hours.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Repository</dt><dd>An abstraction that stores and retrieves entities like an in-memory collection, hiding where the data really lives.</dd></div><div class="def"><dt>Generic repository</dt><dd>One repository implementation reused for every entity type: <code>IRepository&lt;T&gt;</code>.</dd></div><div class="def"><dt>Entity</dt><dd>An object with an identity (Id) that persists over time.</dd></div><div class="def"><dt>Index</dt><dd>An extra lookup structure (e.g. Dictionary by ISBN) that avoids scanning all items.</dd></div><div class="def"><dt>Reservation queue</dt><dd>A FIFO line of members waiting for an item.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>One generic InMemoryRepository&lt;T&gt; replaces separate item and member storage.</li><li>Dictionary&lt;int, T&gt; gives O(1) lookup by Id instead of scanning a list.</li><li>HashSet guards uniqueness of ISBNs and emails in O(1).</li><li>Queue&lt;int&gt; per item holds reservations in arrival order.</li><li>Refactoring means behaviour stays the same; re-run last week's 'try to break it' table to prove it.</li></ul></div>
+
+<h3>What changes</h3>
+<div class="tbl"><table><tr><th>Week 2</th><th>Week 4</th></tr><tr><td><code>ICatalog</code> with item- and member-specific methods</td><td><code>IRepository&lt;T&gt;</code> for any entity</td></tr><tr><td><code>List&lt;LibraryItem&gt;</code> + <code>FirstOrDefault</code> scans</td><td><code>Dictionary&lt;int, T&gt;</code> lookups</td></tr><tr><td>ISBN/email checks by scanning</td><td><code>HashSet&lt;string&gt;</code> indexes</td></tr><tr><td>Loans in a list scanned for each check</td><td><code>Dictionary&lt;int, List&lt;Loan&gt;&gt;</code> by member + <code>Dictionary&lt;int, Loan&gt;</code> by item</td></tr><tr><td>No reservations</td><td><code>Dictionary&lt;int, Queue&lt;int&gt;&gt;</code> per item</td></tr></table></div>
+
+<h3>Step 1 — IEntity and IRepository&lt;T&gt;</h3>
+<div class="code"><div class="fname">Library.Core/Interfaces/IEntity.cs</div><pre><code class="language-csharp">namespace Library.Core.Interfaces;
+
+public interface IEntity
+{
+    int Id { get; }
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Interfaces/IRepository.cs</div><pre><code class="language-csharp">namespace Library.Core.Interfaces;
+
+public interface IRepository&lt;T&gt; where T : class, IEntity
+{
+    int Count { get; }
+    void Add(T entity);
+    T? GetById(int id);
+    bool Remove(int id);
+    IReadOnlyList&lt;T&gt; GetAll();
+    IReadOnlyList&lt;T&gt; Find(Func&lt;T, bool&gt; predicate);     // Func: a delegate (Week 3, Day 5)
+}</code></pre></div>
+<p>Make <code>LibraryItem</code>, <code>Member</code> and <code>Loan</code> implement <code>IEntity</code>. Items and members already have <code>Id</code>; give <code>Loan</code> one with a static counter.</p>
+<div class="code nofile"><pre><code class="language-csharp">public abstract class LibraryItem : ISearchable, IEntity { /* unchanged */ }
+public class Member : ISearchable, IEntity { /* unchanged */ }
+
+public class Loan : IEntity
+{
+    private static int _nextId = 1;
+    public int Id { get; } = _nextId++;
+    /* rest unchanged */
+}</code></pre></div>
+
+<h3>Step 2 — InMemoryRepository&lt;T&gt;</h3>
+<div class="code"><div class="fname">Library.Core/Services/InMemoryRepository.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+
+namespace Library.Core.Services;
+
+public class InMemoryRepository&lt;T&gt; : IRepository&lt;T&gt; where T : class, IEntity
+{
+    private readonly Dictionary&lt;int, T&gt; _store = new();
+
+    public int Count =&gt; _store.Count;
+
+    public virtual void Add(T entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        if (!_store.TryAdd(entity.Id, entity))
+            throw new InvalidOperationException($"{typeof(T).Name} with id {entity.Id} already exists");
+    }
+
+    public T? GetById(int id) =&gt; _store.GetValueOrDefault(id);
+
+    public virtual bool Remove(int id) =&gt; _store.Remove(id);
+
+    public IReadOnlyList&lt;T&gt; GetAll() =&gt; _store.Values.ToList();
+
+    public IReadOnlyList&lt;T&gt; Find(Func&lt;T, bool&gt; predicate)
+    {
+        var results = new List&lt;T&gt;();
+        foreach (var item in _store.Values)
+            if (predicate(item)) results.Add(item);
+        return results;
+    }
+}</code></pre></div>
+
+<h3>Step 3 — Specialised repositories with unique indexes</h3>
+<p>Inherit the generic behaviour and add a HashSet index for the field that must be unique.</p>
+<div class="code"><div class="fname">Library.Core/Services/Repositories.cs</div><pre><code class="language-csharp">using Library.Core.Models;
+
+namespace Library.Core.Services;
+
+public class ItemRepository : InMemoryRepository&lt;LibraryItem&gt;
+{
+    private readonly HashSet&lt;string&gt; _isbns = new(StringComparer.Ordinal);
+
+    public override void Add(LibraryItem item)
+    {
+        if (item is Book book &amp;&amp; !_isbns.Add(book.Isbn))
+            throw new InvalidOperationException($"A book with ISBN {book.Isbn} already exists");
+        base.Add(item);
+    }
+
+    public override bool Remove(int id)
+    {
+        if (GetById(id) is Book book) _isbns.Remove(book.Isbn);
+        return base.Remove(id);
+    }
+
+    public IReadOnlyList&lt;T&gt; OfKind&lt;T&gt;() where T : LibraryItem =&gt; Find(i =&gt; i is T).Cast&lt;T&gt;().ToList();
+}
+
+public class MemberRepository : InMemoryRepository&lt;Member&gt;
+{
+    private readonly Dictionary&lt;string, Member&gt; _byEmail = new(StringComparer.OrdinalIgnoreCase);
+
+    public override void Add(Member member)
+    {
+        if (!_byEmail.TryAdd(member.Email, member))
+            throw new InvalidOperationException($"{member.Email} is already registered");
+        base.Add(member);
+    }
+
+    public Member? GetByEmail(string email) =&gt; _byEmail.GetValueOrDefault(email.Trim());
+}</code></pre></div>
+
+<h3>Step 4 — LibraryService with indexed loans and reservations</h3>
+<div class="code"><div class="fname">Library.Core/Services/LibraryService.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+using Library.Core.Models;
+
+namespace Library.Core.Services;
+
+public class LibraryService(ItemRepository items, MemberRepository members, IClock clock)
+{
+    private readonly InMemoryRepository&lt;Loan&gt; _loans = new();
+    private readonly Dictionary&lt;int, Loan&gt; _openLoanByItem = new();             // itemId → open loan
+    private readonly Dictionary&lt;int, List&lt;Loan&gt;&gt; _openLoansByMember = new();    // memberId → open loans
+    private readonly Dictionary&lt;int, Queue&lt;int&gt;&gt; _reservations = new();         // itemId → waiting memberIds
+
+    public IReadOnlyList&lt;Loan&gt; OpenLoans =&gt; _openLoanByItem.Values.ToList();
+    public IReadOnlyList&lt;Loan&gt; Overdue =&gt; _openLoanByItem.Values.Where(l =&gt; l.DaysOverdue(clock.Today) &gt; 0).ToList();
+
+    public Result&lt;Loan&gt; Borrow(int memberId, int itemId)
+    {
+        if (members.GetById(memberId) is not { } member) return Result&lt;Loan&gt;.Fail($"No member with id {memberId}");
+        if (items.GetById(itemId) is not { } item)       return Result&lt;Loan&gt;.Fail($"No item with id {itemId}");
+        if (_openLoanByItem.ContainsKey(itemId))         return Result&lt;Loan&gt;.Fail($"'{item.Title}' is already on loan");
+
+        // Reserved? Only the member at the front of the queue may take it
+        if (_reservations.TryGetValue(itemId, out var queue) &amp;&amp; queue.TryPeek(out int nextInLine) &amp;&amp; nextInLine != memberId)
+            return Result&lt;Loan&gt;.Fail($"'{item.Title}' is reserved for member {nextInLine}");
+
+        var memberLoans = OpenLoansOf(memberId);
+        if (memberLoans.Count &gt;= Member.MaxLoans)
+            return Result&lt;Loan&gt;.Fail($"{member.Name} already has {Member.MaxLoans} items out");
+        if (memberLoans.Any(l =&gt; l.DaysOverdue(clock.Today) &gt; 0))
+            return Result&lt;Loan&gt;.Fail($"{member.Name} has an overdue item; return it first");
+
+        var loan = new Loan(item, member, clock.Today);
+        _loans.Add(loan);
+        _openLoanByItem[itemId] = loan;
+        memberLoans.Add(loan);
+        item.IsAvailable = false;
+        queue?.TryDequeue(out _);                       // their reservation is fulfilled
+        return Result&lt;Loan&gt;.Ok(loan);
+    }
+
+    public Result&lt;decimal&gt; Return(int itemId)
+    {
+        if (!_openLoanByItem.Remove(itemId, out var loan))
+            return Result&lt;decimal&gt;.Fail($"Item {itemId} isn't on loan");
+
+        decimal fee = loan.Close(clock.Today);
+        OpenLoansOf(loan.Member.Id).Remove(loan);
+        loan.Item.IsAvailable = true;
+        return Result&lt;decimal&gt;.Ok(fee);
+    }
+
+    public Result&lt;int&gt; Reserve(int memberId, int itemId)
+    {
+        if (members.GetById(memberId) is null) return Result&lt;int&gt;.Fail($"No member with id {memberId}");
+        if (items.GetById(itemId) is not { } item) return Result&lt;int&gt;.Fail($"No item with id {itemId}");
+        if (item.IsAvailable) return Result&lt;int&gt;.Fail($"'{item.Title}' is available — borrow it instead");
+
+        if (!_reservations.TryGetValue(itemId, out var queue))
+            _reservations[itemId] = queue = new Queue&lt;int&gt;();
+        if (queue.Contains(memberId)) return Result&lt;int&gt;.Fail("You're already in the queue");
+
+        queue.Enqueue(memberId);
+        return Result&lt;int&gt;.Ok(queue.Count);            // position in line
+    }
+
+    public IReadOnlyList&lt;ISearchable&gt; Search(string term)
+    {
+        if (string.IsNullOrWhiteSpace(term)) return [];
+        var hits = new List&lt;ISearchable&gt;();
+        hits.AddRange(items.Find(i =&gt; i.Matches(term)));
+        hits.AddRange(members.Find(m =&gt; m.Matches(term)));
+        return hits;
+    }
+
+    private List&lt;Loan&gt; OpenLoansOf(int memberId)
+    {
+        if (!_openLoansByMember.TryGetValue(memberId, out var list))
+            _openLoansByMember[memberId] = list = [];
+        return list;
+    }
+}</code></pre></div>
+<p><code>is not { } member</code> is a property pattern that checks for non-null and assigns in one step (Week 3, Day 2).</p>
+
+<h3>Step 5 — Wire it up</h3>
+<div class="code"><div class="fname">Library.App/Program.cs (changes)</div><pre><code class="language-csharp">var items = new ItemRepository();
+var members = new MemberRepository();
+SeedData.Load(items, members);              // update SeedData to take the two repositories
+var clock = new ManualClock(DateOnly.FromDateTime(DateTime.Today));
+var library = new LibraryService(items, members, clock);
+
+// New menu option:
+// case 10: Reserve(); break;
+
+void Reserve()
+{
+    int memberId = ConsoleInput.ReadInt("Member id: ", 1, int.MaxValue);
+    int itemId   = ConsoleInput.ReadInt("Item id: ", 1, int.MaxValue);
+    var r = library.Reserve(memberId, itemId);
+    Console.WriteLine(r.Success ? $"  ✓ You're number {r.Value} in line" : $"  ✗ {r.Error}");
+}
+
+// Listing books only, sorted by title, using the generic helper and a comparer
+foreach (var b in items.OfKind&lt;Book&gt;().OrderBy(b =&gt; b.Title, StringComparer.OrdinalIgnoreCase))
+    Console.WriteLine($"  {b}");</code></pre></div>
+
+<h3>Step 6 — Regression check</h3>
+<p>Re-run every row of the Week 2 Sunday table; results must be identical. Then test the new feature:</p>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected</th></tr><tr><td>Member 1001 borrows item 1</td><td>✓ loan created</td></tr><tr><td>Member 1002 reserves item 1</td><td>✓ number 1 in line</td></tr><tr><td>Member 1002 reserves item 1 again</td><td>"You're already in the queue"</td></tr><tr><td>Member 1001 returns item 1; member 1003 tries to borrow it</td><td>"reserved for member 1002"</td></tr><tr><td>Member 1002 borrows item 1</td><td>✓ and the reservation queue is now empty</td></tr><tr><td>Reserve an item that's available</td><td>"borrow it instead"</td></tr></table></div>
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Add <code>PagedResult&lt;T&gt; GetPage(int page, int size)</code> to the repository and page through items 2 at a time.</li>
+<li>Add an undo for the last borrow/return using a <code>Stack</code> of actions.</li>
+<li>Write the regression table as a small console "test runner" that prints PASS/FAIL (you'll replace it with xUnit in Week 10).</li>
+</ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Repository pattern?</summary><div>An abstraction over data storage that exposes collection-like operations (Add, GetById, Find, Remove) for entities, so business logic doesn't depend on whether data lives in memory, SQL Server or an API.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why constrain IRepository&lt;T&gt; with where T : class, IEntity?</summary><div>IEntity guarantees an Id the repository can key on; class allows returning null for 'not found' (T?) and matches how entities are modelled.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are the criticisms of a generic repository over EF Core?</summary><div>DbContext/DbSet is already a repository and unit of work, so a thin generic wrapper often adds little, hides useful features (Include, projections, IQueryable) and leaks abstractions. Many teams prefer specific repositories or query objects per use case.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why keep secondary indexes like _openLoanByItem, and what's the risk?</summary><div>They turn O(n) scans into O(1) lookups. The risk is consistency: every add/remove must update all indexes, so mutations should be centralised in one place — exactly what a database does for you with indexes and transactions.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Revise Weeks 1–4 and write notes in your own words</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Consolidate the first month: check what you can explain without notes, fill gaps, and write your own cheat sheets.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Active recall</dt><dd>Testing yourself from memory instead of re-reading; far more effective for retention.</dd></div><div class="def"><dt>Feynman technique</dt><dd>Explain a topic in plain words as if teaching a beginner; gaps show up where you get stuck.</dd></div><div class="def"><dt>Spaced repetition</dt><dd>Reviewing material at increasing intervals (1 day, 3 days, 1 week, 1 month).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Close the notes before answering anything below.</li><li>If you can't explain something in two sentences, re-read only that section.</li><li>Write your cheat sheets by hand or in your own markdown repo; don't copy these pages.</li><li>Mark each topic green / amber / red and revisit reds next weekend.</li></ul></div>
+
+<h3>1. How to spend today (≈4 hours)</h3>
+<div class="tbl"><table><tr><th>Time</th><th>Activity</th></tr><tr><td>45 min</td><td>Blank-page recall: for each week, write everything you remember on one page</td></tr><tr><td>45 min</td><td>Compare with the notes; mark each checklist item green/amber/red</td></tr><tr><td>60 min</td><td>Re-study reds; type out one code example per red topic</td></tr><tr><td>45 min</td><td>Mixed quiz and mock interview below (answer aloud, record yourself)</td></tr><tr><td>30 min</td><td>Write your own cheat sheet for collections and push it to a <code>dotnet-notes</code> repo</td></tr><tr><td>15 min</td><td>Finish Saturday's refactor, update the library README, push</td></tr></table></div>
+
+<h3>2. One-month checklist</h3>
+<h4>Week 1 — C# basics</h4>
+<ul><li>SDK vs runtime; CLR, IL, JIT</li><li>Value vs reference types; decimal vs double</li><li>Parse / TryParse / Convert; switch expressions</li><li>String immutability and StringBuilder; arrays, ranges</li><li>ref / out / in; nullable types and ?. ?? ??=</li></ul>
+<h4>Week 2 — OOP</h4>
+<ul><li>Properties vs fields; init, required, primary constructors</li><li>Encapsulation; access modifiers; static members</li><li>Inheritance, constructor order, virtual/override vs new, sealed</li><li>Abstract classes, polymorphism, Template Method</li><li>Interfaces, DI by hand, interface vs abstract class</li></ul>
+<h4>Week 3 — Modern C#</h4>
+<ul><li>struct vs class vs record vs record struct vs tuple</li><li>Pattern kinds; tuple-switch state machines; list patterns</li><li>Enums and flags; Equals/GetHashCode contract; boxing</li><li>Exceptions: order, filters, throw vs throw ex, custom hierarchy</li><li>Delegates, Func/Action, events and leaks</li></ul>
+<h4>Week 4 — Collections and generics</h4>
+<ul><li>List / Dictionary / HashSet costs and when to use each</li><li>Queue / Stack / PriorityQueue / LinkedList / sorted collections</li><li>Generic classes, methods, constraints, variance</li><li>IEnumerable vs ICollection vs IList; yield and deferred execution</li><li>IComparable vs IComparer; IEqualityComparer; read-only vs immutable vs frozen</li></ul>
+
+<h3>3. Collections cheat sheet</h3>
+<div class="tbl"><table><tr><th>Collection</th><th>Order</th><th>Duplicates</th><th>Add</th><th>Find</th><th>Remove</th><th>Use when</th></tr><tr><td><code>T[]</code></td><td>Index</td><td>Yes</td><td>—</td><td>O(n) / O(1) index</td><td>—</td><td>Fixed size</td></tr><tr><td><code>List&lt;T&gt;</code></td><td>Insertion</td><td>Yes</td><td>O(1)*</td><td>O(n) / O(1) index</td><td>O(n)</td><td>Default ordered list</td></tr><tr><td><code>Dictionary&lt;K,V&gt;</code></td><td>None</td><td>Keys unique</td><td>O(1)</td><td>O(1) by key</td><td>O(1)</td><td>Lookup by key</td></tr><tr><td><code>HashSet&lt;T&gt;</code></td><td>None</td><td>No</td><td>O(1)</td><td>O(1)</td><td>O(1)</td><td>Uniqueness, membership</td></tr><tr><td><code>Queue&lt;T&gt;</code></td><td>FIFO</td><td>Yes</td><td>O(1)</td><td>—</td><td>O(1) front</td><td>Arrival order</td></tr><tr><td><code>Stack&lt;T&gt;</code></td><td>LIFO</td><td>Yes</td><td>O(1)</td><td>—</td><td>O(1) top</td><td>Undo, nesting</td></tr><tr><td><code>PriorityQueue</code></td><td>Priority</td><td>Yes</td><td>O(log n)</td><td>—</td><td>O(log n)</td><td>Most urgent first</td></tr><tr><td><code>SortedDictionary</code></td><td>Key</td><td>Keys unique</td><td>O(log n)</td><td>O(log n)</td><td>O(log n)</td><td>Always sorted</td></tr><tr><td><code>LinkedList&lt;T&gt;</code></td><td>Insertion</td><td>Yes</td><td>O(1) with node</td><td>O(n)</td><td>O(1) with node</td><td>Middle inserts</td></tr><tr><td><code>FrozenDictionary</code></td><td>None</td><td>Keys unique</td><td>—</td><td>Fastest</td><td>—</td><td>Static lookups</td></tr></table></div>
+
+<h3>4. Mixed quiz — predict the output</h3>
+<details><summary>Q1. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var d = new Dictionary&lt;string, int&gt;();
+d["a"] = 1; d["a"] = 2;
+Console.WriteLine(d.Count + d["a"]);</code></pre></div><b>3.</b> The indexer overwrites, so Count is 1 and the value is 2.</details>
+<details><summary>Q2. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">IEnumerable&lt;int&gt; Nums() { Console.Write("A"); yield return 1; Console.Write("B"); yield return 2; }
+var n = Nums();
+Console.Write("C");
+foreach (var x in n) Console.Write(x);</code></pre></div><b>CA1B2.</b> Nothing runs until enumeration starts.</details>
+<details><summary>Q3. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var s = new Stack&lt;int&gt;([1, 2, 3]);
+var q = new Queue&lt;int&gt;([1, 2, 3]);
+Console.WriteLine($"{s.Pop()}{q.Dequeue()}");</code></pre></div><b>31.</b> The stack's top is the last pushed (3); the queue's front is the first enqueued (1).</details>
+<details><summary>Q4. Does this compile?</summary>
+<div class="code nofile"><pre><code class="language-csharp">List&lt;object&gt; items = new List&lt;string&gt; { "a" };</code></pre></div><b>No.</b> List&lt;T&gt; is invariant. <code>IEnumerable&lt;object&gt; items = new List&lt;string&gt;()</code> would compile (covariance).</details>
+<details><summary>Q5. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var set = new HashSet&lt;string&gt;(StringComparer.OrdinalIgnoreCase) { "Pune", "PUNE", "pune", "Goa" };
+Console.WriteLine(set.Count);</code></pre></div><b>2.</b> The comparer treats the three Pune spellings as one.</details>
+<details><summary>Q6. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">struct P { public int X; }
+var list = new List&lt;P&gt; { new P { X = 1 } };
+var p = list[0]; p.X = 9;
+Console.WriteLine(list[0].X);</code></pre></div><b>1.</b> The indexer returns a copy of the struct; changing the copy doesn't change the list.</details>
+<details><summary>Q7. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">record R(int A);
+var set = new HashSet&lt;R&gt; { new R(1), new R(1) };
+Console.WriteLine(set.Count);</code></pre></div><b>1.</b> Records have value equality and matching hash codes.</details>
+<details><summary>Q8. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">try { int[] a = new int[2]; a[2] = 1; }
+catch (IndexOutOfRangeException) { Console.Write("I"); }
+catch (Exception) { Console.Write("E"); }
+finally { Console.Write("F"); }</code></pre></div><b>IF.</b> The specific catch handles it, then finally runs.</details>
+
+<h3>5. Mock interview (answer aloud, 2 minutes each)</h3>
+<ol>
+<li>Walk me through what happens from <code>dotnet run</code> to your Main method executing.</li>
+<li>Explain value vs reference types, and where boxing happens.</li>
+<li>Interface or abstract class for a payment gateway integration? Why?</li>
+<li>How would you make a <code>Money</code> type safe to use as a dictionary key?</li>
+<li>When would you throw an exception vs return a result object?</li>
+<li>You need to check if 1 million incoming order IDs were already processed. What collection and why?</li>
+<li>What is deferred execution and how can it bite you?</li>
+<li>Design an LRU cache with O(1) get and put.</li>
+</ol>
+
+<h3>6. Write your own notes</h3>
+<p>Create a <code>dotnet-notes</code> repo with one markdown file per week. For each topic write: a one-line definition, one example from your own projects (bank, library), one gotcha. Writing it yourself is what makes it stick.</p>
+<div class="code nofile"><pre><code class="language-bash">mkdir dotnet-notes &amp;&amp; cd dotnet-notes
+git init
+printf "# Week 4 — Collections\n\n## Dictionary\n- What: ...\n- My example: ...\n- Gotcha: ...\n" &gt; week04.md
+git add . &amp;&amp; git commit -m "Week 4 notes" &amp;&amp; git push</code></pre></div>
+
+<div class="note tip"><b>Next week:</b> Delegates in depth, lambdas, closures and LINQ — Where, Select, OrderBy, GroupBy, Join, SelectMany, aggregates, and IEnumerable vs IQueryable. Micro-project 5 is a student grade analyser over CSV data.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>You need to check whether 1 million order IDs were already processed. What do you use?</summary><div>A HashSet&lt;long&gt; (or HashSet&lt;Guid&gt;): O(1) Contains and Add, and Add returns false for duplicates so check-and-insert is one call. For persistence across restarts, a unique index in the database.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Design an LRU cache with O(1) get and put.</summary><div>Dictionary from key to LinkedListNode, plus a LinkedList ordered by recency. Get: look up the node, move it to the front, return the value. Put: update or add at the front; if over capacity, remove the last node and its dictionary entry. Both are O(1).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you make Money safe as a dictionary key?</summary><div>Make it immutable (readonly record struct Money(decimal Amount, string Currency)), so Equals and GetHashCode are value-based and can't change after insertion. Normalise the currency code (upper case) in the constructor.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Interface or abstract class for payment gateways?</summary><div>An interface (IPaymentGateway) as the contract consumers depend on and tests mock, optionally with an abstract base class implementing the shared steps (logging, retries, validation) via Template Method for concrete gateways to inherit.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week4-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

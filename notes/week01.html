@@ -1,0 +1,1245 @@
+<title>.NET Notes · Week 1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 1</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">Setup &amp; first program</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Variables &amp; types</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Operators &amp; control flow</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Strings &amp; arrays</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Methods &amp; nullability</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: calculator</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Validation &amp; revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 1 · Week 1 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">C# 12</span><span class="chip">~18 hrs</span></div>
+  <h1>Week 1 — Setup and C# basics</h1>
+  <p>Seven days from installing the SDK to shipping your first two-project solution. Pick a day to open its notes. Weekdays take about 2 hours: read the definitions, type every example, do the exercise, then rehearse the interview questions. Weekends are about 4 hours of project work.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>Setup, the dotnet CLI and your first program</h3><p>SDK vs runtime, CLR/IL/JIT, project files, solutions, Git.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>Variables, types, value vs reference</h3><p>Built-in types, decimal vs double, conversion, boxing.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Operators and control flow</h3><p>if, switch statements and expressions, patterns, loops.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Strings and arrays</h3><p>Interpolation, immutability, StringBuilder, ranges, arrays.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Methods and nullability</h3><p>ref/out/in, params, overloading, ?. and ??.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Micro-project 1: Toolkit</h3><p>Calculator + unit converter + history in a two-project solution.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Validation, README and revision</h3><p>Harden input, document, push, quiz yourself.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+
+<!-- ============ DAY 1 ============ -->
+<section class="day" id="day1">
+<div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Setup, the dotnet CLI and your first program</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>By the end you can create, build and run a console app from the terminal, understand every file it generated, and push it to GitHub.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>SDK</dt><dd>Software Development Kit: compiler (Roslyn), <code>dotnet</code> CLI, templates and build tools needed to <i>create</i> apps.</dd></div><div class="def"><dt>Runtime</dt><dd>The minimum needed to <i>run</i> a compiled app: the CLR plus the base libraries.</dd></div><div class="def"><dt>CLR</dt><dd>Common Language Runtime: the virtual machine that loads assemblies, JIT-compiles IL, manages memory (GC), enforces type safety and handles exceptions.</dd></div><div class="def"><dt>IL / MSIL / CIL</dt><dd>Intermediate Language: CPU-independent instructions the C# compiler emits into a .dll.</dd></div><div class="def"><dt>JIT</dt><dd>Just-In-Time compiler: turns IL into native machine code the first time a method runs.</dd></div><div class="def"><dt>Assembly</dt><dd>The compiled unit of deployment (.dll or .exe) containing IL plus metadata and a manifest.</dd></div><div class="def"><dt>BCL</dt><dd>Base Class Library: the standard types every app gets (System, System.IO, System.Collections…).</dd></div><div class="def"><dt>NuGet</dt><dd>The .NET package manager and package format (.nupkg); packages come from nuget.org.</dd></div><div class="def"><dt>Project (.csproj)</dt><dd>An MSBuild file describing one buildable unit: target framework, references, packages, settings.</dd></div><div class="def"><dt>Solution (.sln)</dt><dd>A container that groups related projects so they build and open together.</dd></div><div class="def"><dt>Target Framework Moniker (TFM)</dt><dd>The framework a project builds for, e.g. <code>net8.0</code>, <code>net9.0</code>.</dd></div><div class="def"><dt>Top-level statements</dt><dd>C# 9+ feature letting Program.cs contain statements directly; the compiler generates the <code>Main</code> method.</dd></div><div class="def"><dt>Implicit usings</dt><dd>Global <code>using</code> directives (System, System.Linq, …) added automatically when <code>&lt;ImplicitUsings&gt;</code> is enabled.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>C# source → <b>Roslyn compiler</b> → IL in an assembly → <b>CLR + JIT</b> → native code.</li><li>Install the SDK on dev machines, only the runtime on servers (or ship self-contained).</li><li><code>dotnet new</code> creates, <code>dotnet build</code> compiles, <code>dotnet run</code> builds + runs, <code>dotnet watch</code> hot-reloads.</li><li>bin/ and obj/ are build output — always ignored by Git.</li><li>One solution → many projects; projects reference each other with <code>dotnet add reference</code>.</li><li>Prefer LTS releases (8, 10) for production work.</li></ul></div>
+
+<h3>1. What .NET actually is</h3>
+<p>.NET is a free, cross-platform runtime plus a large standard library. You write C#, the compiler turns it into <b>IL</b> (Intermediate Language) stored in a <code>.dll</code>, and at run time the <b>CLR</b> (Common Language Runtime) compiles that IL to machine code with the <b>JIT</b> compiler. You will study these internals in Week 8; for now remember the pipeline.</p>
+<div class="tbl"><table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><b>SDK</b></td><td>Compiler, CLI and templates — what developers install</td></tr>
+<tr><td><b>Runtime</b></td><td>What a machine needs only to <i>run</i> apps</td></tr>
+<tr><td><b>BCL</b></td><td>Base Class Library: <code>System.Collections</code>, <code>System.IO</code>, <code>System.Text.Json</code>…</td></tr>
+<tr><td><b>LTS / STS</b></td><td>LTS releases (even numbers: 8, 10) get 3 years of support; STS (odd: 9) get 18 months</td></tr>
+<tr><td><b>NuGet</b></td><td>The package manager, like npm for .NET</td></tr>
+</table></div>
+
+<h3>2. Install the tools</h3>
+<ol>
+<li>Install the <b>.NET SDK</b> (8 LTS or newer) from <a href="https://dotnet.microsoft.com/download" target="_blank" rel="noopener">dotnet.microsoft.com/download</a>.</li>
+<li>Pick an editor: <b>Visual Studio 2022 Community</b> (Windows), <b>JetBrains Rider</b>, or <b>VS Code</b> with the <i>C# Dev Kit</i> extension.</li>
+<li>Install <b>Git</b> and create a GitHub account if you don't have one.</li>
+</ol>
+<div class="code nofile"><pre><code class="language-bash">dotnet --version        # e.g. 8.0.404
+dotnet --list-sdks      # every SDK installed
+dotnet new list         # available project templates
+git --version</code></pre></div>
+
+<h3>3. Create and run a console app</h3>
+<div class="code nofile"><pre><code class="language-bash">mkdir dotnet-week1 &amp;&amp; cd dotnet-week1
+dotnet new console -n HelloDotnet
+cd HelloDotnet
+dotnet run              # builds then runs → "Hello, World!"
+dotnet build            # compile only; output in bin/Debug/net8.0/
+dotnet watch run        # re-runs automatically on every save</code></pre></div>
+
+<h4>What the template generated</h4>
+<div class="tbl"><table>
+<tr><th>File / folder</th><th>Purpose</th></tr>
+<tr><td><code>HelloDotnet.csproj</code></td><td>Project file (MSBuild XML): target framework, packages, settings</td></tr>
+<tr><td><code>Program.cs</code></td><td>Entry point, using <i>top-level statements</i></td></tr>
+<tr><td><code>bin/</code></td><td>Compiled output (<code>.dll</code>, <code>.exe</code>)</td></tr>
+<tr><td><code>obj/</code></td><td>Intermediate build files — never commit</td></tr>
+</table></div>
+<div class="code"><div class="fname">HelloDotnet.csproj</div><pre><code class="language-xml">&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;OutputType&gt;Exe&lt;/OutputType&gt;
+    &lt;TargetFramework&gt;net8.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;   &lt;!-- auto 'using System;' etc. --&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;               &lt;!-- nullable reference types on --&gt;
+  &lt;/PropertyGroup&gt;
+&lt;/Project&gt;</code></pre></div>
+
+<h3>4. Top-level statements vs the classic Main method</h3>
+<p>Since C# 9, <code>Program.cs</code> can contain statements directly. The compiler wraps them in a hidden <code>Main</code> method. Both versions below compile to the same thing.</p>
+<div class="code"><div class="fname">Program.cs — modern</div><pre><code class="language-csharp">Console.WriteLine("What's your name?");
+string? name = Console.ReadLine();
+Console.WriteLine($"Hello, {name}! Today is {DateTime.Now:dddd}.");</code></pre></div>
+<div class="code"><div class="fname">Program.cs — classic (what the compiler generates)</div><pre><code class="language-csharp">using System;
+
+namespace HelloDotnet;
+
+internal class Program
+{
+    static void Main(string[] args)
+    {
+        Console.WriteLine("What's your name?");
+        string? name = Console.ReadLine();
+        Console.WriteLine($"Hello, {name}!");
+    }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> <code>args</code> still works in top-level programs. Run <code>dotnet run -- Samrath</code> and read it with <code>args[0]</code>.</div>
+
+<h3>5. Solutions and multiple projects</h3>
+<p>Real apps have several projects (API, class library, tests) grouped in a <b>solution</b> (<code>.sln</code>). Practise the shape now.</p>
+<div class="code nofile"><pre><code class="language-bash">dotnet new sln -n Week1
+dotnet new classlib -n Week1.Core
+dotnet sln add HelloDotnet/HelloDotnet.csproj Week1.Core/Week1.Core.csproj
+dotnet add HelloDotnet reference Week1.Core     # HelloDotnet can now use Core's classes
+dotnet add HelloDotnet package Spectre.Console # add a NuGet package</code></pre></div>
+
+<h3>6. Git basics</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new gitignore          # .NET-specific .gitignore (ignores bin/ obj/)
+git init
+git add .
+git commit -m "Day 1: hello dotnet"
+git branch -M main
+git remote add origin https://github.com/&lt;you&gt;/dotnet-week1.git
+git push -u origin main</code></pre></div>
+
+<h3>Common mistakes</h3>
+<ul>
+<li>Committing <code>bin/</code> and <code>obj/</code> — always add the .gitignore first.</li>
+<li>Running <code>dotnet run</code> from the solution folder with several runnable projects — use <code>dotnet run --project HelloDotnet</code>.</li>
+<li>Mixing SDK versions across machines — pin one with a <code>global.json</code> (<code>dotnet new globaljson</code>).</li>
+</ul>
+
+<h3>Exercise (30 min)</h3>
+<ol class="ex">
+<li>Create a console app that asks for name and birth year and prints the age.</li>
+<li>Add a class library <code>Greeter</code> with a method that returns a greeting; call it from the console app.</li>
+<li>Push both to a new GitHub repo with a one-paragraph README.</li>
+</ol>
+
+<h3>Self-check questions</h3>
+<details><summary>What is the difference between the SDK and the runtime?</summary>The SDK contains the compiler, CLI and templates needed to build apps. The runtime only contains what's needed to execute already-compiled apps.</details>
+<details><summary>What does the compiler produce from C# code?</summary>IL (Intermediate Language) inside an assembly (.dll). The CLR's JIT compiler turns that IL into native machine code when it runs.</details>
+<details><summary>What does &lt;Nullable&gt;enable&lt;/Nullable&gt; do?</summary>It turns on nullable reference types: the compiler warns when you might dereference null, and you mark nullable references explicitly with <code>?</code> (e.g. <code>string?</code>).</details>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is .NET and how is it different from .NET Framework?</summary><div><b>.NET Framework</b> (4.x) is the original Windows-only implementation, now in maintenance. <b>.NET</b> (Core → 5, 6, 7, 8, 9…) is the open-source, cross-platform, modular successor with better performance, side-by-side installs and container support. All new development targets .NET 8+.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain the compilation process of a C# program.</summary><div>The C# compiler (Roslyn) compiles source into IL stored in an assembly with metadata. At runtime the CLR loads the assembly and the JIT compiles each method to native code on first call. Tiered compilation first produces quick code, then re-optimises hot methods. ReadyToRun/Native AOT can pre-compile to reduce startup.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the CLR responsible for?</summary><div>Loading assemblies, JIT compilation, garbage collection, type safety and verification, exception handling, thread management and security boundaries.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the difference between managed and unmanaged code?</summary><div>Managed code runs under the CLR, which handles memory, type safety and exceptions. Unmanaged code (C/C++, Win32 APIs) runs directly on the OS; you manage memory yourself and call it through P/Invoke or COM interop.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Framework-dependent vs self-contained deployment?</summary><div>Framework-dependent apps are small but need the matching runtime installed. Self-contained apps bundle the runtime for a specific OS/CPU (<code>-r linux-x64 --self-contained</code>), so they're bigger but run anywhere. Native AOT goes further, producing a single native binary.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does the .csproj contain and what is MSBuild?</summary><div>MSBuild is the build engine; the .csproj is its XML input with properties (TargetFramework, Nullable, OutputType), item groups (PackageReference, ProjectReference) and targets. SDK-style projects keep it short by importing defaults from <code>Microsoft.NET.Sdk</code>.</div></details></section>
+
+<!-- ============ DAY 2 ============ -->
+<section class="day" id="day2">
+<div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Variables, types, value vs reference, conversion</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Pick the right built-in type, explain where value and reference types live in memory, and convert between types safely.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Variable</dt><dd>A named storage location with a fixed type.</dd></div><div class="def"><dt>Value type</dt><dd>A type whose variable holds the data itself; assignment copies the data. Structs, enums and primitives like int, double, bool.</dd></div><div class="def"><dt>Reference type</dt><dd>A type whose variable holds a reference to an object on the managed heap; assignment copies the reference. Classes, string, arrays, delegates, records (class).</dd></div><div class="def"><dt>Stack</dt><dd>Fast LIFO memory for method calls and their local value-type variables; freed automatically when the method returns.</dd></div><div class="def"><dt>Managed heap</dt><dd>Memory where reference-type objects live, managed by the garbage collector.</dd></div><div class="def"><dt>var</dt><dd>Implicitly typed local; the compiler infers a fixed type from the initializer. Still strongly typed.</dd></div><div class="def"><dt>const</dt><dd>Compile-time constant baked into the IL; must be a primitive or string.</dd></div><div class="def"><dt>readonly</dt><dd>A field that can be assigned only at declaration or in the constructor; evaluated at runtime.</dd></div><div class="def"><dt>Implicit conversion</dt><dd>Automatic, lossless conversion (int → long).</dd></div><div class="def"><dt>Explicit conversion (cast)</dt><dd>Conversion that may lose data and must be written out: <code>(int)9.7</code>.</dd></div><div class="def"><dt>Boxing</dt><dd>Wrapping a value type in an object on the heap so it can be treated as <code>object</code>.</dd></div><div class="def"><dt>Unboxing</dt><dd>Extracting the value type back out of a boxed object with an explicit cast to the exact type.</dd></div><div class="def"><dt>Default value</dt><dd>What an unassigned field holds: 0, false, '\0', or null for references.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Value types copy data; reference types copy the reference — the core idea for the whole course.</li><li>Use <code>decimal</code> for money, <code>double</code> for measurements, <code>int</code>/<code>long</code> for counts.</li><li><code>TryParse</code> for user input; <code>Parse</code> only when bad input is truly exceptional.</li><li><code>const</code> = compile time, <code>readonly</code> = set once at runtime.</li><li>Integer overflow wraps silently unless you use <code>checked</code>.</li><li>Boxing allocates on the heap — avoid it in loops; generics prevent it.</li></ul></div>
+
+<h3>1. Declaring variables</h3>
+<div class="code nofile"><pre><code class="language-csharp">int age = 29;              // explicit type
+var city = "Udupi";        // type inferred at compile time → string (still strongly typed)
+const double Pi = 3.14159; // compile-time constant, cannot change
+readonly int _id;          // (field only) set once, in the constructor
+
+// var still requires an initializer and the type never changes:
+var count = 10;
+// count = "ten";          // ❌ compile error: cannot convert string to int</code></pre></div>
+
+<h3>2. Built-in types</h3>
+<div class="tbl"><table>
+<tr><th>C# keyword</th><th>.NET type</th><th>Size</th><th>Use for</th></tr>
+<tr><td><code>int</code></td><td>System.Int32</td><td>4 bytes</td><td>Counts, IDs (±2.1 billion)</td></tr>
+<tr><td><code>long</code></td><td>System.Int64</td><td>8 bytes</td><td>Large counts, timestamps</td></tr>
+<tr><td><code>double</code></td><td>System.Double</td><td>8 bytes</td><td>Scientific values, measurements</td></tr>
+<tr><td><code>decimal</code></td><td>System.Decimal</td><td>16 bytes</td><td><b>Money</b> — exact base-10</td></tr>
+<tr><td><code>bool</code></td><td>System.Boolean</td><td>1 byte</td><td>true / false</td></tr>
+<tr><td><code>char</code></td><td>System.Char</td><td>2 bytes</td><td>One UTF-16 character</td></tr>
+<tr><td><code>string</code></td><td>System.String</td><td>reference</td><td>Text (immutable)</td></tr>
+<tr><td><code>DateTime</code> / <code>DateOnly</code></td><td>struct</td><td>8 bytes</td><td>Dates and times</td></tr>
+</table></div>
+<div class="code nofile"><pre><code class="language-csharp">Console.WriteLine(0.1 + 0.2 == 0.3);     // False  (double is binary floating point)
+Console.WriteLine(0.1m + 0.2m == 0.3m);  // True   (decimal is exact)
+
+int big = int.MaxValue;
+int overflow = big + 1;                  // wraps to -2147483648 silently
+// checked { int x = big + 1; }          // throws OverflowException instead
+
+long population = 1_400_000_000;         // underscores for readability</code></pre></div>
+<div class="note warn"><b>Rule.</b> Never use <code>double</code> or <code>float</code> for money. Use <code>decimal</code> and the <code>m</code> suffix.</div>
+
+<h3>3. Value types vs reference types</h3>
+<p>This is the single most-asked C# fundamentals interview question.</p>
+<ul>
+<li><b>Value types</b> (<code>int</code>, <code>double</code>, <code>bool</code>, <code>char</code>, <code>struct</code>, <code>enum</code>) hold the data itself. Assigning copies the data.</li>
+<li><b>Reference types</b> (<code>class</code>, <code>string</code>, arrays, <code>object</code>, delegates) hold a reference to an object on the managed heap. Assigning copies the reference, so both variables point to the same object.</li>
+</ul>
+<div class="code"><div class="fname">ValueVsReference.cs</div><pre><code class="language-csharp">// Value type: copy of the data
+int a = 10;
+int b = a;
+b = 20;
+Console.WriteLine(a); // 10 — a is untouched
+
+// Reference type: copy of the reference
+var p1 = new Point { X = 1 };
+var p2 = p1;          // both point to the SAME object
+p2.X = 99;
+Console.WriteLine(p1.X); // 99 — changed through p2
+
+// Struct is a value type even though it looks like a class
+var s1 = new PointStruct { X = 1 };
+var s2 = s1;          // full copy
+s2.X = 99;
+Console.WriteLine(s1.X); // 1
+
+class Point { public int X; }
+struct PointStruct { public int X; }</code></pre></div>
+<div class="note tip"><b>Precise wording.</b> "Value types live on the stack" is only partly true. Local value-type variables usually live on the stack, but a value-type <i>field</i> inside a class lives on the heap with that object. Say: "value types are copied by value; reference types are copied by reference."</div>
+
+<h4>string is a special reference type</h4>
+<div class="code nofile"><pre><code class="language-csharp">string s1 = "hello";
+string s2 = s1;
+s2 = "world";            // creates a NEW string; s1 still "hello"
+Console.WriteLine(s1);   // hello — strings are immutable, so they behave like values
+Console.WriteLine("ab" == "a" + "b"); // True — == compares content for strings</code></pre></div>
+
+<h3>4. Type conversion</h3>
+<div class="code nofile"><pre><code class="language-csharp">// Implicit: safe, no data loss
+int i = 42;
+long l = i;
+double d = i;
+
+// Explicit cast: possible data loss
+double price = 9.99;
+int whole = (int)price;           // 9 (truncates, doesn't round)
+
+// Parse: throws FormatException on bad input
+int n1 = int.Parse("123");
+
+// TryParse: the safe way for user input
+if (int.TryParse(Console.ReadLine(), out int n2))
+    Console.WriteLine($"You typed {n2}");
+else
+    Console.WriteLine("Not a number");
+
+// Convert class: handles null (returns 0) and rounds
+int r = Convert.ToInt32(9.6);     // 10 (banker's rounding: 2.5 → 2)
+
+// Culture matters for decimals: "1,5" vs "1.5"
+using System.Globalization;
+double x = double.Parse("1.5", CultureInfo.InvariantCulture);</code></pre></div>
+
+<h3>5. Boxing and unboxing (preview)</h3>
+<div class="code nofile"><pre><code class="language-csharp">int v = 5;
+object o = v;      // boxing: value copied into a new heap object
+int back = (int)o; // unboxing: must cast to the exact type
+// long bad = (long)o; // ❌ InvalidCastException</code></pre></div>
+<p>Boxing allocates memory, so avoid it in hot loops. Generic collections (<code>List&lt;int&gt;</code>) exist largely to avoid it.</p>
+
+<h3>Common mistakes</h3>
+<ul>
+<li>Using <code>int.Parse</code> on user input — prefer <code>TryParse</code>.</li>
+<li>Expecting <code>(int)9.99</code> to round — it truncates.</li>
+<li>Assuming changing a copied class variable won't affect the original.</li>
+</ul>
+
+<h3>Exercise (40 min)</h3>
+<ol class="ex">
+<li>Write a program that reads two numbers with <code>TryParse</code> and prints their sum as <code>int</code>, <code>double</code> and <code>decimal</code>.</li>
+<li>Prove value vs reference behaviour with a <code>struct</code> and a <code>class</code> of the same shape; print before/after.</li>
+<li>Show <code>0.1 + 0.2</code> with <code>double</code> and <code>decimal</code> and write one sentence on why they differ.</li>
+</ol>
+
+<h3>Self-check questions</h3>
+<details><summary>Why is string a reference type but behaves like a value type?</summary>It's immutable. Any "change" creates a new string object, so other variables referencing the old one are never affected. <code>==</code> is overloaded to compare content.</details>
+<details><summary>When would you choose a struct over a class?</summary>For small (≈16 bytes or less), immutable values that represent a single value, like a coordinate or money amount, and are created often — to avoid heap allocations.</details>
+<details><summary>What's the difference between Parse, TryParse and Convert?</summary>Parse throws on bad input; TryParse returns false and gives the value through <code>out</code>; Convert handles null (returns default) and rounds floating values.</details>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between value types and reference types?</summary><div>Value types store their data directly and are copied on assignment; reference types store a reference to a heap object and assignment copies only the reference, so both variables see changes. Value types can't be null unless nullable (<code>int?</code>); reference types default to null.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>const vs readonly?</summary><div><code>const</code> is a compile-time constant, implicitly static, restricted to primitives/strings, and its value is copied into callers' IL (changing it requires recompiling callers). <code>readonly</code> is set at declaration or in a constructor, can hold any type, and is evaluated at runtime.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why use decimal instead of double for money?</summary><div>double is binary floating point and can't represent many base-10 fractions exactly (0.1 + 0.2 ≠ 0.3). decimal is a 128-bit base-10 type with 28–29 significant digits, so currency arithmetic is exact. The cost is speed and range.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is it true that value types always live on the stack?</summary><div>No. Local value-type variables usually live on the stack (or in registers), but a value-type field of a class lives on the heap inside that object, and boxed values and array elements of value types are on the heap too. The real distinction is copy semantics, not location.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is boxing and why is it a performance concern?</summary><div>Boxing allocates a heap object and copies the value into it when a value type is converted to object or an interface. It creates GC pressure and costs CPU, which is why non-generic ArrayList was replaced by List&lt;T&gt;.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is var dynamic typing?</summary><div>No. <code>var</code> is resolved at compile time to one fixed type. <code>dynamic</code> defers type checking to runtime via the DLR. Use var when the type is obvious from the right-hand side.</div></details></section>
+
+<!-- ============ DAY 3 ============ -->
+<section class="day" id="day3">
+<div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Operators, if/switch, loops and switch expressions</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Write branching and looping logic idiomatically, including modern switch expressions and pattern-based conditions.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Operator</dt><dd>A symbol that performs an operation on operands (+, ==, &amp;&amp;).</dd></div><div class="def"><dt>Operator precedence</dt><dd>The order operators are evaluated: * / % before + −, comparison before &amp;&amp; before ||.</dd></div><div class="def"><dt>Short-circuit evaluation</dt><dd>&amp;&amp; and || stop evaluating as soon as the result is known.</dd></div><div class="def"><dt>Ternary operator</dt><dd><code>condition ? a : b</code> — an expression that picks one of two values.</dd></div><div class="def"><dt>Guard clause</dt><dd>An early <code>return</code> or <code>throw</code> at the top of a method that removes deep nesting.</dd></div><div class="def"><dt>switch statement</dt><dd>Branches execution to a matching <code>case</code> block; each must end with break/return/throw.</dd></div><div class="def"><dt>switch expression</dt><dd>C# 8+ expression that maps an input to a value using pattern arms (<code>=&gt;</code>).</dd></div><div class="def"><dt>Pattern matching</dt><dd>Testing a value's type, shape or range in conditions (<code>is</code>, relational <code>&gt;= 90</code>, logical <code>and/or/not</code>).</dd></div><div class="def"><dt>Discard (_)</dt><dd>A placeholder meaning "any value I don't care about"; the default arm in a switch expression.</dd></div><div class="def"><dt>Iteration statement</dt><dd>A loop: for, foreach, while, do-while.</dd></div><div class="def"><dt>break / continue</dt><dd>break exits the loop; continue skips to the next iteration.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Integer division truncates: <code>7 / 2 == 3</code>; make one operand double to get 3.5.</li><li><code>%</code> gives the remainder — useful for even/odd and "every Nth item".</li><li>Prefer switch <b>expressions</b> when mapping input → output; the compiler warns on missing cases.</li><li>Use guard clauses instead of nested if/else pyramids.</li><li>for when you need the index, foreach for collections, while for unknown counts, do-while for menus.</li><li>Never modify a collection inside its own foreach.</li></ul></div>
+
+<h3>1. Operators you'll use daily</h3>
+<div class="tbl"><table>
+<tr><th>Category</th><th>Operators</th><th>Note</th></tr>
+<tr><td>Arithmetic</td><td><code>+ - * / %</code></td><td><code>7 / 2</code> = 3 for ints; <code>7 / 2.0</code> = 3.5</td></tr>
+<tr><td>Comparison</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td><td></td></tr>
+<tr><td>Logical</td><td><code>&amp;&amp; || !</code></td><td>Short-circuit: right side may not run</td></tr>
+<tr><td>Assignment</td><td><code>= += -= *= /= ??=</code></td><td><code>x ??= 5</code> sets only if x is null</td></tr>
+<tr><td>Null</td><td><code>?? ?.</code></td><td>Covered on Day 5</td></tr>
+<tr><td>Ternary</td><td><code>cond ? a : b</code></td><td>Keep it to one level</td></tr>
+<tr><td>Increment</td><td><code>i++ ++i</code></td><td>Post returns old value, pre returns new</td></tr>
+</table></div>
+<div class="code nofile"><pre><code class="language-csharp">int i = 5;
+Console.WriteLine(i++); // 5 (then i becomes 6)
+Console.WriteLine(++i); // 7
+
+Console.WriteLine(17 % 5);    // 2 — remainder, handy for "every Nth" or even/odd
+bool isEven = 10 % 2 == 0;
+
+string label = age >= 18 ? "Adult" : "Minor";</code></pre></div>
+
+<h3>2. if / else</h3>
+<div class="code nofile"><pre><code class="language-csharp">int score = 78;
+
+if (score >= 90)      Console.WriteLine("A");
+else if (score >= 75) Console.WriteLine("B");
+else if (score >= 50) Console.WriteLine("C");
+else                  Console.WriteLine("Fail");
+
+// Guard clause: exit early instead of deep nesting
+static decimal Discount(decimal total, bool isMember)
+{
+    if (total &lt;= 0) return 0;
+    if (!isMember)  return 0;
+    return total * 0.10m;
+}</code></pre></div>
+
+<h3>3. Classic switch statement</h3>
+<div class="code nofile"><pre><code class="language-csharp">string day = "Sat";
+switch (day)
+{
+    case "Sat":
+    case "Sun":
+        Console.WriteLine("Weekend: build the micro-project");
+        break;
+    case "Mon":
+        Console.WriteLine("New topic");
+        break;
+    default:
+        Console.WriteLine("Study 2 hours");
+        break;   // every section needs break/return — no fall-through
+}</code></pre></div>
+
+<h3>4. Switch expressions and patterns (C# 8+)</h3>
+<p>Switch expressions return a value, are shorter, and the compiler warns if you miss a case. Prefer them for mapping input to output.</p>
+<div class="code nofile"><pre><code class="language-csharp">string Grade(int score) => score switch
+{
+    &gt;= 90           => "A",
+    &gt;= 75 and &lt; 90  => "B",
+    &gt;= 50           => "C",
+    &lt; 0 or &gt; 100    => throw new ArgumentOutOfRangeException(nameof(score)),
+    _               => "Fail"        // _ is the discard: "anything else"
+};
+
+decimal ShippingCost(string country, decimal weightKg) => (country, weightKg) switch
+{
+    ("IN", &lt;= 1)  => 50m,
+    ("IN", _)     => 50m + (weightKg - 1) * 20m,
+    ("US", _)     => 900m,
+    _             => 1500m
+};
+
+Console.WriteLine(Grade(82));               // B
+Console.WriteLine(ShippingCost("IN", 3));   // 90</code></pre></div>
+
+<h3>5. Loops</h3>
+<div class="code nofile"><pre><code class="language-csharp">// for: when you need the index
+for (int i = 1; i &lt;= 5; i++)
+    Console.Write($"{i} ");           // 1 2 3 4 5
+
+// foreach: iterate a collection (read-only loop variable)
+string[] topics = { "C#", "SQL", "Web API" };
+foreach (var topic in topics)
+    Console.WriteLine(topic);
+
+// while: unknown number of repetitions
+int balance = 1000;
+int months = 0;
+while (balance &lt; 2000)
+{
+    balance = (int)(balance * 1.08);
+    months++;
+}
+
+// do-while: runs at least once — perfect for menus
+string? input;
+do
+{
+    Console.Write("Type 'q' to quit: ");
+    input = Console.ReadLine();
+} while (input != "q");
+
+// break and continue
+for (int n = 1; n &lt;= 20; n++)
+{
+    if (n % 2 == 0) continue;   // skip evens
+    if (n &gt; 11) break;          // stop entirely
+    Console.Write($"{n} ");     // 1 3 5 7 9 11
+}</code></pre></div>
+
+<h3>Common mistakes</h3>
+<ul>
+<li>Integer division surprises: <code>5 / 2 * 2.0</code> is 4.0, not 5.0.</li>
+<li>Off-by-one: <code>i &lt;= array.Length</code> throws <code>IndexOutOfRangeException</code>.</li>
+<li>Modifying a collection inside <code>foreach</code> — throws <code>InvalidOperationException</code>.</li>
+</ul>
+
+<h3>Exercise (40 min)</h3>
+<ol class="ex">
+<li>FizzBuzz 1–100 using a switch expression on <code>(n % 3, n % 5)</code>.</li>
+<li>A do-while menu: 1) Add number 2) Show total 3) Quit.</li>
+<li>Compute how many years ₹1,00,000 takes to double at 7% interest with a while loop.</li>
+</ol>
+
+<h3>Self-check questions</h3>
+<details><summary>Switch statement vs switch expression?</summary>The statement executes blocks and needs <code>break</code>. The expression returns a value, uses <code>=&gt;</code> arms, supports relational and logical patterns, and warns when not exhaustive.</details>
+<details><summary>What does short-circuit evaluation mean?</summary>In <code>a &amp;&amp; b</code>, if <code>a</code> is false, <code>b</code> never runs. This lets you write <code>obj != null &amp;&amp; obj.IsActive</code> safely.</details>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What's the difference between == and Equals()?</summary><div>For value types both compare values. For reference types == compares references by default unless overloaded (string overloads it to compare content); Equals() can be overridden to compare content. Records generate value-based equality for both.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between &amp; and &amp;&amp;?</summary><div>&amp;&amp; is the conditional (short-circuit) AND; the right side runs only if needed. &amp; on bools evaluates both sides, and on integers is bitwise AND.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Difference between break and continue?</summary><div>break exits the innermost loop or switch; continue skips the rest of the current iteration and moves to the next.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Switch statement vs switch expression — when do you use each?</summary><div>Use the expression when each branch produces a value: it's concise, supports relational/logical/tuple/property patterns and warns if not exhaustive. Use the statement when branches run multiple statements or side effects.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>foreach vs for — which is faster?</summary><div>For arrays the JIT optimises both similarly. foreach is clearer and avoids index bugs; for gives you the index and allows modifying elements by position. Neither allows adding/removing items from a List while iterating with foreach.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What patterns can a switch expression use?</summary><div>Constant, type (<code>Car c</code>), relational (<code>&gt; 100</code>), logical (<code>and</code>, <code>or</code>, <code>not</code>), property (<code>{ Status: "Paid" }</code>), positional/tuple (<code>("IN", _)</code>), list patterns (<code>[1, .., 9]</code>, C# 11) and discard <code>_</code>.</div></details></section>
+
+<!-- ============ DAY 4 ============ -->
+<section class="day" id="day4">
+<div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Strings, interpolation, StringBuilder and arrays</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Manipulate text efficiently, know when to switch to StringBuilder, and work with single and multi-dimensional arrays.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>string</dt><dd>An immutable sequence of UTF-16 chars (System.String), a reference type.</dd></div><div class="def"><dt>Immutability</dt><dd>An object's state can't change after creation; "modifying" a string creates a new one.</dd></div><div class="def"><dt>String interning</dt><dd>The runtime keeps one shared instance of each identical string literal to save memory.</dd></div><div class="def"><dt>String interpolation</dt><dd><code>$"Hi {name}"</code> — embeds expressions in a string literal with optional format specifiers.</dd></div><div class="def"><dt>Verbatim string</dt><dd><code>@"C:\path"</code> — backslashes are literal; newlines allowed.</dd></div><div class="def"><dt>Raw string literal</dt><dd>C# 11 <code>"""…"""</code> — no escaping at all; ideal for JSON, SQL and multi-line text.</dd></div><div class="def"><dt>Format specifier</dt><dd>A code after a colon that controls output: <code>:C</code> currency, <code>:N2</code>, <code>:yyyy-MM-dd</code>.</dd></div><div class="def"><dt>StringBuilder</dt><dd>A mutable character buffer (System.Text) for building strings in loops without repeated allocations.</dd></div><div class="def"><dt>StringComparison</dt><dd>An enum telling comparisons how to treat case and culture, e.g. <code>OrdinalIgnoreCase</code>.</dd></div><div class="def"><dt>Array</dt><dd>A fixed-size, zero-indexed collection of one element type; a reference type.</dd></div><div class="def"><dt>Jagged array</dt><dd>An array of arrays (<code>int[][]</code>) whose rows can differ in length.</dd></div><div class="def"><dt>Multidimensional array</dt><dd>A rectangular block (<code>int[,]</code>) with equal-length rows.</dd></div><div class="def"><dt>Index / Range</dt><dd><code>^1</code> means last element; <code>a..b</code> slices from a up to (not including) b.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Strings are immutable: every +, Replace or ToUpper allocates a new string.</li><li>Concatenating in a loop → use StringBuilder.</li><li>Compare with <code>string.Equals(a, b, StringComparison.OrdinalIgnoreCase)</code>, not ToLower().</li><li>Validate input with <code>string.IsNullOrWhiteSpace</code>.</li><li>Arrays are fixed size and reference types — assigning copies the reference; use Clone() or ToArray() to copy.</li><li>Use <code>[^1]</code> for the last element and ranges for slices.</li></ul></div>
+
+<h3>1. String essentials</h3>
+<div class="code nofile"><pre><code class="language-csharp">string name = "Samrath";
+string greeting = $"Hi {name}, you have {3 * 2} tasks";      // interpolation
+string path = @"C:\projects\dotnet";                           // verbatim: no escapes
+string json = """
+    { "name": "Samrath", "role": "dev" }
+    """;                                                       // raw string literal (C# 11)
+
+decimal price = 1234.5m;
+Console.WriteLine($"{price:C}");          // currency for current culture
+Console.WriteLine($"{price:N2}");         // 1,234.50
+Console.WriteLine($"{DateTime.Now:yyyy-MM-dd}");
+Console.WriteLine($"|{name,-10}|{42,5}|"); // alignment: |Samrath   |   42|</code></pre></div>
+
+<h3>2. Common string methods</h3>
+<div class="code nofile"><pre><code class="language-csharp">string s = "  Learn .NET Full Stack  ";
+
+s.Trim();                              // "Learn .NET Full Stack"
+s.ToUpper(); s.ToLower();
+s.Contains("NET");                     // true
+s.StartsWith("  Learn");               // true
+s.IndexOf("Full");                     // 13
+s.Replace("Stack", "Developer");
+s.Trim().Split(' ');                   // ["Learn", ".NET", "Full", "Stack"]
+string.Join(" | ", new[] { "C#", "SQL" }); // "C# | SQL"
+s.Trim().Substring(0, 5);              // "Learn"
+s.Trim()[..5];                         // "Learn" — range syntax
+s.Trim()[^5..];                        // "Stack" — ^ counts from the end
+
+string.IsNullOrWhiteSpace(s);          // validate input with this
+
+// Case-insensitive comparison — the correct way
+bool same = string.Equals("dotnet", "DOTNET", StringComparison.OrdinalIgnoreCase);</code></pre></div>
+<div class="note warn"><b>Avoid</b> <code>a.ToLower() == b.ToLower()</code> for comparison: it allocates two new strings and can break in some cultures (the Turkish "i" problem). Use <code>StringComparison.OrdinalIgnoreCase</code>.</div>
+
+<h3>3. Immutability and StringBuilder</h3>
+<p>Every concatenation creates a new string. In a loop of 10,000 iterations that is 10,000 allocations. <code>StringBuilder</code> keeps one growable buffer.</p>
+<div class="code"><div class="fname">StringBuilderDemo.cs</div><pre><code class="language-csharp">using System.Diagnostics;
+using System.Text;
+
+var sw = Stopwatch.StartNew();
+string slow = "";
+for (int i = 0; i &lt; 20_000; i++) slow += i;   // new string every time
+Console.WriteLine($"+= : {sw.ElapsedMilliseconds} ms");
+
+sw.Restart();
+var sb = new StringBuilder();
+for (int i = 0; i &lt; 20_000; i++) sb.Append(i);
+string fast = sb.ToString();
+Console.WriteLine($"StringBuilder: {sw.ElapsedMilliseconds} ms");
+
+// Building a report
+var report = new StringBuilder()
+    .AppendLine("Weekly Report")
+    .AppendLine(new string('-', 20))
+    .AppendLine($"Hours: {18}")
+    .ToString();</code></pre></div>
+<p>Rule of thumb: a few concatenations → interpolation; concatenating inside a loop → <code>StringBuilder</code>.</p>
+
+<h3>4. Arrays</h3>
+<div class="code nofile"><pre><code class="language-csharp">int[] marks = new int[5];                 // fixed size, defaults to 0
+int[] scores = { 78, 92, 65, 88 };        // initializer
+int[] collection = [1, 2, 3];             // collection expression (C# 12)
+
+Console.WriteLine(scores.Length);         // 4
+Console.WriteLine(scores[0]);             // 78
+Console.WriteLine(scores[^1]);            // 88 — last element
+int[] firstTwo = scores[..2];             // [78, 92]
+
+Array.Sort(scores);                       // in place → 65 78 88 92
+Array.Reverse(scores);
+int idx = Array.IndexOf(scores, 88);
+bool hasHigh = Array.Exists(scores, s =&gt; s &gt; 90);
+
+// 2D (rectangular) array
+int[,] grid = new int[3, 3];
+grid[1, 1] = 5;
+for (int r = 0; r &lt; grid.GetLength(0); r++)
+    for (int c = 0; c &lt; grid.GetLength(1); c++)
+        Console.Write($"{grid[r, c]} ");
+
+// Jagged array: rows of different lengths
+int[][] jagged = [ [1], [2, 3], [4, 5, 6] ];
+
+// Arrays are reference types!
+int[] copy = scores;            // same array
+int[] clone = (int[])scores.Clone(); // independent copy</code></pre></div>
+
+<h3>Common mistakes</h3>
+<ul>
+<li>String concatenation inside loops.</li>
+<li>Forgetting that arrays have a fixed size — use <code>List&lt;T&gt;</code> (Week 4) when the size changes.</li>
+<li><code>Substring</code> with a length past the end → <code>ArgumentOutOfRangeException</code>.</li>
+</ul>
+
+<h3>Exercise (40 min)</h3>
+<ol class="ex">
+<li>Read a sentence and print: word count, longest word, the sentence reversed word by word, and whether it's a palindrome (ignoring spaces and case).</li>
+<li>Read 5 marks into an array; print average, highest, lowest and a formatted table using alignment.</li>
+<li>Run the StringBuilder benchmark and record both timings in your notes.</li>
+</ol>
+
+<h3>Self-check questions</h3>
+<details><summary>Why are strings immutable in .NET?</summary>Thread safety, safe use as dictionary keys, and string interning (identical literals share one instance). The trade-off is allocation on every modification.</details>
+<details><summary>Rectangular vs jagged arrays?</summary><code>int[,]</code> is one block with equal row lengths; <code>int[][]</code> is an array of arrays where each row can differ in length and is allocated separately.</details>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why are strings immutable in C#?</summary><div>Immutability makes strings thread-safe, safe as dictionary keys (hash never changes), and enables interning so identical literals share memory. The downside is that each change allocates a new string.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When would you use StringBuilder over string?</summary><div>When building a string through many appends, especially in loops or when the number of pieces is unknown. For a handful of fixed pieces, interpolation is clearer and just as fast.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Difference between string and String?</summary><div>None functionally: <code>string</code> is the C# keyword alias for <code>System.String</code>. Convention is <code>string</code> for declarations and <code>String.Method</code> or <code>string.Method</code> for static calls.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>String.Empty vs "" vs null?</summary><div>"" and String.Empty are the same zero-length string (interned). null means no string object at all; calling a method on it throws NullReferenceException. Use IsNullOrEmpty/IsNullOrWhiteSpace to check both.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Jagged vs multidimensional arrays — which performs better?</summary><div>Jagged arrays are often faster to index because the JIT optimises single-dimension arrays well, and rows can vary in length. Multidimensional arrays use one contiguous block, which is simpler for true grids.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why is ToLower() comparison discouraged?</summary><div>It allocates two new strings and is culture-sensitive (the Turkish dotted/dotless i breaks it). Ordinal comparisons with StringComparison are faster and predictable.</div></details></section>
+
+<!-- ============ DAY 5 ============ -->
+<section class="day" id="day5">
+<div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Methods, parameters, ref/out/in, overloading, nullable types</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Write small, well-named methods, choose the right parameter modifier, and handle null safely with nullable types and operators.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Method</dt><dd>A named block of code that performs a task, optionally takes parameters and returns a value.</dd></div><div class="def"><dt>Signature</dt><dd>A method's name plus its parameter types and modifiers — not the return type.</dd></div><div class="def"><dt>Parameter vs argument</dt><dd>Parameters are in the declaration; arguments are the actual values passed at the call.</dd></div><div class="def"><dt>Pass by value</dt><dd>The default: the method receives a copy of the variable (for references, a copy of the reference).</dd></div><div class="def"><dt>ref</dt><dd>Passes the variable by reference; it must be initialised first and the method may change it.</dd></div><div class="def"><dt>out</dt><dd>Passes by reference for output; it need not be initialised but the method must assign it.</dd></div><div class="def"><dt>in</dt><dd>Passes by read-only reference — avoids copying large structs while preventing modification.</dd></div><div class="def"><dt>params</dt><dd>Lets a method accept a variable number of arguments as an array (or span/collection in C# 13).</dd></div><div class="def"><dt>Optional parameter</dt><dd>A parameter with a default value: <code>decimal rate = 0.18m</code>.</dd></div><div class="def"><dt>Named argument</dt><dd>Passing by parameter name: <code>AddTax(rate: 0.05m, amount: 500)</code>.</dd></div><div class="def"><dt>Method overloading</dt><dd>Several methods with the same name but different parameter lists (compile-time polymorphism).</dd></div><div class="def"><dt>Expression-bodied member</dt><dd>A one-line member written with <code>=&gt;</code>.</dd></div><div class="def"><dt>Local function</dt><dd>A method declared inside another method, visible only there.</dd></div><div class="def"><dt>Nullable value type</dt><dd><code>int?</code> = <code>Nullable&lt;int&gt;</code>, a struct that can also hold null.</dd></div><div class="def"><dt>Nullable reference types</dt><dd>C# 8+ compiler analysis where <code>string?</code> may be null and <code>string</code> should not be.</dd></div><div class="def"><dt>Null-coalescing (??, ??=)</dt><dd><code>a ?? b</code> returns b when a is null; <code>a ??= b</code> assigns b only if a is null.</dd></div><div class="def"><dt>Null-conditional (?.)</dt><dd><code>obj?.Prop</code> returns null instead of throwing when obj is null.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>A method should do one thing; name it with a verb.</li><li>Prefer returning a tuple or record over several out parameters.</li><li>Passing a class without ref still lets the method change its properties — the reference is copied.</li><li>Overloads must differ in parameters, never by return type alone.</li><li><code>int?</code> is a real type; <code>string?</code> is only a compiler annotation.</li><li>Use <code>?.</code> + <code>??</code> for safe navigation; avoid the <code>!</code> operator unless you're certain.</li></ul></div>
+
+<h3>1. Method anatomy</h3>
+<div class="code nofile"><pre><code class="language-csharp">//  access   static  return  name     parameters
+    public   static  decimal AddTax(decimal amount, decimal rate = 0.18m)
+    {
+        return amount + amount * rate;
+    }
+
+// Expression-bodied for one-liners
+static int Square(int x) =&gt; x * x;
+
+// Named and optional arguments
+var total = AddTax(1000m);                // uses default 18%
+var custom = AddTax(rate: 0.05m, amount: 500m);</code></pre></div>
+<p>Good methods do one thing, have names that start with a verb (<code>CalculateTotal</code>, <code>IsValid</code>), and have few parameters (about 3; more suggests a class).</p>
+
+<h3>2. Parameter modifiers</h3>
+<div class="tbl"><table>
+<tr><th>Modifier</th><th>Caller must initialise?</th><th>Method must assign?</th><th>Use for</th></tr>
+<tr><td>(none)</td><td>yes</td><td>—</td><td>Default: a copy is passed</td></tr>
+<tr><td><code>ref</code></td><td>yes</td><td>no</td><td>Method modifies caller's variable</td></tr>
+<tr><td><code>out</code></td><td>no</td><td><b>yes</b></td><td>Returning extra values (TryParse pattern)</td></tr>
+<tr><td><code>in</code></td><td>yes</td><td>cannot modify</td><td>Pass large structs read-only without copying</td></tr>
+<tr><td><code>params</code></td><td>—</td><td>—</td><td>Variable number of arguments</td></tr>
+</table></div>
+<div class="code"><div class="fname">Parameters.cs</div><pre><code class="language-csharp">int x = 5;
+AddOne(x);        Console.WriteLine(x);  // 5 — copy was changed
+AddOneRef(ref x); Console.WriteLine(x);  // 6 — original changed
+
+static void AddOne(int n) =&gt; n++;
+static void AddOneRef(ref int n) =&gt; n++;
+
+// out: our own TryParse-style method
+if (TryDivide(10, 0, out double result))
+    Console.WriteLine(result);
+else
+    Console.WriteLine("Cannot divide by zero");
+
+static bool TryDivide(double a, double b, out double result)
+{
+    if (b == 0) { result = 0; return false; }
+    result = a / b;
+    return true;
+}
+
+// params
+static int Sum(params int[] numbers) =&gt; numbers.Sum();
+Console.WriteLine(Sum(1, 2, 3, 4));   // 10
+
+// Prefer tuples over many out params
+static (int Min, int Max, double Avg) Stats(int[] values)
+    =&gt; (values.Min(), values.Max(), values.Average());
+
+var (min, max, avg) = Stats([4, 8, 15, 16, 23, 42]);
+Console.WriteLine($"{min} {max} {avg:F1}");</code></pre></div>
+<div class="note tip"><b>Classes and ref.</b> Passing an object without <code>ref</code> still lets the method change its <i>properties</i>, because the reference is copied, not the object. <code>ref</code> on a class parameter lets the method replace the caller's object entirely.</div>
+
+<h3>3. Overloading</h3>
+<div class="code nofile"><pre><code class="language-csharp">static double Area(double radius) =&gt; Math.PI * radius * radius;          // circle
+static double Area(double width, double height) =&gt; width * height;       // rectangle
+static double Area(double a, double b, double c)                         // triangle (Heron)
+{
+    double s = (a + b + c) / 2;
+    return Math.Sqrt(s * (s - a) * (s - b) * (s - c));
+}
+// Overloads differ by parameter count or types — NOT by return type alone.</code></pre></div>
+
+<h3>4. Nullable types and null operators</h3>
+<div class="code nofile"><pre><code class="language-csharp">// Nullable VALUE types: int? is Nullable&lt;int&gt;
+int? discount = null;
+if (discount.HasValue) Console.WriteLine(discount.Value);
+int applied = discount ?? 0;              // null-coalescing: fallback value
+int alt = discount.GetValueOrDefault();   // 0
+
+// Nullable REFERENCE types (with &lt;Nullable&gt;enable&lt;/Nullable&gt;)
+string? middleName = null;               // may be null — compiler tracks it
+string firstName = "Samrath";            // should never be null
+
+int len = middleName?.Length ?? 0;       // ?. returns null instead of throwing
+middleName ??= "N/A";                    // assign only if null
+
+Customer? c = FindCustomer(42);
+string city = c?.Address?.City ?? "Unknown";
+
+// ! (null-forgiving) silences the warning — use only when you KNOW it's not null
+string sure = FindName()!;
+
+// Guard clauses
+static void Register(string email)
+{
+    ArgumentException.ThrowIfNullOrWhiteSpace(email);   // .NET 7+
+    // ...
+}</code></pre></div>
+
+<h3>5. Local functions and recursion</h3>
+<div class="code nofile"><pre><code class="language-csharp">static long Factorial(int n)
+{
+    if (n &lt; 0) throw new ArgumentOutOfRangeException(nameof(n));
+    return Calc(n);
+
+    static long Calc(int k) =&gt; k &lt;= 1 ? 1 : k * Calc(k - 1);   // local function
+}</code></pre></div>
+
+<h3>Common mistakes</h3>
+<ul>
+<li>Overusing <code>ref</code>/<code>out</code> — return a tuple or a small record instead.</li>
+<li>Sprinkling <code>!</code> to silence warnings; it hides real bugs.</li>
+<li>Methods that print <i>and</i> calculate. Calculate in one method, print in another, so the logic is testable.</li>
+</ul>
+
+<h3>Exercise (40 min)</h3>
+<ol class="ex">
+<li>Write <code>TryParseTemperature(string input, out double celsius)</code> that accepts "36.6C" or "98F".</li>
+<li>Overload <code>Area</code> for circle, rectangle and triangle and call each.</li>
+<li>Write <code>GetInitials(string first, string? middle, string last)</code> using <code>?.</code> and <code>??</code>.</li>
+</ol>
+
+<h3>Self-check questions</h3>
+<details><summary>ref vs out?</summary>Both pass by reference. <code>ref</code> needs the variable initialised before the call; <code>out</code> doesn't, but the method must assign it before returning.</details>
+<details><summary>int? vs string?</summary><code>int?</code> is a real type, <code>Nullable&lt;int&gt;</code>, with HasValue/Value. <code>string?</code> is only a compiler annotation for nullable-reference analysis; at run time it's the same <code>string</code>.</details>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between ref and out?</summary><div>Both pass by reference. ref requires the caller to initialise the variable and the method may read or change it. out doesn't require initialisation but the method must assign it before returning; it's used to return extra values, like TryParse.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is method overloading?</summary><div>Defining multiple methods with the same name but different parameter types, counts or order. The compiler chooses the best match at compile time. Return type alone can't distinguish overloads.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does the ?? operator do?</summary><div>Null-coalescing: returns the left operand if it isn't null, otherwise the right operand. <code>??=</code> assigns the right operand only when the left is null.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>If you pass an object to a method without ref and the method changes a property, does the caller see it?</summary><div>Yes. The reference is copied, but both copies point to the same object. If the method assigns a new object to the parameter, the caller does not see that unless the parameter is ref.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What's the difference between int? and string? under nullable reference types?</summary><div>int? compiles to Nullable&lt;int&gt;, a struct with HasValue/Value. string? is an annotation only: at runtime it's still System.String; the compiler uses it for warnings.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you use the in modifier?</summary><div>For large readonly structs passed frequently in performance-sensitive code, to avoid copying while guaranteeing the method can't modify them. For small types it gives no benefit.</div></details></section>
+
+<!-- ============ DAY 6 ============ -->
+<section class="day" id="day6">
+<div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Micro-project 1: Console calculator and unit converter</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Combine everything from Days 1–5 into one menu-driven console app split across a solution with a class library. Budget: about 4 hours.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Class library</dt><dd>A project (<code>dotnet new classlib</code>) that compiles to a reusable .dll with no entry point.</dd></div><div class="def"><dt>Separation of concerns</dt><dd>Keeping business logic (Core) apart from input/output (App) so each can change and be tested alone.</dd></div><div class="def"><dt>Project reference</dt><dd>A dependency from one project to another in the same solution.</dd></div><div class="def"><dt>Enum</dt><dd>A value type defining a set of named constants, e.g. <code>Unit.Km</code>.</dd></div><div class="def"><dt>Static class</dt><dd>A class that can't be instantiated and contains only static members — good for stateless helpers.</dd></div><div class="def"><dt>Circular buffer</dt><dd>A fixed-size array whose write index wraps around, keeping the latest N items.</dd></div><div class="def"><dt>Try-pattern</dt><dd>A method returning bool for success and giving the result through an out parameter.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Logic lives in Toolkit.Core, all Console calls in Toolkit.App.</li><li>Convert temperatures through one normal form (Celsius) instead of writing every pair.</li><li>Use switch expressions on tuples for operator and unit mapping.</li><li>Never let bad input crash the app — loop until valid.</li><li>Commit after each step with a clear message.</li></ul></div>
+
+<h3>Requirements</h3>
+<ul>
+<li>Main menu: 1) Calculator 2) Unit converter 3) History 0) Exit.</li>
+<li>Calculator: + − × ÷ % and power on two numbers; safe division by zero.</li>
+<li>Converter: length (km↔mi, m↔ft), weight (kg↔lb), temperature (C↔F↔K).</li>
+<li>History: keep the last 10 operations in an array and display them.</li>
+<li>All logic in <code>Toolkit.Core</code> (class library), all console I/O in <code>Toolkit.App</code>.</li>
+</ul>
+
+<h3>Project structure</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new sln -n Toolkit
+dotnet new classlib -n Toolkit.Core
+dotnet new console  -n Toolkit.App
+dotnet sln add Toolkit.Core Toolkit.App
+dotnet add Toolkit.App reference Toolkit.Core
+dotnet new gitignore</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">Toolkit/
+├─ Toolkit.sln
+├─ Toolkit.Core/
+│  ├─ Calculator.cs
+│  ├─ UnitConverter.cs
+│  └─ History.cs
+└─ Toolkit.App/
+   ├─ Program.cs
+   └─ ConsoleInput.cs</code></pre></div>
+
+<h3>Step 1 — Calculator (Core)</h3>
+<div class="code"><div class="fname">Toolkit.Core/Calculator.cs</div><pre><code class="language-csharp">namespace Toolkit.Core;
+
+public static class Calculator
+{
+    public static bool TryCalculate(double a, char op, double b, out double result, out string? error)
+    {
+        error = null;
+        result = op switch
+        {
+            '+' =&gt; a + b,
+            '-' =&gt; a - b,
+            '*' or 'x' =&gt; a * b,
+            '/' when b == 0 =&gt; double.NaN,
+            '/' =&gt; a / b,
+            '%' when b == 0 =&gt; double.NaN,
+            '%' =&gt; a % b,
+            '^' =&gt; Math.Pow(a, b),
+            _ =&gt; double.NaN
+        };
+
+        if (double.IsNaN(result))
+        {
+            error = (op is '/' or '%') &amp;&amp; b == 0
+                ? "Cannot divide by zero."
+                : $"Unknown operator '{op}'. Use + - * / % ^";
+            return false;
+        }
+        return true;
+    }
+}</code></pre></div>
+
+<h3>Step 2 — Unit converter (Core)</h3>
+<div class="code"><div class="fname">Toolkit.Core/UnitConverter.cs</div><pre><code class="language-csharp">namespace Toolkit.Core;
+
+public enum Unit { Km, Mile, Meter, Foot, Kg, Pound, Celsius, Fahrenheit, Kelvin }
+
+public static class UnitConverter
+{
+    private const double KmPerMile = 1.609344;
+    private const double FeetPerMeter = 3.28084;
+    private const double PoundsPerKg = 2.20462;
+
+    public static bool TryConvert(double value, Unit from, Unit to, out double result)
+    {
+        result = (from, to) switch
+        {
+            (Unit.Km, Unit.Mile)       =&gt; value / KmPerMile,
+            (Unit.Mile, Unit.Km)       =&gt; value * KmPerMile,
+            (Unit.Meter, Unit.Foot)    =&gt; value * FeetPerMeter,
+            (Unit.Foot, Unit.Meter)    =&gt; value / FeetPerMeter,
+            (Unit.Kg, Unit.Pound)      =&gt; value * PoundsPerKg,
+            (Unit.Pound, Unit.Kg)      =&gt; value / PoundsPerKg,
+            (Unit.Celsius, _) or (Unit.Fahrenheit, _) or (Unit.Kelvin, _)
+                                       =&gt; ConvertTemperature(value, from, to),
+            _                          =&gt; double.NaN
+        };
+        return !double.IsNaN(result);
+    }
+
+    private static double ConvertTemperature(double value, Unit from, Unit to)
+    {
+        // Normalise to Celsius first, then convert out — avoids 6 separate formulas
+        double celsius = from switch
+        {
+            Unit.Celsius    =&gt; value,
+            Unit.Fahrenheit =&gt; (value - 32) * 5 / 9,
+            Unit.Kelvin     =&gt; value - 273.15,
+            _               =&gt; double.NaN
+        };
+        if (celsius &lt; -273.15) return double.NaN;   // below absolute zero
+
+        return to switch
+        {
+            Unit.Celsius    =&gt; celsius,
+            Unit.Fahrenheit =&gt; celsius * 9 / 5 + 32,
+            Unit.Kelvin     =&gt; celsius + 273.15,
+            _               =&gt; double.NaN
+        };
+    }
+}</code></pre></div>
+
+<h3>Step 3 — History with a fixed-size array (Core)</h3>
+<div class="code"><div class="fname">Toolkit.Core/History.cs</div><pre><code class="language-csharp">namespace Toolkit.Core;
+
+public class History
+{
+    private readonly string[] _items;
+    private int _count;
+    private int _next;               // circular buffer index
+
+    public History(int capacity = 10) =&gt; _items = new string[capacity];
+
+    public void Add(string entry)
+    {
+        _items[_next] = $"{DateTime.Now:HH:mm:ss}  {entry}";
+        _next = (_next + 1) % _items.Length;     // wrap around
+        if (_count &lt; _items.Length) _count++;
+    }
+
+    public string[] GetAll()
+    {
+        var result = new string[_count];
+        int start = _count &lt; _items.Length ? 0 : _next;   // oldest item
+        for (int i = 0; i &lt; _count; i++)
+            result[i] = _items[(start + i) % _items.Length];
+        return result;
+    }
+}</code></pre></div>
+
+<h3>Step 4 — Safe console input (App)</h3>
+<div class="code"><div class="fname">Toolkit.App/ConsoleInput.cs</div><pre><code class="language-csharp">using System.Globalization;
+
+namespace Toolkit.App;
+
+internal static class ConsoleInput
+{
+    public static double ReadDouble(string prompt)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            string? text = Console.ReadLine();
+            if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+                return value;
+            Console.WriteLine("  ✗ Please enter a valid number (e.g. 12.5).");
+        }
+    }
+
+    public static char ReadOperator(string prompt)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            string? text = Console.ReadLine()?.Trim();
+            if (text is { Length: 1 } &amp;&amp; "+-*x/%^".Contains(text[0]))
+                return text[0];
+            Console.WriteLine("  ✗ Use one of: + - * / % ^");
+        }
+    }
+
+    public static int ReadChoice(string prompt, int min, int max)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            if (int.TryParse(Console.ReadLine(), out int n) &amp;&amp; n &gt;= min &amp;&amp; n &lt;= max)
+                return n;
+            Console.WriteLine($"  ✗ Choose a number from {min} to {max}.");
+        }
+    }
+}</code></pre></div>
+
+<h3>Step 5 — Menu loop (App)</h3>
+<div class="code"><div class="fname">Toolkit.App/Program.cs</div><pre><code class="language-csharp">using Toolkit.App;
+using Toolkit.Core;
+
+var history = new History();
+
+int choice;
+do
+{
+    Console.WriteLine("""
+
+        ===== Toolkit =====
+        1) Calculator
+        2) Unit converter
+        3) History
+        0) Exit
+        """);
+    choice = ConsoleInput.ReadChoice("Choose: ", 0, 3);
+
+    switch (choice)
+    {
+        case 1: RunCalculator(); break;
+        case 2: RunConverter();  break;
+        case 3: ShowHistory();   break;
+    }
+} while (choice != 0);
+
+Console.WriteLine("Bye!");
+
+void RunCalculator()
+{
+    double a = ConsoleInput.ReadDouble("First number: ");
+    char op = ConsoleInput.ReadOperator("Operator (+ - * / % ^): ");
+    double b = ConsoleInput.ReadDouble("Second number: ");
+
+    if (Calculator.TryCalculate(a, op, b, out double result, out string? error))
+    {
+        string line = $"{a} {op} {b} = {result:0.####}";
+        Console.WriteLine($"  ✓ {line}");
+        history.Add(line);
+    }
+    else
+    {
+        Console.WriteLine($"  ✗ {error}");
+    }
+}
+
+void RunConverter()
+{
+    Unit[] units = Enum.GetValues&lt;Unit&gt;();
+    for (int i = 0; i &lt; units.Length; i++)
+        Console.WriteLine($"  {i + 1}) {units[i]}");
+
+    Unit from = units[ConsoleInput.ReadChoice("From: ", 1, units.Length) - 1];
+    Unit to   = units[ConsoleInput.ReadChoice("To:   ", 1, units.Length) - 1];
+    double value = ConsoleInput.ReadDouble($"Value in {from}: ");
+
+    if (UnitConverter.TryConvert(value, from, to, out double result))
+    {
+        string line = $"{value} {from} = {result:0.###} {to}";
+        Console.WriteLine($"  ✓ {line}");
+        history.Add(line);
+    }
+    else
+    {
+        Console.WriteLine($"  ✗ Can't convert {from} to {to} (or value is out of range).");
+    }
+}
+
+void ShowHistory()
+{
+    string[] items = history.GetAll();
+    if (items.Length == 0) { Console.WriteLine("  (no history yet)"); return; }
+    foreach (string item in items) Console.WriteLine($"  {item}");
+}</code></pre></div>
+
+<h3>Run it</h3>
+<div class="code nofile"><pre><code class="language-text">$ dotnet run --project Toolkit.App
+===== Toolkit =====
+1) Calculator
+2) Unit converter
+3) History
+0) Exit
+Choose: 1
+First number: 12
+Operator (+ - * / % ^): /
+Second number: 0
+  ✗ Cannot divide by zero.</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Accept a whole expression like <code>12 * 3.5</code> on one line (split and parse).</li>
+<li>Add a currency converter with rates held in a <code>decimal</code> array.</li>
+<li>Colour output with <code>Console.ForegroundColor</code> or the Spectre.Console package.</li>
+</ul>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why split an app into a class library and a console project?</summary><div>It separates business logic from UI, so the same logic can later be reused by a Web API or tests without changing it, and each part has a single responsibility.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When should a class be static?</summary><div>When it has no state and only provides utility methods (like Math or our Calculator). Static classes can't implement interfaces or be mocked, so prefer instances once you need DI or testing.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you make this calculator unit-testable?</summary><div>Keep pure methods (inputs → outputs, no Console calls) in Core, add an xUnit test project referencing Core, and test each operator, divide-by-zero and conversion pairs with [Theory] data.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is an enum's underlying type and can you cast any int to it?</summary><div>int by default (changeable to byte, long…). Any int can be cast even if it isn't a defined member, so validate with <code>Enum.IsDefined</code> when reading external input.</div></details></section>
+
+<!-- ============ DAY 7 ============ -->
+<section class="day" id="day7">
+<div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Validation, README, push and weekly revision</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Harden the Toolkit against bad input, document it like a real project, and lock in Week 1 with a self-test.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Input validation</dt><dd>Checking data is present, well-formed and within range before using it.</dd></div><div class="def"><dt>EOF (end of input)</dt><dd>When the input stream closes; <code>Console.ReadLine()</code> returns null.</dd></div><div class="def"><dt>README</dt><dd>The front page of a repository: what it is, how to run it, what it demonstrates.</dd></div><div class="def"><dt>Commit</dt><dd>A saved snapshot of changes in Git with a message describing them.</dd></div><div class="def"><dt>Infinity / NaN</dt><dd>Special double values for overflow results and undefined results like 0/0.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Test every prompt with empty, garbage, huge and boundary values.</li><li>Handle null from ReadLine to avoid crashes on Ctrl+Z / Ctrl+D.</li><li>A good README: purpose, features, how to run, what you learned.</li><li>Revise by explaining aloud — if you can't explain it, re-read it.</li></ul></div>
+
+<h3>1. Harden validation (60 min)</h3>
+<p>Try to break your own app. Every one of these inputs should produce a friendly message, never a crash:</p>
+<div class="tbl"><table>
+<tr><th>Input</th><th>Where</th><th>Expected</th></tr>
+<tr><td>empty / spaces</td><td>any prompt</td><td>Re-prompt</td></tr>
+<tr><td><code>abc</code>, <code>12..5</code></td><td>number</td><td>Re-prompt</td></tr>
+<tr><td><code>1e309</code></td><td>number</td><td>Reject infinity</td></tr>
+<tr><td><code>/ 0</code></td><td>calculator</td><td>"Cannot divide by zero"</td></tr>
+<tr><td><code>-300</code> Celsius</td><td>converter</td><td>Below absolute zero</td></tr>
+<tr><td>Ctrl+Z / Ctrl+D</td><td>any prompt</td><td><code>ReadLine()</code> returns null — exit cleanly</td></tr>
+</table></div>
+<div class="code"><div class="fname">ConsoleInput.cs — improved ReadDouble</div><pre><code class="language-csharp">public static double ReadDouble(string prompt)
+{
+    while (true)
+    {
+        Console.Write(prompt);
+        string? text = Console.ReadLine();
+
+        if (text is null)                         // input stream closed (Ctrl+Z / Ctrl+D)
+            Environment.Exit(0);
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            Console.WriteLine("  ✗ Input can't be empty.");
+            continue;
+        }
+
+        if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double value))
+        {
+            Console.WriteLine("  ✗ Not a number.");
+            continue;
+        }
+
+        if (double.IsInfinity(value))
+        {
+            Console.WriteLine("  ✗ Number is too large.");
+            continue;
+        }
+
+        return value;
+    }
+}</code></pre></div>
+
+<h3>2. Write the README (30 min)</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-markdown"># Toolkit — Console Calculator &amp; Unit Converter
+
+Micro-project 1 of my .NET full-stack roadmap (Week 1).
+
+## Features
+- Calculator: + − × ÷ % ^ with divide-by-zero protection
+- Unit converter: length, weight, temperature (via Celsius normalisation)
+- History of the last 10 operations (circular buffer)
+
+## Run
+```bash
+dotnet run --project Toolkit.App
+```
+
+## What I practised
+- Solutions with a class library + console app
+- Switch expressions and tuple patterns
+- `TryParse` / `out` parameters and input validation
+- Value vs reference types, arrays
+
+## Next
+- Unit tests with xUnit (Week 10)</code></pre></div>
+
+<h3>3. Commit and push (15 min)</h3>
+<div class="code nofile"><pre><code class="language-bash">git add .
+git commit -m "Toolkit: calculator, unit converter, history, input validation"
+git push</code></pre></div>
+<p>Write meaningful commit messages: what changed, in the present tense. Commit after each step rather than once at the end.</p>
+
+<h3>4. Week 1 revision checklist (60 min)</h3>
+<p>Explain each out loud or in your notebook without looking back. Anything you can't explain, re-read that day.</p>
+<ul>
+<li>SDK vs runtime, IL, CLR, JIT</li>
+<li>What each file in a new console project does</li>
+<li><code>decimal</code> vs <code>double</code>, and why money uses decimal</li>
+<li>Value vs reference types with a code example</li>
+<li>Parse vs TryParse vs Convert</li>
+<li>Switch statement vs switch expression</li>
+<li>Why string concatenation in a loop is slow</li>
+<li><code>ref</code> vs <code>out</code> vs <code>in</code></li>
+<li><code>?.</code>, <code>??</code>, <code>??=</code> and when to use <code>!</code></li>
+</ul>
+
+<h3>5. Quick quiz — predict the output</h3>
+<details><summary>Q1. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">int[] a = { 1, 2, 3 };
+int[] b = a;
+b[0] = 100;
+Console.WriteLine(a[0]);</code></pre></div>
+<b>100.</b> Arrays are reference types; <code>a</code> and <code>b</code> point to the same array.</details>
+<details><summary>Q2. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">Console.WriteLine(7 / 2 * 2.0);</code></pre></div>
+<b>6.</b> <code>7 / 2</code> is integer division = 3, then 3 × 2.0 = 6.0.</details>
+<details><summary>Q3. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">string? s = null;
+Console.WriteLine(s?.Length ?? -1);</code></pre></div>
+<b>-1.</b> <code>s?.Length</code> is null, so <code>??</code> supplies -1.</details>
+<details><summary>Q4. Does this compile?</summary>
+<div class="code nofile"><pre><code class="language-csharp">static int Get() =&gt; 1;
+static double Get() =&gt; 1.0;</code></pre></div>
+<b>No.</b> Overloads can't differ by return type only.</details>
+<details><summary>Q5. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">int x = 10;
+Change(x);
+Console.WriteLine(x);
+static void Change(int n) { n = 50; }</code></pre></div>
+<b>10.</b> A copy of the value was passed; use <code>ref</code> to change the original.</details>
+
+<div class="note tip"><b>Next week:</b> OOP part 1 — classes, constructors, encapsulation, inheritance, polymorphism and interfaces, ending with the library management system.</div>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How do you validate numeric user input in C#?</summary><div>Read the string, reject null/whitespace, use TryParse with the right NumberStyles and CultureInfo, then check range (and IsInfinity/IsNaN for doubles). Re-prompt on failure instead of throwing.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What makes a good commit message?</summary><div>A short imperative summary under ~50 chars ("Add unit converter"), optionally a blank line and a body explaining why. One logical change per commit.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Exceptions vs Try-pattern for validation — which is better?</summary><div>Exceptions are for exceptional, unexpected failures and are expensive. Expected failures like bad user input should use Try-patterns or result objects; they're faster and make the control flow obvious.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Week 1 recap: what happens from dotnet run to your code executing?</summary><div>MSBuild restores packages and compiles with Roslyn to IL in a .dll, the host (dotnet) starts the CLR, the CLR loads the assembly, finds the entry point, JIT-compiles Main and runs it, with the GC managing memory along the way.</div></details></section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week1-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

@@ -1,0 +1,2615 @@
+<title>.NET Notes · Week 9</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 9</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">SRP &amp; OCP</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">LSP · ISP · DIP · DI</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Creational patterns</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Strategy · Observer · UoW</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Decorator &amp; Adapter</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: parking lot</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Patterns &amp; revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 1 · Week 9 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">C# 12</span><span class="chip">~18 hrs</span><span class="chip">Micro-project 7</span></div>
+  <h1>Week 9 — SOLID and design patterns</h1>
+  <p>You can write C#; this week is about writing C# that is easy to change. You'll learn the five SOLID principles through before/after refactors, wire dependencies with constructor injection and the .NET DI container, and add the most-used design patterns to your vocabulary — and spot them inside .NET itself. The week ends with the classic interview LLD question: a parking lot system, designed first and then built with Strategy, Factory and Observer.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>SOLID: Single Responsibility and Open/Closed</h3><p>Splitting an InvoiceService, discount rules open for extension, when a switch is fine.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>SOLID: Liskov, Interface Segregation, Dependency Inversion and DI</h3><p>Rectangle/Square, role interfaces, composition root, lifetimes, ServiceCollection.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Creational patterns: Singleton, Factories, Builder</h3><p>Lazy&lt;T&gt; singletons vs DI, simple/Factory Method/Abstract Factory, fluent builders.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Strategy, Observer, Repository and Unit of Work</h3><p>Shipping strategies via dictionary and DI, events vs IObservable, all-or-nothing saves.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Decorator, Adapter and patterns inside .NET</h3><p>Caching decorators, wrapping a payment SDK, streams, middleware, HttpClient handlers.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Micro-project 7: Parking lot system</h3><p>Requirements, class diagram, levels, sized slots, tickets, allocation, availability.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Parking lot patterns, README and revision</h3><p>Pricing strategies, slot factory, lot-full observers, try-to-break table, quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>SOLID part 1: Single Responsibility and Open/Closed</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Recognise classes that do too much or must be edited for every new rule, and refactor them into small, focused types that are open for extension.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>SOLID</dt><dd>Five object-oriented design principles (SRP, OCP, LSP, ISP, DIP) collected by Robert C. Martin to keep code easy to change.</dd></div><div class="def"><dt>Single Responsibility Principle (SRP)</dt><dd>A class should have one reason to change, i.e. answer to one actor or business concern.</dd></div><div class="def"><dt>Reason to change</dt><dd>A source of change requests: tax rules (finance), storage (DBA), email provider (ops), log format (support).</dd></div><div class="def"><dt>Cohesion</dt><dd>How closely the members of a class belong together. High cohesion = every member serves one purpose.</dd></div><div class="def"><dt>Coupling</dt><dd>How much one type depends on the details of another. Low coupling = changes don't ripple.</dd></div><div class="def"><dt>God class</dt><dd>A class that knows and does too much; the classic SRP violation ("OrderManager", "Utils", "Helper").</dd></div><div class="def"><dt>Open/Closed Principle (OCP)</dt><dd>Software entities should be open for extension but closed for modification: add behaviour by adding code, not editing tested code.</dd></div><div class="def"><dt>Extension point</dt><dd>A seam (interface, abstract method, delegate, event) where new behaviour can be plugged in.</dd></div><div class="def"><dt>Polymorphism</dt><dd>Calling the same member on different types and getting type-specific behaviour (Week 2).</dd></div><div class="def"><dt>Shotgun surgery</dt><dd>A smell where one change forces edits in many places; often caused by a switch repeated across files.</dd></div><div class="def"><dt>Refactoring</dt><dd>Changing the structure of code without changing its behaviour.</dd></div><div class="def"><dt>YAGNI</dt><dd>"You aren't gonna need it": don't build extension points for variations that don't exist yet.</dd></div><div class="def"><dt>Rule of three</dt><dd>Tolerate duplication or a switch twice; abstract when the third variation appears.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>SRP is about <i>reasons to change</i>, not "one method per class".</li><li>A good SRP split usually leaves a thin orchestrator that calls focused collaborators.</li><li>OCP doesn't mean you never edit a file; it means adding a new variant shouldn't require editing existing, tested variants.</li><li>The usual OCP tools in C#: interfaces + polymorphism, abstract classes, delegates, and registering implementations in a list or dictionary.</li><li>A <code>switch</code> on a closed set (e.g. an enum that will never grow) is fine; a switch on a growing business list is a smell.</li><li>SOLID is a set of heuristics, not laws. Over-applying them produces "interface soup".</li></ul></div>
+
+<h3>1. The five principles at a glance</h3>
+<div class="tbl"><table><tr><th>Letter</th><th>Principle</th><th>One-line meaning</th><th>Smell when violated</th></tr><tr><td>S</td><td>Single Responsibility</td><td>One reason to change</td><td>A class touched by every feature; 800-line services</td></tr><tr><td>O</td><td>Open/Closed</td><td>Extend by adding code, not editing it</td><td>A switch you edit for every new type</td></tr><tr><td>L</td><td>Liskov Substitution</td><td>Subtypes must work wherever the base type is expected</td><td>Overrides that throw NotSupportedException or <code>if (x is Square)</code> checks</td></tr><tr><td>I</td><td>Interface Segregation</td><td>Clients shouldn't depend on methods they don't use</td><td>Implementations full of empty methods</td></tr><tr><td>D</td><td>Dependency Inversion</td><td>Depend on abstractions; high-level policy doesn't know low-level details</td><td><code>new SqlConnection()</code> inside business logic</td></tr></table></div>
+<p>You have already used several of these: Week 2's <code>IClock</code> and interfaces were DIP, Week 2's Template Method was OCP, and Week 4's <code>IRepository&lt;T&gt;</code> split storage from library rules (SRP). Today and tomorrow give them names and sharpen the judgement of when to apply them.</p>
+
+<h3>2. SRP — before: an InvoiceService that does everything</h3>
+<div class="code"><div class="fname">Before/InvoiceService.cs</div><pre><code class="language-csharp">public class InvoiceService
+{
+    public void CreateInvoice(string customerEmail, string buyerState,
+                              List&lt;(string Item, decimal Price, int Qty)&gt; lines)
+    {
+        // 1. Calculate (finance team changes GST rules)
+        decimal subtotal = 0;
+        foreach (var l in lines) subtotal += l.Price * l.Qty;
+        decimal tax = subtotal * 0.18m;                     // GST… but CGST+SGST or IGST?
+        decimal total = subtotal + tax;
+
+        // 2. Save (DBA wants SQL Server instead of CSV)
+        File.AppendAllText("invoices.csv", $"{DateTime.Now:O},{customerEmail},{total}\n");
+
+        // 3. Email (ops wants a different provider)
+        Console.WriteLine($"[SMTP] To {customerEmail}: your invoice total is ₹{total:N2}");
+
+        // 4. Log (support wants structured logs)
+        Console.WriteLine($"[LOG] Invoice created for {customerEmail}");
+    }
+}</code></pre></div>
+<p>Four different people can ask for changes to this one method. You can't unit test the GST calculation without writing a file and "sending" an email, and a bug fix in the CSV format risks breaking tax.</p>
+
+<h3>3. SRP — after: focused collaborators plus a thin orchestrator</h3>
+<div class="code"><div class="fname">Billing/Invoice.cs</div><pre><code class="language-csharp">namespace Billing;
+
+public record InvoiceLine(string Item, decimal UnitPrice, int Quantity)
+{
+    public decimal Amount =&gt; UnitPrice * Quantity;
+}
+
+public record Invoice(string Number, string CustomerEmail, IReadOnlyList&lt;InvoiceLine&gt; Lines,
+                      decimal Subtotal, decimal Cgst, decimal Sgst, decimal Igst)
+{
+    public decimal Total =&gt; Subtotal + Cgst + Sgst + Igst;
+}
+
+// Responsibility 1: tax rules (pure, easy to unit test)
+public class GstCalculator
+{
+    public (decimal Cgst, decimal Sgst, decimal Igst) Calculate(decimal subtotal, string sellerState, string buyerState)
+    {
+        if (string.Equals(sellerState, buyerState, StringComparison.OrdinalIgnoreCase))
+        {
+            decimal half = Math.Round(subtotal * 0.09m, 2);   // intra-state: CGST 9% + SGST 9%
+            return (half, half, 0m);
+        }
+        return (0m, 0m, Math.Round(subtotal * 0.18m, 2));    // inter-state: IGST 18%
+    }
+}
+
+// Responsibilities 2–4: behind interfaces so they can be swapped
+public interface IInvoiceRepository { void Save(Invoice invoice); }
+public interface IInvoiceSender     { void Send(Invoice invoice); }
+public interface IAppLogger         { void Info(string message); }</code></pre></div>
+<div class="code"><div class="fname">Billing/InvoiceService.cs</div><pre><code class="language-csharp">namespace Billing;
+
+public class CsvInvoiceRepository(string path) : IInvoiceRepository
+{
+    public void Save(Invoice i) =&gt;
+        File.AppendAllText(path, $"{i.Number},{i.CustomerEmail},{i.Total}{Environment.NewLine}");
+}
+
+public class ConsoleEmailSender : IInvoiceSender
+{
+    public void Send(Invoice i) =&gt;
+        Console.WriteLine($"[EMAIL] To {i.CustomerEmail}: invoice {i.Number}, total ₹{i.Total:N2}");
+}
+
+public class ConsoleLogger : IAppLogger
+{
+    public void Info(string message) =&gt; Console.WriteLine($"[INFO {DateTime.Now:HH:mm:ss}] {message}");
+}
+
+// The orchestrator: its only job is the workflow order
+public class InvoiceService(GstCalculator gst, IInvoiceRepository repository, IInvoiceSender sender, IAppLogger log)
+{
+    private const string SellerState = "MH";
+    private int _next = 1;
+
+    public Invoice Create(string email, string buyerState, IReadOnlyList&lt;InvoiceLine&gt; lines)
+    {
+        if (lines.Count == 0) throw new ArgumentException("An invoice needs at least one line", nameof(lines));
+
+        decimal subtotal = lines.Sum(l =&gt; l.Amount);
+        var (cgst, sgst, igst) = gst.Calculate(subtotal, SellerState, buyerState);
+        var invoice = new Invoice($"INV-{_next++:D5}", email, lines, subtotal, cgst, sgst, igst);
+
+        repository.Save(invoice);
+        sender.Send(invoice);
+        log.Info($"Created {invoice.Number} for {email}");
+        return invoice;
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Billing;
+
+var service = new InvoiceService(new GstCalculator(), new CsvInvoiceRepository("invoices.csv"),
+                                 new ConsoleEmailSender(), new ConsoleLogger());
+
+var inv = service.Create("asha@example.com", "KA",
+    [new("Laptop bag", 1_499m, 2), new("Wireless mouse", 799m, 1)]);
+
+Console.WriteLine($"Subtotal {inv.Subtotal:N2}  IGST {inv.Igst:N2}  Total {inv.Total:N2}");
+// [EMAIL] To asha@example.com: invoice INV-00001, total ₹4,480.46
+// [INFO 10:15:02] Created INV-00001 for asha@example.com
+// Subtotal 3,797.00  IGST 683.46  Total 4,480.46
+
+var local = new GstCalculator().Calculate(3_797m, "MH", "mh");
+Console.WriteLine(local);   // (341.73, 341.73, 0)</code></pre></div>
+<div class="note tip"><b>Tip.</b> Test the split by asking "who would request a change here?" for each class. If the answer is one team or one rule set, the class has one responsibility.</div>
+
+<h3>4. Spotting SRP violations</h3>
+<div class="tbl"><table><tr><th>Symptom</th><th>Likely split</th></tr><tr><td>Class name ends in Manager, Helper, Utils, Processor</td><td>Name each real job: Calculator, Repository, Sender, Validator</td></tr><tr><td>Method has comment headings: // validate, // save, // notify</td><td>One collaborator per heading</td></tr><tr><td><code>using</code> list mixes System.IO, System.Net.Mail, Microsoft.Data.SqlClient</td><td>Infrastructure concerns behind interfaces</td></tr><tr><td>You need a database to test a calculation</td><td>Extract the pure logic into its own class</td></tr><tr><td>Fields used by only half the methods</td><td>Low cohesion: two classes hiding in one</td></tr></table></div>
+<div class="note warn"><b>Balance.</b> Don't split by technical layer for its own sake. A 40-line class with one clear job is fine even if it has six methods. SRP is about cohesion, not size.</div>
+
+<h3>5. OCP — before: a discount calculator with a growing switch</h3>
+<div class="code"><div class="fname">Before/DiscountCalculator.cs</div><pre><code class="language-csharp">public class DiscountCalculator
+{
+    public decimal Apply(string customerType, decimal amount)
+    {
+        switch (customerType)
+        {
+            case "Regular":  return amount;
+            case "Silver":   return amount * 0.95m;
+            case "Gold":     return amount * 0.90m;
+            case "Employee": return amount * 0.70m;
+            // Marketing: "add a festive sale"… edit here again
+            // Product:   "first order gets ₹100 off"… and again
+            default: throw new ArgumentException($"Unknown customer type {customerType}");
+        }
+    }
+}</code></pre></div>
+<p>Every new promotion means editing and re-testing this method, and the same <code>switch</code> tends to be copied into the cart page, the invoice and reports (shotgun surgery).</p>
+
+<h3>6. OCP — after: rules as polymorphic objects</h3>
+<div class="code"><div class="fname">Pricing/Discounts.cs</div><pre><code class="language-csharp">namespace Pricing;
+
+public record Order(string CustomerTier, decimal Amount, DateOnly Date, bool IsFirstOrder);
+public record DiscountResult(string Rule, decimal Amount);
+
+public interface IDiscountRule
+{
+    string Name { get; }
+    bool AppliesTo(Order order);
+    decimal DiscountFor(Order order);
+}
+
+public class TierDiscount(string tier, decimal percent) : IDiscountRule
+{
+    public string Name =&gt; $"{tier} {percent:0}%";
+    public bool AppliesTo(Order o) =&gt; string.Equals(o.CustomerTier, tier, StringComparison.OrdinalIgnoreCase);
+    public decimal DiscountFor(Order o) =&gt; Math.Round(o.Amount * percent / 100m, 2);
+}
+
+public class FirstOrderDiscount : IDiscountRule
+{
+    public string Name =&gt; "First order ₹100";
+    public bool AppliesTo(Order o) =&gt; o.IsFirstOrder &amp;&amp; o.Amount &gt;= 500m;
+    public decimal DiscountFor(Order o) =&gt; 100m;
+}
+
+public class FestiveDiscount(DateOnly from, DateOnly to, decimal percent) : IDiscountRule
+{
+    public string Name =&gt; $"Festive {percent:0}%";
+    public bool AppliesTo(Order o) =&gt; o.Date &gt;= from &amp;&amp; o.Date &lt;= to;
+    public decimal DiscountFor(Order o) =&gt; Math.Round(o.Amount * percent / 100m, 2);
+}
+
+// Closed for modification: it never changes when a rule is added
+public class DiscountCalculator(IEnumerable&lt;IDiscountRule&gt; rules)
+{
+    // Business policy: the single best discount wins (no stacking)
+    public DiscountResult Best(Order order) =&gt;
+        rules.Where(r =&gt; r.AppliesTo(order))
+             .Select(r =&gt; new DiscountResult(r.Name, r.DiscountFor(order)))
+             .DefaultIfEmpty(new DiscountResult("None", 0m))
+             .MaxBy(d =&gt; d.Amount)!;
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Pricing;
+
+IDiscountRule[] rules =
+[
+    new TierDiscount("Silver", 5), new TierDiscount("Gold", 10), new TierDiscount("Employee", 30),
+    new FirstOrderDiscount(),
+    new FestiveDiscount(new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 15), 12)   // added without touching the calculator
+];
+var calc = new DiscountCalculator(rules);
+
+Console.WriteLine(calc.Best(new Order("Gold", 2_000m, new DateOnly(2026, 10, 20), false)));
+// DiscountResult { Rule = Gold 10%, Amount = 200 }
+Console.WriteLine(calc.Best(new Order("Gold", 2_000m, new DateOnly(2026, 11, 10), false)));
+// DiscountResult { Rule = Festive 12%, Amount = 240 }
+Console.WriteLine(calc.Best(new Order("Regular", 600m, new DateOnly(2026, 12, 1), true)));
+// DiscountResult { Rule = First order ₹100, Amount = 100 }</code></pre></div>
+<p>Adding a rule is now a new class plus one line where the rules are listed (later, one DI registration). The calculator and every existing rule stay untouched and keep their tests.</p>
+
+<h4>Lighter-weight OCP: a dictionary of delegates</h4>
+<div class="code nofile"><pre><code class="language-csharp">// When variations are tiny, a lookup table of Func is enough (Week 5 lambdas)
+var shippingByZone = new Dictionary&lt;string, Func&lt;decimal, decimal&gt;&gt;(StringComparer.OrdinalIgnoreCase)
+{
+    ["metro"]  = weightKg =&gt; 40m + 10m * Math.Ceiling(weightKg),
+    ["rest"]   = weightKg =&gt; 60m + 15m * Math.Ceiling(weightKg),
+    ["remote"] = weightKg =&gt; 120m + 25m * Math.Ceiling(weightKg)
+};
+Console.WriteLine(shippingByZone["Metro"](1.2m));   // 60  (40 + 10 × 2)</code></pre></div>
+<div class="tbl"><table><tr><th>Situation</th><th>Prefer</th></tr><tr><td>Closed set that won't grow (DayOfWeek, a 3-state enum)</td><td>A <code>switch</code> expression — exhaustive and readable</td></tr><tr><td>Growing list of business variations, each with logic</td><td>Interface + one class per variation</td></tr><tr><td>Variations are one-liners with no state</td><td>Dictionary of <code>Func</code></td></tr><tr><td>Shared steps, one or two steps differ</td><td>Abstract base class with Template Method (Week 2)</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Splitting a class into many tiny classes with no clear reason to change (fragmentation).</li><li>Thinking SRP means "one method per class".</li><li>Building plugin architectures for a variation that will never happen (violating YAGNI).</li><li>Keeping the switch but moving it into a "factory" that still has to be edited for every new rule, then calling it OCP.</li><li>Copying the same switch on customer type into several classes (shotgun surgery).</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Take the Week 3 bank's <code>Account</code> or a class of your own over 150 lines; list each reason to change and extract at least two collaborators.</li><li>Add a <code>WeekendDiscount</code> (5% on Saturday/Sunday) and a <code>BulkDiscount</code> (₹500 off above ₹20,000) without editing <code>DiscountCalculator</code>.</li><li>Change the policy to "stack all discounts but cap at 40% of the amount" by writing a second calculator class, and explain why the rules didn't change.</li></ol>
+<h3>Self-check questions</h3><details><summary>Does SRP mean a class should have only one method?</summary>No. It means one reason to change. A class can have many methods as long as they all serve the same responsibility.</details><details><summary>How do you know you're violating OCP?</summary>When adding a new variant (a new customer tier, payment method, report type) forces you to edit existing, tested code, typically a switch or if-else chain.</details><details><summary>Is every switch statement an OCP violation?</summary>No. A switch over a closed, stable set is often the clearest code. It becomes a problem when the set grows with business requirements or the same switch is repeated.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Single Responsibility Principle?</summary><div>A class should have one reason to change: it serves one actor or concern. For example, GST calculation, invoice storage and email delivery change for different reasons and belong in different classes, coordinated by a thin service.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain the Open/Closed Principle with an example.</summary><div>Code should be open for extension but closed for modification. A discount calculator that takes IEnumerable&lt;IDiscountRule&gt; lets you add a FestiveDiscount class without editing the calculator or existing rules, unlike a switch on customer type.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What do cohesion and coupling mean, and which do you want high?</summary><div>Cohesion is how strongly a class's members relate to one purpose; coupling is how much it depends on other classes' details. Aim for high cohesion and low coupling.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you apply OCP without over-engineering?</summary><div>Introduce an extension point when variation is real and recurring (rule of three), keep closed sets as switch expressions, and prefer the simplest mechanism that works: a delegate table before a class hierarchy, an interface before a plugin framework.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does SRP make code easier to test?</summary><div>Pure logic (GstCalculator) can be tested with plain inputs and outputs. Side effects (files, email, logging) sit behind interfaces, so the orchestrator can be tested with fakes that record calls instead of touching real infrastructure.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is shotgun surgery and how do SOLID principles help?</summary><div>A change that requires small edits in many classes, often because a switch on a type code is duplicated. Moving each variant's behaviour into its own polymorphic class (OCP) puts the change in one new place.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>SOLID part 2: Liskov, Interface Segregation, Dependency Inversion and DI</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Design hierarchies that can be substituted safely, keep interfaces small, make business logic depend on abstractions, and wire it all together with constructor injection and a DI container.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Liskov Substitution Principle (LSP)</dt><dd>Objects of a subtype must be usable anywhere the base type is expected without breaking correctness.</dd></div><div class="def"><dt>Precondition</dt><dd>What must be true before a method is called. A subtype may not strengthen it.</dd></div><div class="def"><dt>Postcondition</dt><dd>What a method guarantees afterwards. A subtype may not weaken it.</dd></div><div class="def"><dt>Invariant</dt><dd>A condition that is always true for an object (e.g. Balance ≥ 0). Subtypes must preserve it.</dd></div><div class="def"><dt>Interface Segregation Principle (ISP)</dt><dd>Clients shouldn't be forced to depend on methods they don't use; prefer small, role-based interfaces.</dd></div><div class="def"><dt>Fat interface</dt><dd>An interface with many unrelated members, forcing implementers to stub or throw.</dd></div><div class="def"><dt>Dependency Inversion Principle (DIP)</dt><dd>High-level policy and low-level details both depend on abstractions; the abstraction belongs to the policy side.</dd></div><div class="def"><dt>Dependency Injection (DI)</dt><dd>Giving an object its dependencies from outside instead of creating them inside.</dd></div><div class="def"><dt>Constructor injection</dt><dd>Passing required dependencies through the constructor; the default and preferred style.</dd></div><div class="def"><dt>Composition root</dt><dd>The single place (Program.cs) where concrete types are chosen and the object graph is assembled.</dd></div><div class="def"><dt>DI container</dt><dd>A library (Microsoft.Extensions.DependencyInjection) that builds object graphs from registrations.</dd></div><div class="def"><dt>Service lifetime</dt><dd>How long a container-created instance lives: Singleton, Scoped or Transient.</dd></div><div class="def"><dt>Captive dependency</dt><dd>A longer-lived service holding a shorter-lived one (a singleton holding a scoped DbContext), keeping it alive too long.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>LSP is about behaviour, not just compiling: "is-a" in the real world isn't enough.</li><li>If callers need <code>if (x is SomeSubtype)</code>, the hierarchy probably violates LSP.</li><li>ISP: split by client need. One class can still implement several small interfaces.</li><li>DIP: the business layer defines <code>IOrderStore</code>; the infrastructure layer implements it.</li><li>DI is the technique; DIP is the principle; a container is an optional tool.</li><li>Only Program.cs (the composition root) should call <code>new</code> on infrastructure classes or ask a container for services.</li></ul></div>
+
+<h3>1. LSP — the Rectangle/Square trap</h3>
+<div class="code"><div class="fname">LspBroken.cs</div><pre><code class="language-csharp">ResizeBanner(new Rectangle());    // 20
+ResizeBanner(new Square());       // 16  ← substitution broke the caller's assumption
+
+static void ResizeBanner(Rectangle r)
+{
+    r.Width = 5;
+    r.Height = 4;
+    Console.WriteLine(r.Area);    // the caller reasonably expects 20
+}
+
+public class Rectangle
+{
+    public virtual int Width  { get; set; }
+    public virtual int Height { get; set; }
+    public int Area =&gt; Width * Height;
+}
+
+// Mathematically a square IS a rectangle… behaviourally it isn't
+public class Square : Rectangle
+{
+    public override int Width  { get =&gt; base.Width;  set { base.Width = value; base.Height = value; } }
+    public override int Height { get =&gt; base.Height; set { base.Width = value; base.Height = value; } }
+}</code></pre></div>
+<p>The <code>Rectangle</code> setter's implicit postcondition is "setting Width leaves Height unchanged". <code>Square</code> weakens it. Fix it by not modelling mutable shapes as a hierarchy where they disagree; immutable types behind a common interface are safe:</p>
+<div class="code"><div class="fname">LspFixed.cs</div><pre><code class="language-csharp">IShape[] shapes = [new Rect(5, 4), new Sq(4)];
+Console.WriteLine(shapes.Sum(s =&gt; s.Area));   // 36 — every IShape keeps its contract
+
+public interface IShape { int Area { get; } }
+
+public sealed record Rect(int Width, int Height) : IShape { public int Area =&gt; Width * Height; }
+public sealed record Sq(int Side) : IShape              { public int Area =&gt; Side * Side; }</code></pre></div>
+
+<h3>2. LSP in the BCL: read-only collections that throw</h3>
+<div class="code"><div class="fname">ReadOnlyLsp.cs</div><pre><code class="language-csharp">using System.Collections.ObjectModel;
+
+static void AddDefaultTag(ICollection&lt;string&gt; tags) =&gt; tags.Add("new-arrival");
+
+AddDefaultTag(new List&lt;string&gt;());                          // ✓ fine
+AddDefaultTag(new ReadOnlyCollection&lt;string&gt;(["sale"]));    // ❌ NotSupportedException
+AddDefaultTag(new string[1]);                               // ❌ NotSupportedException: Collection was of a fixed size
+
+// The "escape hatch" — callers must remember to check, which is the LSP smell
+static void SafeAdd(ICollection&lt;string&gt; tags)
+{
+    if (tags.IsReadOnly) return;
+    tags.Add("new-arrival");
+}</code></pre></div>
+<p>Arrays implement <code>IList&lt;T&gt;</code> and <code>ReadOnlyCollection&lt;T&gt;</code> implements <code>ICollection&lt;T&gt;</code> for historical reasons, so the compiler accepts code that fails at runtime. That's why .NET added <code>IReadOnlyCollection&lt;T&gt;</code> and <code>IReadOnlyList&lt;T&gt;</code>: accept those when you only read, and <code>ICollection&lt;T&gt;</code> only when you genuinely add.</p>
+<div class="tbl"><table><tr><th>Contract rule</th><th>A subtype may…</th><th>Example violation</th></tr><tr><td>Preconditions</td><td>not demand more (strengthen)</td><td>Base accepts any amount &gt; 0; subtype rejects amounts &lt; ₹100</td></tr><tr><td>Postconditions</td><td>not promise less (weaken)</td><td>Base guarantees the order is saved; subtype silently skips saving</td></tr><tr><td>Invariants</td><td>not break them</td><td>Base keeps Balance ≥ 0; subtype allows negative balance without an overdraft concept in the base</td></tr><tr><td>Exceptions</td><td>not throw new, unexpected exception types</td><td>Override throws NotSupportedException or NotImplementedException</td></tr><tr><td>History</td><td>not allow state changes the base forbids</td><td>An "immutable" base type gets a mutable subtype</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> In Week 3's bank, <code>Withdraw</code> worked for both account types because the base class defined the rule through <code>AvailableToWithdraw</code>. Overdraft wasn't a surprise exception; it was part of the base contract. That's LSP done right.</div>
+
+<h3>3. ISP — split fat interfaces by client</h3>
+<div class="code"><div class="fname">Before/IOfficeDevice.cs</div><pre><code class="language-csharp">public record Document(string Title, string Content);
+
+// ❌ Fat interface: a basic printer must pretend it can scan and fax
+public interface IOfficeDevice
+{
+    void Print(Document d);
+    void Scan(Document d);
+    void Fax(Document d, string number);
+}
+
+public class BasicInkjet : IOfficeDevice
+{
+    public void Print(Document d) =&gt; Console.WriteLine($"Printing {d.Title}");
+    public void Scan(Document d) =&gt; throw new NotSupportedException();          // also an LSP violation
+    public void Fax(Document d, string number) =&gt; throw new NotSupportedException();
+}</code></pre></div>
+<div class="code"><div class="fname">After/RoleInterfaces.cs</div><pre><code class="language-csharp">new PayslipService(new BasicInkjet()).PrintPayslip("Rohit Verma", 68_450m);          // Printing Payslip – Rohit Verma
+new PayslipService(new OfficeMultiFunction()).PrintPayslip("Neha Joshi", 72_900m);   // [MFP] Printing Payslip – Neha Joshi
+
+// ✓ Role interfaces (Document is the record from the "before" file)
+public interface IPrinter { void Print(Document d); }
+public interface IScanner { Document Scan(string title); }
+public interface IFax     { void Fax(Document d, string number); }
+
+public class BasicInkjet : IPrinter
+{
+    public void Print(Document d) =&gt; Console.WriteLine($"Printing {d.Title}");
+}
+
+public class OfficeMultiFunction : IPrinter, IScanner, IFax
+{
+    public void Print(Document d) =&gt; Console.WriteLine($"[MFP] Printing {d.Title}");
+    public Document Scan(string title) =&gt; new(title, "(scanned image)");
+    public void Fax(Document d, string number) =&gt; Console.WriteLine($"[MFP] Faxing {d.Title} to {number}");
+}
+
+// Each client asks only for the role it needs
+public class PayslipService(IPrinter printer)
+{
+    public void PrintPayslip(string employee, decimal net) =&gt;
+        printer.Print(new Document($"Payslip – {employee}", $"Net pay ₹{net:N2}"));
+}</code></pre></div>
+<p>The classic HR version: an <code>IWorker</code> with <code>Work()</code>, <code>TakeLunchBreak()</code> and <code>GetSalary()</code> forces a <code>RobotWorker</code> to implement lunch breaks. Split into <code>IWorkable</code>, <code>IFeedable</code>/<code>IHasBreaks</code> and <code>IPayable</code>.</p>
+
+<h3>4. DIP — high-level policy depends on abstractions</h3>
+<div class="code"><div class="fname">Before/OrderService.cs (fragment)</div><pre><code class="language-csharp">// ❌ Business rule glued to infrastructure: can't test without SQL and an SMS account
+public class OrderServiceBefore
+{
+    private readonly SqlOrderStore _store = new("Server=.;Database=Shop;Trusted_Connection=True");
+    private readonly SmsGatewayClient _sms = new("api-key");
+    // Place(...) uses _store and _sms directly
+}</code></pre></div>
+<div class="code"><div class="fname">Shop.Core/OrderService.cs</div><pre><code class="language-csharp">namespace Shop.Core;            // the high-level project OWNS these abstractions
+
+public record Order(int Id, string Customer, decimal Amount, DateTime PlacedAt);
+
+public interface IOrderStore       { int NextId(); void Add(Order order); }
+public interface ICustomerNotifier { void Notify(string customer, string message); }
+public interface IClock            { DateTime Now { get; } }
+
+public class OrderService(IOrderStore store, ICustomerNotifier notifier, IClock clock)
+{
+    public Order Place(string customer, decimal amount)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(customer);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+
+        var order = new Order(store.NextId(), customer, amount, clock.Now);
+        store.Add(order);
+        notifier.Notify(customer, $"Order #{order.Id} for ₹{amount:N2} confirmed");
+        return order;
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Shop.Infrastructure/Implementations.cs</div><pre><code class="language-csharp">using Shop.Core;
+
+namespace Shop.Infrastructure;  // low-level details depend UP on Shop.Core
+
+public class InMemoryOrderStore : IOrderStore
+{
+    private readonly List&lt;Order&gt; _orders = [];
+    public int NextId() =&gt; _orders.Count + 1001;
+    public void Add(Order order) =&gt; _orders.Add(order);
+}
+
+public class ConsoleSmsNotifier : ICustomerNotifier
+{
+    public void Notify(string customer, string message) =&gt; Console.WriteLine($"[SMS → {customer}] {message}");
+}
+
+public class SystemClock : IClock { public DateTime Now =&gt; DateTime.Now; }</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>Without DIP</th><th>With DIP</th></tr><tr><td>Project references</td><td>Core → Infrastructure</td><td>Infrastructure → Core</td></tr><tr><td>Who defines <code>IOrderStore</code></td><td>Nobody (concrete class used)</td><td>Shop.Core, in terms the business needs</td></tr><tr><td>Swap SQL for an API</td><td>Edit OrderService</td><td>Write a new class implementing IOrderStore</td></tr><tr><td>Unit test OrderService</td><td>Needs a database</td><td>Pass fakes</td></tr></table></div>
+
+<h3>5. Dependency injection by hand: the composition root</h3>
+<div class="code"><div class="fname">Shop.App/Program.cs</div><pre><code class="language-csharp">using Shop.Core;
+using Shop.Infrastructure;
+
+// Composition root: the ONLY place that knows the concrete classes
+IClock clock = new SystemClock();
+IOrderStore store = new InMemoryOrderStore();
+ICustomerNotifier notifier = new ConsoleSmsNotifier();
+var orders = new OrderService(store, notifier, clock);
+
+orders.Place("Asha", 1_250m);    // [SMS → Asha] Order #1001 for ₹1,250.00 confirmed
+orders.Place("Ravi", 640m);      // [SMS → Ravi] Order #1002 for ₹640.00 confirmed</code></pre></div>
+<div class="tbl"><table><tr><th>Injection style</th><th>How</th><th>Use for</th></tr><tr><td>Constructor</td><td>Parameters of the constructor (or primary constructor)</td><td>Required dependencies — the default</td></tr><tr><td>Method</td><td>Passed to the one method that needs it</td><td>A dependency used by one operation, e.g. <code>CancellationToken</code>, <code>IFormatProvider</code></td></tr><tr><td>Property</td><td>Settable property with a sensible default</td><td>Truly optional dependencies; rare in .NET</td></tr></table></div>
+<h4>Lifetimes, conceptually</h4>
+<div class="tbl"><table><tr><th>Lifetime</th><th>One instance per…</th><th>Typical examples</th><th>Watch out</th></tr><tr><td>Singleton</td><td>Application</td><td>Configuration, clock, caches, HttpClient factory, stateless strategies</td><td>Must be thread-safe; must not hold scoped services</td></tr><tr><td>Scoped</td><td>Scope (one HTTP request in ASP.NET Core)</td><td>EF Core DbContext, unit of work, current-user info</td><td>Don't resolve from the root provider</td></tr><tr><td>Transient</td><td>Every resolve</td><td>Lightweight, stateless services, validators</td><td>Disposable transients live until their scope ends</td></tr></table></div>
+<div class="note warn"><b>Rule.</b> A longer-lived service must not depend on a shorter-lived one. A singleton that receives a scoped DbContext keeps that one context forever — shared across requests and threads (a captive dependency).</div>
+
+<h3>6. Preview: Microsoft.Extensions.DependencyInjection in a console app</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new console -n DiPreview
+cd DiPreview
+dotnet add package Microsoft.Extensions.DependencyInjection</code></pre></div>
+<div class="code"><div class="fname">DiPreview/Program.cs</div><pre><code class="language-csharp">using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddSingleton&lt;SingletonTag&gt;();
+services.AddScoped&lt;ScopedTag&gt;();
+services.AddTransient&lt;TransientTag&gt;();
+
+using var provider = services.BuildServiceProvider(new ServiceProviderOptions
+{
+    ValidateScopes = true,     // throw if a scoped service is resolved from the root or captured by a singleton
+    ValidateOnBuild = true     // check every registration can be constructed when building
+});
+
+for (int request = 1; request &lt;= 2; request++)
+{
+    using var scope = provider.CreateScope();          // ≈ one web request
+    var sp = scope.ServiceProvider;
+    for (int resolve = 1; resolve &lt;= 2; resolve++)
+        Console.WriteLine($"request {request}, resolve {resolve}: " +
+            $"singleton {sp.GetRequiredService&lt;SingletonTag&gt;().Id}  " +
+            $"scoped {sp.GetRequiredService&lt;ScopedTag&gt;().Id}  " +
+            $"transient {sp.GetRequiredService&lt;TransientTag&gt;().Id}");
+}
+// request 1, resolve 1: singleton 3f2a  scoped 91bc  transient 0d4e
+// request 1, resolve 2: singleton 3f2a  scoped 91bc  transient 7a10
+// request 2, resolve 1: singleton 3f2a  scoped c5e7  transient 22f9
+// request 2, resolve 2: singleton 3f2a  scoped c5e7  transient b803
+// (ids are random; the PATTERN of repeats is what matters)
+
+public class SingletonTag { public string Id { get; } = Guid.NewGuid().ToString()[..4]; }
+public class ScopedTag    { public string Id { get; } = Guid.NewGuid().ToString()[..4]; }
+public class TransientTag { public string Id { get; } = Guid.NewGuid().ToString()[..4]; }</code></pre></div>
+<h4>Registering the shop with the container</h4>
+<div class="code"><div class="fname">Program.cs (with container)</div><pre><code class="language-csharp">using Microsoft.Extensions.DependencyInjection;
+using Shop.Core;
+using Shop.Infrastructure;
+
+var services = new ServiceCollection();
+services.AddSingleton&lt;IClock, SystemClock&gt;();
+services.AddScoped&lt;IOrderStore, InMemoryOrderStore&gt;();
+services.AddTransient&lt;ICustomerNotifier, ConsoleSmsNotifier&gt;();
+services.AddTransient&lt;OrderService&gt;();            // the container reads its constructor and supplies the three dependencies
+
+using var provider = services.BuildServiceProvider(validateScopes: true);
+using var scope = provider.CreateScope();
+var orders = scope.ServiceProvider.GetRequiredService&lt;OrderService&gt;();
+orders.Place("Meena", 2_100m);                    // [SMS → Meena] Order #1001 for ₹2,100.00 confirmed
+
+// provider.GetRequiredService&lt;OrderService&gt;();   // ❌ with validateScopes: InvalidOperationException —
+//                                                //    cannot resolve scoped IOrderStore from the root provider</code></pre></div>
+<div class="note tip"><b>Tip.</b> <code>GetRequiredService</code> throws a clear error if something isn't registered; <code>GetService</code> returns null. Outside the composition root you should almost never call either — that's the Service Locator anti-pattern. Let constructors declare what they need.</div>
+
+<h3>Common mistakes</h3><ul><li>Inheriting just because "X is a Y" in English (Square/Rectangle, Ostrich/Bird with Fly()).</li><li>Overriding methods to throw <code>NotSupportedException</code> or <code>NotImplementedException</code>.</li><li>Defining interfaces in the infrastructure project, so the core still depends on infrastructure.</li><li>Calling <code>provider.GetService</code> from business classes (service locator) instead of constructor injection.</li><li>Registering a DbContext-like scoped service inside a singleton (captive dependency).</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Model <code>Bird</code>, <code>Sparrow</code> and <code>Penguin</code> so that no subtype throws from an inherited method. Hint: split <code>IFlyingBird</code> out.</li><li>Split a fat <code>IEmployeeService</code> (CalculateSalary, PrintIdCard, BookTravel, ApproveLeave) into role interfaces and write two clients that each depend on one role.</li><li>Rewire the Week 4 library app: build it once by hand in a composition root, then again with <code>ServiceCollection</code>; print singleton/scoped/transient ids to prove the lifetimes.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why does Square violate LSP if it compiles fine?</summary>LSP is behavioural. Code written against Rectangle assumes width and height change independently; Square breaks that postcondition, so substituting it changes the program's correctness.</details><details><summary>Where should IOrderStore live: in Shop.Core or Shop.Infrastructure?</summary>In Shop.Core, the high-level layer that uses it. Infrastructure references Core and implements the interface, so dependencies point toward the business logic.</details><details><summary>What happens if you resolve a scoped service from the root provider?</summary>With scope validation on it throws InvalidOperationException. Without validation it silently behaves like a singleton for the app's lifetime, a common source of bugs.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Explain the Liskov Substitution Principle.</summary><div>If S is a subtype of T, any code that works with T must work correctly with S without knowing it. Subtypes may not strengthen preconditions, weaken postconditions, break invariants or throw unexpected exceptions.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Interface Segregation Principle?</summary><div>Prefer several small, client-specific interfaces over one large one, so implementers aren't forced to stub irrelevant members and clients aren't coupled to methods they don't use. Example: IPrinter, IScanner, IFax instead of IOfficeDevice.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between DIP and DI?</summary><div>DIP is a design principle: high-level modules and low-level modules both depend on abstractions owned by the high-level side. DI is a technique for supplying dependencies from outside (usually via constructors), which is how you achieve DIP in practice.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain Singleton, Scoped and Transient lifetimes.</summary><div>Singleton: one instance for the application's lifetime. Scoped: one instance per scope, which in ASP.NET Core is one HTTP request. Transient: a new instance every time it's resolved. Choose by state and thread-safety: stateless and thread-safe can be singleton; per-request state like DbContext is scoped.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a captive dependency and how do you detect it?</summary><div>A service with a longer lifetime holding one with a shorter lifetime, e.g. a singleton holding a scoped DbContext, which then lives forever and is shared across threads. Enable ValidateScopes (on by default in the Development environment in ASP.NET Core) and ValidateOnBuild to get exceptions.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a composition root and why have only one?</summary><div>The single entry-point location, usually Program.cs, where the object graph is composed and concrete types are chosen. Keeping it in one place means the rest of the code depends only on abstractions and is easy to reconfigure or test.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Creational patterns: Singleton, Factories and Builder</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Control how objects are created: guarantee a single instance safely, hide which concrete class gets created, and assemble complex objects step by step with a fluent builder.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Design pattern</dt><dd>A named, reusable solution to a recurring design problem; vocabulary as much as code.</dd></div><div class="def"><dt>GoF</dt><dd>"Gang of Four": Gamma, Helm, Johnson and Vlissides, whose 1994 book catalogued 23 patterns in three groups.</dd></div><div class="def"><dt>Creational pattern</dt><dd>A pattern about how objects get created: Singleton, Factory Method, Abstract Factory, Builder, Prototype.</dd></div><div class="def"><dt>Singleton</dt><dd>Ensures a class has exactly one instance and provides global access to it.</dd></div><div class="def"><dt>Lazy&lt;T&gt;</dt><dd>A wrapper that creates its value on first access; thread-safe by default.</dd></div><div class="def"><dt>Static initialisation</dt><dd>The CLR runs a type's static initialisers exactly once, thread-safely.</dd></div><div class="def"><dt>Simple factory</dt><dd>A method or class that chooses and creates a concrete type from input (not a GoF pattern, but very common).</dd></div><div class="def"><dt>Factory Method</dt><dd>A base class defines an abstract creation method; subclasses decide which concrete type to create.</dd></div><div class="def"><dt>Abstract Factory</dt><dd>An interface for creating families of related objects that must be used together.</dd></div><div class="def"><dt>Product</dt><dd>The object a factory creates, usually exposed through an interface.</dd></div><div class="def"><dt>Builder</dt><dd>Separates step-by-step construction of a complex object from its final representation.</dd></div><div class="def"><dt>Fluent interface</dt><dd>Methods that return <code>this</code> so calls can be chained.</dd></div><div class="def"><dt>Prototype</dt><dd>Creating new objects by copying an existing one; in C#, a record's <code>with</code> expression.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Patterns are tools for specific problems; don't start a design by picking patterns.</li><li>In modern .NET, prefer a DI singleton over the hand-written Singleton pattern.</li><li>If you hand-write a singleton, use <code>Lazy&lt;T&gt;</code> or a static readonly field — never an unsynchronised null check.</li><li>A factory is worth it when creation logic is non-trivial or the concrete type depends on runtime input.</li><li>Use a builder when an object has many optional parts, ordering rules or validation that must run before it exists.</li><li>For simple objects, records with <code>required</code>/<code>init</code> properties beat a builder.</li></ul></div>
+
+<h3>1. Singleton — three implementations, one recommendation</h3>
+<div class="code"><div class="fname">Singletons.cs</div><pre><code class="language-csharp">// ❌ 1. Naive: two threads can both see null and create two instances
+public sealed class AppSettingsNaive
+{
+    private static AppSettingsNaive? _instance;
+    private AppSettingsNaive() { }
+    public static AppSettingsNaive Instance =&gt; _instance ??= new AppSettingsNaive();
+}
+
+// ✓ 2. Static readonly field: the CLR runs static initialisers once, thread-safely
+public sealed class CurrencyFormatter
+{
+    public static readonly CurrencyFormatter Instance = new();
+    private CurrencyFormatter() { }
+    public string Format(decimal amount) =&gt; $"₹{amount:N2}";
+}
+
+// ✓ 3. Lazy&lt;T&gt;: thread-safe AND created only on first use
+public sealed class GstRateTable
+{
+    private static readonly Lazy&lt;GstRateTable&gt; _instance = new(() =&gt; new GstRateTable());
+    public static GstRateTable Instance =&gt; _instance.Value;
+
+    private readonly Dictionary&lt;string, decimal&gt; _ratesByHsn;
+
+    private GstRateTable()
+    {
+        Console.WriteLine("Loading GST rate table…");      // expensive work, runs once
+        _ratesByHsn = new(StringComparer.Ordinal)
+        {
+            ["8471"] = 0.18m,   // computers (illustrative rates)
+            ["0401"] = 0.00m,   // fresh milk
+            ["3004"] = 0.05m    // medicines
+        };
+    }
+
+    public decimal RateFor(string hsnCode) =&gt;
+        _ratesByHsn.TryGetValue(hsnCode, out var rate) ? rate : throw new KeyNotFoundException($"Unknown HSN {hsnCode}");
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">Parallel.For(0, 8, _ =&gt; GstRateTable.Instance.RateFor("8471"));
+Console.WriteLine(ReferenceEquals(GstRateTable.Instance, GstRateTable.Instance));
+// Loading GST rate table…      ← printed once, even with 8 threads
+// True</code></pre></div>
+<p><code>new Lazy&lt;T&gt;(factory)</code> uses <code>LazyThreadSafetyMode.ExecutionAndPublication</code> by default: only one thread runs the factory, the rest wait and get the same instance.</p>
+<h4>Why DI singletons are preferred</h4>
+<div class="code"><div class="fname">DiSingleton.cs (fragment)</div><pre><code class="language-csharp">public interface IGstRates { decimal RateFor(string hsnCode); }
+
+public sealed class GstRates : IGstRates           // ordinary class, public constructor, no static Instance
+{
+    public decimal RateFor(string hsnCode) =&gt; hsnCode == "8471" ? 0.18m : 0.05m;
+}
+
+// Composition root — the container guarantees one instance
+services.AddSingleton&lt;IGstRates, GstRates&gt;();
+
+// Consumers declare the dependency, so tests can pass a fake
+public class InvoiceTaxService(IGstRates rates)
+{
+    public decimal TaxFor(string hsn, decimal amount) =&gt; Math.Round(amount * rates.RateFor(hsn), 2);
+}</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>Classic Singleton</th><th>DI singleton</th></tr><tr><td>Who enforces one instance</td><td>The class (private ctor + static)</td><td>The container registration</td></tr><tr><td>Dependencies visible?</td><td>No — hidden <code>X.Instance</code> calls anywhere</td><td>Yes — in the constructor</td></tr><tr><td>Unit testing</td><td>Hard: global state leaks between tests</td><td>Easy: inject a fake</td></tr><tr><td>Swap implementation</td><td>Edit every caller</td><td>Change one registration</td></tr><tr><td>Still useful for</td><td>Stateless helpers with no dependencies; library code with no container</td><td>Almost everything in an app</td></tr></table></div>
+
+<h3>2. Simple factory</h3>
+<div class="code"><div class="fname">NotificationFactory.cs</div><pre><code class="language-csharp">// The customer's saved preference decides the concrete type at runtime
+string preference = "WhatsApp";
+NotificationSenderFactory.Create(preference).Send("+91 98450 12345", "Your order has shipped");
+// [WHATSAPP +91 98450 12345] Your order has shipped
+
+public interface INotificationSender
+{
+    string Channel { get; }
+    void Send(string to, string message);
+}
+
+public class SmsSender : INotificationSender
+{
+    public string Channel =&gt; "sms";
+    public void Send(string to, string message) =&gt; Console.WriteLine($"[SMS {to}] {message}");
+}
+public class EmailSender : INotificationSender
+{
+    public string Channel =&gt; "email";
+    public void Send(string to, string message) =&gt; Console.WriteLine($"[EMAIL {to}] {message}");
+}
+public class WhatsAppSender : INotificationSender
+{
+    public string Channel =&gt; "whatsapp";
+    public void Send(string to, string message) =&gt; Console.WriteLine($"[WHATSAPP {to}] {message}");
+}
+
+public static class NotificationSenderFactory
+{
+    public static INotificationSender Create(string channel) =&gt; channel.Trim().ToLowerInvariant() switch
+    {
+        "sms"      =&gt; new SmsSender(),
+        "email"    =&gt; new EmailSender(),
+        "whatsapp" =&gt; new WhatsAppSender(),
+        _ =&gt; throw new ArgumentException($"Unknown channel '{channel}'", nameof(channel))
+    };
+}</code></pre></div>
+<p>Callers no longer know the concrete classes. The factory still has a switch, but it is the <i>only</i> one. On Thursday you'll see how to remove it with shipping strategies: build a dictionary from all registered implementations (keyed by a <code>Key</code>/<code>Channel</code> property), so even the factory stops changing.</p>
+
+<h3>3. Factory Method — let subclasses choose the product</h3>
+<div class="code"><div class="fname">ReportExporter.cs</div><pre><code class="language-csharp">using System.Globalization;
+using System.Text;
+
+SalesRow[] rows = [new("Pune", 125_000m), new("Indore", 87_500m)];
+ReportExporter exporter = new MarkdownExporter();
+Console.Write(exporter.Export(rows));
+// | City | Revenue |
+// |---|---:|
+// | Pune | ₹125,000 |
+// | Indore | ₹87,500 |
+
+public record SalesRow(string City, decimal Revenue);
+
+public interface IReportFormatter
+{
+    string Header();
+    string Row(SalesRow row);
+}
+
+public abstract class ReportExporter
+{
+    // The algorithm is fixed…
+    public string Export(IReadOnlyList&lt;SalesRow&gt; rows)
+    {
+        IReportFormatter formatter = CreateFormatter();        // …but the product comes from the factory method
+        var sb = new StringBuilder();
+        sb.AppendLine(formatter.Header());
+        foreach (var row in rows) sb.AppendLine(formatter.Row(row));
+        return sb.ToString();
+    }
+
+    protected abstract IReportFormatter CreateFormatter();   // ← Factory Method
+}
+
+public class CsvExporter : ReportExporter
+{
+    protected override IReportFormatter CreateFormatter() =&gt; new CsvFormatter();
+
+    private sealed class CsvFormatter : IReportFormatter
+    {
+        public string Header() =&gt; "City,Revenue";
+        public string Row(SalesRow r) =&gt; $"{r.City},{r.Revenue.ToString(CultureInfo.InvariantCulture)}";
+    }
+}
+
+public class MarkdownExporter : ReportExporter
+{
+    protected override IReportFormatter CreateFormatter() =&gt; new MarkdownFormatter();
+
+    private sealed class MarkdownFormatter : IReportFormatter
+    {
+        public string Header() =&gt; "| City | Revenue |" + Environment.NewLine + "|---|---:|";
+        public string Row(SalesRow r) =&gt; $"| {r.City} | ₹{r.Revenue:N0} |";
+    }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> Factory Method is Template Method (Week 2) where the varying step is "create an object". You'll see it in ASP.NET Core too, e.g. overriding a method that creates a handler or a provider.</div>
+
+<h3>4. Abstract Factory — families that must match</h3>
+<p>A payment provider has a charge API and a refund API. Mixing a sandbox gateway with a live refund service would be a disaster, so one factory creates the whole family.</p>
+<div class="code"><div class="fname">PaymentFactories.cs</div><pre><code class="language-csharp">// Chosen ONCE at startup
+string environment = Environment.GetEnvironmentVariable("APP_ENV") ?? "Development";
+IPaymentProviderFactory factory = environment == "Production"
+    ? new LiveProviderFactory(Environment.GetEnvironmentVariable("PAY_API_KEY") ?? throw new InvalidOperationException("Missing key"))
+    : new SandboxProviderFactory();
+
+var gateway = factory.CreateGateway();
+var refunds = factory.CreateRefunds();
+string paymentId = gateway.Charge("ORD-1042", 1_499m);
+Console.WriteLine(refunds.Refund(paymentId, 1_499m));   // sbx_rfnd_sbx_pay_ORD-1042
+
+public interface IPaymentGateway { string Charge(string orderId, decimal amount); }
+public interface IRefundGateway  { string Refund(string paymentId, decimal amount); }
+
+public interface IPaymentProviderFactory
+{
+    IPaymentGateway CreateGateway();
+    IRefundGateway CreateRefunds();
+}
+
+// Family 1: sandbox — fake ids, no money moves
+public class SandboxProviderFactory : IPaymentProviderFactory
+{
+    public IPaymentGateway CreateGateway() =&gt; new SandboxGateway();
+    public IRefundGateway CreateRefunds() =&gt; new SandboxRefunds();
+
+    private sealed class SandboxGateway : IPaymentGateway
+    {
+        public string Charge(string orderId, decimal amount) =&gt; $"sbx_pay_{orderId}";
+    }
+    private sealed class SandboxRefunds : IRefundGateway
+    {
+        public string Refund(string paymentId, decimal amount) =&gt; $"sbx_rfnd_{paymentId}";
+    }
+}
+
+// Family 2: live — would call the real provider's HTTP API
+public class LiveProviderFactory(string apiKey) : IPaymentProviderFactory
+{
+    public IPaymentGateway CreateGateway() =&gt; new LiveGateway(apiKey);
+    public IRefundGateway CreateRefunds() =&gt; new LiveRefunds(apiKey);
+
+    private sealed class LiveGateway(string key) : IPaymentGateway
+    {
+        public string Charge(string orderId, decimal amount) =&gt; throw new NotImplementedException("HTTP call goes here");
+    }
+    private sealed class LiveRefunds(string key) : IRefundGateway
+    {
+        public string Refund(string paymentId, decimal amount) =&gt; throw new NotImplementedException("HTTP call goes here");
+    }
+}</code></pre></div>
+
+<h3>5. Builder — fluent, validated construction</h3>
+<div class="code"><div class="fname">OrderBuilder.cs</div><pre><code class="language-csharp">using System.Text.RegularExpressions;
+
+public sealed record OrderLine(string Sku, int Quantity, decimal UnitPrice);
+public sealed record ShippingAddress(string Line1, string City, string Pin);
+
+public sealed class Order
+{
+    public required string Customer { get; init; }
+    public required IReadOnlyList&lt;OrderLine&gt; Lines { get; init; }
+    public required ShippingAddress ShipTo { get; init; }
+    public string? CouponCode { get; init; }
+    public bool GiftWrap { get; init; }
+    public decimal Total =&gt; Lines.Sum(l =&gt; l.Quantity * l.UnitPrice);
+}
+
+public sealed class OrderBuilder
+{
+    private static readonly Regex PinFormat = new(@"^[1-9]\d{5}$");   // Indian PIN: 6 digits, no leading 0
+
+    private string? _customer;
+    private readonly List&lt;OrderLine&gt; _lines = [];
+    private ShippingAddress? _address;
+    private string? _coupon;
+    private bool _giftWrap;
+
+    public OrderBuilder For(string customer) { _customer = customer.Trim(); return this; }
+
+    public OrderBuilder Add(string sku, int quantity, decimal unitPrice)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(quantity);
+        ArgumentOutOfRangeException.ThrowIfNegative(unitPrice);
+        _lines.Add(new OrderLine(sku, quantity, unitPrice));
+        return this;
+    }
+
+    public OrderBuilder ShipTo(string line1, string city, string pin) { _address = new(line1, city, pin); return this; }
+    public OrderBuilder WithCoupon(string code) { _coupon = code.Trim().ToUpperInvariant(); return this; }
+    public OrderBuilder AsGift() { _giftWrap = true; return this; }
+
+    public Order Build()
+    {
+        if (string.IsNullOrWhiteSpace(_customer)) throw new InvalidOperationException("Customer is required");
+        if (_lines.Count == 0) throw new InvalidOperationException("Add at least one line");
+        if (_address is null) throw new InvalidOperationException("Shipping address is required");
+        if (!PinFormat.IsMatch(_address.Pin)) throw new InvalidOperationException($"Invalid PIN code {_address.Pin}");
+
+        return new Order
+        {
+            Customer = _customer,
+            Lines = _lines.ToList(),          // copy: later builder calls can't change this order
+            ShipTo = _address,
+            CouponCode = _coupon,
+            GiftWrap = _giftWrap
+        };
+    }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">var order = new OrderBuilder()
+    .For("Kavya Iyer")
+    .Add("SKU-KURTA", 2, 899m)
+    .Add("SKU-DUPATTA", 1, 499m)
+    .ShipTo("12 MG Road", "Bengaluru", "560001")
+    .WithCoupon("diwali10")
+    .AsGift()
+    .Build();
+
+Console.WriteLine($"{order.Customer}: {order.Lines.Count} lines, ₹{order.Total:N2}, coupon {order.CouponCode}, gift {order.GiftWrap}");
+// Kavya Iyer: 2 lines, ₹2,297.00, coupon DIWALI10, gift True
+
+new OrderBuilder().For("Ravi").Add("SKU-PEN", 1, 20m).ShipTo("1 Main St", "Chennai", "060001").Build();
+// ❌ InvalidOperationException: Invalid PIN code 060001</code></pre></div>
+<h4>Builders you already use in .NET</h4>
+<div class="code"><div class="fname">BuildersInDotNet.cs (fragment)</div><pre><code class="language-csharp">var sb = new StringBuilder().Append("INV-").Append(2026).Append('-').Append(42);   // fluent, then ToString()
+
+var uri = new UriBuilder("https", "api.example.in") { Path = "orders", Query = "status=open" }.Uri;
+
+var builder = WebApplication.CreateBuilder(args);       // configure step by step…
+builder.Services.AddSingleton&lt;IGstRates, GstRates&gt;();   // …services
+builder.Configuration.AddJsonFile("tax.json", optional: true);
+var app = builder.Build();                              // …then build the immutable app</code></pre></div>
+
+<h3>6. Choosing a creational pattern</h3>
+<div class="tbl"><table><tr><th>Problem</th><th>Pattern</th><th>.NET-flavoured alternative</th></tr><tr><td>Exactly one shared instance</td><td>Singleton</td><td><code>services.AddSingleton&lt;T&gt;()</code></td></tr><tr><td>Concrete type depends on runtime input</td><td>Simple factory</td><td>Dictionary of registered implementations; keyed services (.NET 8)</td></tr><tr><td>Base class workflow, subclass picks the product</td><td>Factory Method</td><td>Inject the product or a <code>Func&lt;T&gt;</code></td></tr><tr><td>Related objects must come from the same family</td><td>Abstract Factory</td><td>Register the family per environment in DI</td></tr><tr><td>Many optional parts, validation before existence</td><td>Builder</td><td>Records with <code>required</code> for simple cases</td></tr><tr><td>Copy an existing object with small changes</td><td>Prototype</td><td><code>record with { ... }</code></td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Writing a Singleton with an unsynchronised null check.</li><li>Using Singletons as global mutable state (<code>AppState.Instance.CurrentUser</code>) — hidden coupling and test pollution.</li><li>Creating a factory for a type that has one implementation and a trivial constructor.</li><li>A builder whose <code>Build()</code> doesn't validate, so invalid objects still escape.</li><li>Returning the builder's internal list from <code>Build()</code>, so later builder calls mutate a built object.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Write a thread-safe <code>Lazy&lt;T&gt;</code> singleton <code>StateCodeTable</code> (KA → Karnataka…) and prove with <code>Parallel.For</code> that the constructor runs once; then convert it to a DI singleton behind an interface.</li><li>Create an <code>ExporterFactory</code> that returns a <code>ReportExporter</code> for "csv", "md" or "html"; add an <code>HtmlExporter</code> with its own Factory Method.</li><li>Write a fluent <code>HttpRequestBuilder</code> (<code>Get/Post</code>, <code>WithHeader</code>, <code>WithBearerToken</code>, <code>WithJsonBody</code>) whose <code>Build()</code> returns an <code>HttpRequestMessage</code> and rejects a body on GET.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why is the naive <code>??=</code> singleton unsafe?</summary>Two threads can both read null before either assigns, so both construct an instance and one overwrites the other; any state in the first is lost.</details><details><summary>What is the difference between Factory Method and Abstract Factory?</summary>Factory Method is one overridable creation method used inside a base class's algorithm. Abstract Factory is an object with several creation methods producing a family of related products that must be used together.</details><details><summary>When is a builder overkill?</summary>When the object has a few required properties and no cross-field validation. A record or class with <code>required</code>/<code>init</code> properties and an object initialiser is clearer.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Singleton pattern and how do you implement it thread-safely in C#?</summary><div>It ensures one instance with global access. In C# use a private constructor plus either <code>static readonly T Instance = new()</code> or <code>static readonly Lazy&lt;T&gt;</code>, which is thread-safe by default (ExecutionAndPublication). Avoid unsynchronised null checks.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why are DI-registered singletons preferred over the classic Singleton?</summary><div>Dependencies become explicit in constructors, implementations can be swapped or faked in tests, the class has no static global state, and lifetime is a configuration decision in one place instead of baked into the class.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What problem does the Builder pattern solve?</summary><div>Constructing complex objects with many optional parts or ordering and validation rules, without telescoping constructors. A fluent builder collects parts step by step and validates in Build(). StringBuilder and WebApplicationBuilder are .NET examples.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain Factory Method with an example.</summary><div>A base class defines an algorithm that needs an object but declares an abstract method to create it; subclasses override that method to choose the concrete type. ReportExporter.Export uses CreateFormatter(), which CsvExporter and MarkdownExporter override.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you use an Abstract Factory?</summary><div>When several related objects must be consistent with each other, such as a payment provider's charge and refund clients for sandbox vs live, or UI widgets for one theme. Choosing the factory once guarantees you never mix families.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is Singleton an anti-pattern?</summary><div>The hand-written version often is in application code: it hides dependencies, introduces global mutable state and makes testing hard. A single instance per app is still often right; just let the DI container manage that lifetime.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Behavioural and data patterns: Strategy, Observer, Repository and Unit of Work</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Swap algorithms at runtime with Strategy, let objects react to changes with Observer, and keep data access behind repositories coordinated by a unit of work.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Behavioural pattern</dt><dd>A pattern about how objects interact and share responsibilities: Strategy, Observer, Command, State, Chain of Responsibility…</dd></div><div class="def"><dt>Strategy</dt><dd>A family of interchangeable algorithms behind one interface, chosen at runtime by the client.</dd></div><div class="def"><dt>Context</dt><dd>The class that uses a strategy without knowing which concrete one it has.</dd></div><div class="def"><dt>Keyed service</dt><dd>.NET 8 DI feature: register several implementations of one interface under keys and resolve by key.</dd></div><div class="def"><dt>Observer</dt><dd>A subject notifies a list of dependents (observers) when its state changes, without knowing what they do.</dd></div><div class="def"><dt>Subject / publisher</dt><dd>The object that raises notifications (an event source).</dd></div><div class="def"><dt>Subscriber / observer</dt><dd>An object or handler that registers to be notified.</dd></div><div class="def"><dt>IObservable&lt;T&gt; / IObserver&lt;T&gt;</dt><dd>BCL interfaces for push-based streams: Subscribe returns IDisposable; observers get OnNext, OnError, OnCompleted.</dd></div><div class="def"><dt>Rx (Reactive Extensions)</dt><dd>The System.Reactive library: LINQ-style operators over IObservable&lt;T&gt; (Where, Throttle, Buffer…).</dd></div><div class="def"><dt>Repository</dt><dd>Collection-like abstraction over storage for one aggregate/entity type (Week 4).</dd></div><div class="def"><dt>Unit of Work</dt><dd>Tracks changes made during a business transaction and commits them together, all or nothing.</dd></div><div class="def"><dt>Aggregate</dt><dd>A cluster of objects treated as one unit for changes, e.g. an Order with its lines.</dd></div><div class="def"><dt>Persistence ignorance</dt><dd>Domain classes that don't know how or where they're stored.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Strategy replaces <code>if/switch</code> on "which algorithm" with polymorphism chosen at runtime.</li><li>Inject <code>IEnumerable&lt;IStrategy&gt;</code> and index it by a key, or use .NET 8 keyed services.</li><li>C# events are the built-in Observer pattern; use them for in-process notifications.</li><li><code>IObservable&lt;T&gt;</code> fits streams of values over time (prices, sensor readings) and composes with Rx.</li><li>Always unsubscribe (or dispose the subscription) when the observer lives shorter than the subject.</li><li>EF Core's <code>DbContext</code> already is a Unit of Work, and each <code>DbSet&lt;T&gt;</code> is a repository.</li></ul></div>
+
+<h3>1. Strategy — interchangeable shipping algorithms</h3>
+<div class="code"><div class="fname">Checkout/ShippingStrategies.cs</div><pre><code class="language-csharp">namespace Checkout;
+
+public record Parcel(decimal WeightKg, string FromPin, string ToPin, decimal OrderValue);
+
+public interface IShippingStrategy
+{
+    string Key { get; }
+    bool IsAvailable(Parcel p);
+    decimal Cost(Parcel p);
+    int Days(Parcel p);
+}
+
+internal static class Pin
+{
+    public static bool SameRegion(Parcel p)   =&gt; p.FromPin[0] == p.ToPin[0];          // first digit: postal region
+    public static bool SameDistrict(Parcel p) =&gt; p.FromPin[..3] == p.ToPin[..3];      // first 3: sorting district
+}
+
+public class StandardShipping : IShippingStrategy
+{
+    public string Key =&gt; "standard";
+    public bool IsAvailable(Parcel p) =&gt; true;
+    public decimal Cost(Parcel p) =&gt; p.OrderValue &gt;= 499m ? 0m : 40m + 10m * Math.Ceiling(p.WeightKg);
+    public int Days(Parcel p) =&gt; Pin.SameRegion(p) ? 3 : 6;
+}
+
+public class ExpressShipping : IShippingStrategy
+{
+    public string Key =&gt; "express";
+    public bool IsAvailable(Parcel p) =&gt; p.WeightKg &lt;= 20m;
+    public decimal Cost(Parcel p) =&gt; 99m + 20m * Math.Ceiling(p.WeightKg);
+    public int Days(Parcel p) =&gt; Pin.SameRegion(p) ? 1 : 3;
+}
+
+public class SameDayShipping : IShippingStrategy
+{
+    public string Key =&gt; "sameday";
+    public bool IsAvailable(Parcel p) =&gt; Pin.SameDistrict(p) &amp;&amp; p.WeightKg &lt;= 5m;
+    public decimal Cost(Parcel p) =&gt; 149m;
+    public int Days(Parcel p) =&gt; 0;
+}</code></pre></div>
+<h4>The context: selecting a strategy via a dictionary</h4>
+<div class="code"><div class="fname">Checkout/ShippingQuoteService.cs</div><pre><code class="language-csharp">namespace Checkout;
+
+public class ShippingQuoteService
+{
+    private readonly Dictionary&lt;string, IShippingStrategy&gt; _byKey;
+
+    // Every registered strategy arrives here; adding one needs no change to this class
+    public ShippingQuoteService(IEnumerable&lt;IShippingStrategy&gt; strategies) =&gt;
+        _byKey = strategies.ToDictionary(s =&gt; s.Key, StringComparer.OrdinalIgnoreCase);   // throws on duplicate keys — good
+
+    public decimal Quote(string key, Parcel parcel)
+    {
+        if (!_byKey.TryGetValue(key, out var strategy))
+            throw new ArgumentException($"Unknown shipping option '{key}'", nameof(key));
+        if (!strategy.IsAvailable(parcel))
+            throw new InvalidOperationException($"'{key}' isn't available for this parcel");
+        return strategy.Cost(parcel);
+    }
+
+    public IReadOnlyList&lt;(string Key, decimal Cost, int Days)&gt; Options(Parcel parcel) =&gt;
+        _byKey.Values.Where(s =&gt; s.IsAvailable(parcel))
+                     .Select(s =&gt; (s.Key, s.Cost(parcel), s.Days(parcel)))
+                     .OrderBy(o =&gt; o.Item2)
+                     .ToList();
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Checkout;
+
+var quotes = new ShippingQuoteService([new StandardShipping(), new ExpressShipping(), new SameDayShipping()]);
+
+var puneToPune = new Parcel(1.2m, "411001", "411038", 650m);
+foreach (var (key, cost, days) in quotes.Options(puneToPune))
+    Console.WriteLine($"{key,-9} ₹{cost,6:N2}  {days} day(s)");
+// standard  ₹  0.00  3 day(s)
+// express   ₹139.00  1 day(s)
+// sameday   ₹149.00  0 day(s)
+
+var puneToDelhi = puneToPune with { ToPin = "110001" };
+Console.WriteLine(quotes.Options(puneToDelhi).Count);     // 2 — same-day isn't offered</code></pre></div>
+<h4>Registering strategies with DI</h4>
+<div class="code"><div class="fname">Program.cs (DI)</div><pre><code class="language-csharp">using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddSingleton&lt;IShippingStrategy, StandardShipping&gt;();     // several registrations of ONE interface
+services.AddSingleton&lt;IShippingStrategy, ExpressShipping&gt;();
+services.AddSingleton&lt;IShippingStrategy, SameDayShipping&gt;();
+services.AddSingleton&lt;ShippingQuoteService&gt;();                   // receives IEnumerable&lt;IShippingStrategy&gt; with all three
+
+// .NET 8 keyed services: resolve one implementation by key
+services.AddKeyedSingleton&lt;IShippingStrategy, ExpressShipping&gt;("express");
+
+using var provider = services.BuildServiceProvider();
+var express = provider.GetRequiredKeyedService&lt;IShippingStrategy&gt;("express");
+
+// …or inject by key: public class PrimeCheckout([FromKeyedServices("express")] IShippingStrategy shipping) { }</code></pre></div>
+<div class="note tip"><b>Tip.</b> Resolving a single <code>IShippingStrategy</code> when several are registered gives you the <b>last</b> registration. Inject <code>IEnumerable&lt;IShippingStrategy&gt;</code> to get all of them, in registration order.</div>
+
+<h3>2. Observer with C# events</h3>
+<p>You built events in Week 3's bank. In pattern language, the account was the <i>subject</i> and the console handlers were <i>observers</i>.</p>
+<div class="code"><div class="fname">OrderTracker.cs</div><pre><code class="language-csharp">var tracker = new OrderTracker();
+var sms = new SmsNotifier();
+tracker.StatusChanged += sms.OnStatusChanged;
+tracker.StatusChanged += (_, e) =&gt;                         // observer 2: analytics
+{
+    if (e.Status == OrderStatus.Delivered) Console.WriteLine($"[Analytics] delivered #{e.OrderId}");
+};
+
+tracker.Update(1042, OrderStatus.Shipped);      // [SMS] Order #1042 is now Shipped
+tracker.Update(1042, OrderStatus.Shipped);      // (nothing — unchanged)
+tracker.StatusChanged -= sms.OnStatusChanged;   // unsubscribe
+tracker.Update(1042, OrderStatus.Delivered);    // [Analytics] delivered #1042
+
+public enum OrderStatus { Placed, Packed, Shipped, Delivered }
+
+public class OrderStatusChangedEventArgs(int orderId, OrderStatus status) : EventArgs
+{
+    public int OrderId { get; } = orderId;
+    public OrderStatus Status { get; } = status;
+}
+
+public class OrderTracker                                  // subject
+{
+    private readonly Dictionary&lt;int, OrderStatus&gt; _status = new();
+    public event EventHandler&lt;OrderStatusChangedEventArgs&gt;? StatusChanged;
+
+    public void Update(int orderId, OrderStatus status)
+    {
+        if (_status.TryGetValue(orderId, out var old) &amp;&amp; old == status) return;   // no change, no noise
+        _status[orderId] = status;
+        StatusChanged?.Invoke(this, new(orderId, status));
+    }
+}
+
+public class SmsNotifier                                   // observer 1
+{
+    public void OnStatusChanged(object? sender, OrderStatusChangedEventArgs e) =&gt;
+        Console.WriteLine($"[SMS] Order #{e.OrderId} is now {e.Status}");
+}</code></pre></div>
+
+<h3>3. IObservable&lt;T&gt; — streams of values</h3>
+<div class="code"><div class="fname">PriceFeed.cs</div><pre><code class="language-csharp">var feed = new StockPriceFeed();
+using (feed.Subscribe(new PriceAlert("INFRA", 2_500m)))
+{
+    feed.Publish(2_480m);      // (below threshold)
+    feed.Publish(2_515m);      // INFRA at ₹2515 crossed ₹2500
+}
+feed.Publish(2_600m);          // nothing — subscription disposed
+
+public sealed class StockPriceFeed : IObservable&lt;decimal&gt;
+{
+    private readonly List&lt;IObserver&lt;decimal&gt;&gt; _observers = [];
+
+    public IDisposable Subscribe(IObserver&lt;decimal&gt; observer)
+    {
+        _observers.Add(observer);
+        return new Subscription(_observers, observer);       // disposing it unsubscribes
+    }
+
+    public void Publish(decimal price)
+    {
+        foreach (var o in _observers.ToList()) o.OnNext(price);   // copy: observers may unsubscribe while we loop
+    }
+
+    public void Close()
+    {
+        foreach (var o in _observers.ToList()) o.OnCompleted();
+        _observers.Clear();
+    }
+
+    private sealed class Subscription(List&lt;IObserver&lt;decimal&gt;&gt; list, IObserver&lt;decimal&gt; observer) : IDisposable
+    {
+        public void Dispose() =&gt; list.Remove(observer);
+    }
+}
+
+public sealed class PriceAlert(string symbol, decimal threshold) : IObserver&lt;decimal&gt;
+{
+    public void OnNext(decimal price)
+    {
+        if (price &gt;= threshold) Console.WriteLine($"{symbol} at ₹{price} crossed ₹{threshold}");
+    }
+    public void OnError(Exception error) =&gt; Console.WriteLine($"{symbol} feed error: {error.Message}");
+    public void OnCompleted() =&gt; Console.WriteLine($"{symbol} feed closed");
+}</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>C# events</th><th>IObservable&lt;T&gt;</th></tr><tr><td>Shape</td><td>Discrete notifications ("status changed")</td><td>A stream of values over time, with completion and error</td></tr><tr><td>Unsubscribe</td><td><code>-=</code> with the same delegate</td><td>Dispose the IDisposable from Subscribe</td></tr><tr><td>Completion / error signals</td><td>No (you'd add more events)</td><td>OnCompleted, OnError</td></tr><tr><td>Composition</td><td>Manual</td><td>Rx operators: Where, Select, Throttle, Buffer, CombineLatest</td></tr><tr><td>Pass around as a value</td><td>Awkward</td><td>Natural — it's just an object</td></tr><tr><td>Typical use</td><td>UI, domain notifications, in-process alerts</td><td>Market data, telemetry, sensor feeds, SignalR streams</td></tr></table></div>
+<p class="muted">The BCL ships only the two interfaces. For real work install <code>System.Reactive</code>, which provides <code>Subject&lt;T&gt;</code> and LINQ-style operators.</p>
+
+<h3>4. Repository recap</h3>
+<p>In Week 4 you hid the library's storage behind <code>IRepository&lt;T&gt;</code>. The essential ideas:</p>
+<div class="code"><div class="fname">Repositories.cs (fragment)</div><pre><code class="language-csharp">public interface IEntity { int Id { get; } }
+
+public interface IRepository&lt;T&gt; where T : class, IEntity
+{
+    T? GetById(int id);
+    IReadOnlyList&lt;T&gt; GetAll();
+    void Add(T entity);
+    void Remove(T entity);
+}
+
+// A specific repository adds queries that speak the domain's language
+public interface IOrderRepository : IRepository&lt;Order&gt;
+{
+    IReadOnlyList&lt;Order&gt; PendingFor(string customer);
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Benefit</th><th>Cost</th></tr><tr><td>Business code doesn't know about SQL, files or HTTP</td><td>Another layer to maintain</td></tr><tr><td>Easy to fake in unit tests</td><td>Generic repositories over EF Core can hide useful features (Include, projections)</td></tr><tr><td>One place for query logic per aggregate</td><td>Risk of "one repository per table" instead of per aggregate</td></tr></table></div>
+
+<h3>5. Unit of Work — commit several changes together</h3>
+<p>Placing an order writes an <code>Order</code> and a <code>Payment</code>. If the payment save fails after the order is saved, the data is inconsistent. A unit of work collects changes from several repositories and commits them in one step.</p>
+<div class="code"><div class="fname">UnitOfWork.cs</div><pre><code class="language-csharp">public record Order(int Id, string Customer, decimal Amount) : IEntity;
+public record Payment(int Id, int OrderId, decimal Amount) : IEntity;
+
+public interface IUnitOfWork
+{
+    IRepository&lt;Order&gt; Orders { get; }
+    IRepository&lt;Payment&gt; Payments { get; }
+    int SaveChanges();                                   // all or nothing
+}
+
+public sealed class StagedRepository&lt;T&gt; : IRepository&lt;T&gt; where T : class, IEntity
+{
+    private readonly Dictionary&lt;int, T&gt; _committed = new();
+    private readonly List&lt;T&gt; _toAdd = [];
+    private readonly List&lt;T&gt; _toRemove = [];
+
+    public T? GetById(int id) =&gt; _committed.GetValueOrDefault(id) ?? _toAdd.FirstOrDefault(e =&gt; e.Id == id);
+    public IReadOnlyList&lt;T&gt; GetAll() =&gt; _committed.Values.ToList();
+    public void Add(T entity) =&gt; _toAdd.Add(entity);         // staged, not saved
+    public void Remove(T entity) =&gt; _toRemove.Add(entity);
+
+    internal bool HasConflict(out string? error)
+    {
+        foreach (var e in _toAdd)
+            if (_committed.ContainsKey(e.Id)) { error = $"{typeof(T).Name} {e.Id} already exists"; return true; }
+        error = null;
+        return false;
+    }
+
+    internal int Commit()
+    {
+        foreach (var e in _toAdd) _committed.Add(e.Id, e);
+        foreach (var e in _toRemove) _committed.Remove(e.Id);
+        int changes = _toAdd.Count + _toRemove.Count;
+        Discard();
+        return changes;
+    }
+
+    internal void Discard() { _toAdd.Clear(); _toRemove.Clear(); }
+}
+
+public sealed class InMemoryUnitOfWork : IUnitOfWork
+{
+    private readonly StagedRepository&lt;Order&gt; _orders = new();
+    private readonly StagedRepository&lt;Payment&gt; _payments = new();
+    public IRepository&lt;Order&gt; Orders =&gt; _orders;
+    public IRepository&lt;Payment&gt; Payments =&gt; _payments;
+
+    public int SaveChanges()
+    {
+        // Validate EVERYTHING before applying ANYTHING
+        if (_orders.HasConflict(out var error) || _payments.HasConflict(out error))
+        {
+            _orders.Discard();
+            _payments.Discard();
+            throw new InvalidOperationException($"Nothing saved: {error}");
+        }
+        return _orders.Commit() + _payments.Commit();
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">var uow = new InMemoryUnitOfWork();
+var checkout = new CheckoutService(uow);
+checkout.PlaceOrder(1, "Asha", 1_200m);
+Console.WriteLine($"{uow.Orders.GetAll().Count} order, {uow.Payments.GetAll().Count} payment");   // 1 order, 1 payment
+
+try { checkout.PlaceOrder(1, "Ravi", 900m); }                // duplicate order id
+catch (InvalidOperationException ex) { Console.WriteLine(ex.Message); }   // Nothing saved: Order 1 already exists
+Console.WriteLine(uow.Payments.GetAll().Count);               // 1 — Ravi's payment wasn't saved either
+
+public class CheckoutService(IUnitOfWork uow)
+{
+    public void PlaceOrder(int orderId, string customer, decimal amount)
+    {
+        uow.Orders.Add(new Order(orderId, customer, amount));
+        uow.Payments.Add(new Payment(orderId * 10, orderId, amount));
+        uow.SaveChanges();                                   // one commit for both
+    }
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Concept</th><th>EF Core equivalent (Weeks 14–16)</th></tr><tr><td>Repository</td><td><code>DbSet&lt;Order&gt;</code></td></tr><tr><td>Unit of Work</td><td><code>DbContext</code> (change tracker)</td></tr><tr><td>Staged Add/Remove</td><td><code>Add</code>, <code>Remove</code>, tracked property changes</td></tr><tr><td>SaveChanges (all or nothing)</td><td><code>SaveChanges()</code> runs inside a database transaction</td></tr><tr><td>Scoped per request</td><td><code>AddDbContext</code> registers it as Scoped</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Choosing a strategy with a switch inside the context, which defeats the purpose.</li><li>Resolving a single interface when several implementations are registered and silently getting the last one.</li><li>Subscribing to a long-lived event from a short-lived object and never unsubscribing (memory leak, Week 3).</li><li>Iterating the observer list while a callback unsubscribes, causing "Collection was modified".</li><li>Calling SaveChanges inside each repository method, so related changes can't be committed together.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Implement payment strategies <code>UpiPayment</code>, <code>CardPayment</code> (2% fee) and <code>CashOnDelivery</code> (₹40 fee, max ₹10,000) behind <code>IPaymentStrategy</code> and select one by key from a dictionary.</li><li>Add a <code>WarehouseObserver</code> to <code>OrderTracker</code> that only reacts to <code>Packed</code>, and make <code>Update</code> ignore backwards transitions (Delivered → Shipped).</li><li>Extend <code>InMemoryUnitOfWork</code> with a <code>Customers</code> repository and prove that a failure in any of the three repositories saves nothing.</li></ol>
+<h3>Self-check questions</h3><details><summary>How does Strategy differ from a switch on algorithm type?</summary>Each algorithm lives in its own class behind one interface, and the context receives the one it needs. Adding an algorithm adds a class instead of editing the context.</details><details><summary>What does disposing the IDisposable returned by Subscribe do?</summary>It removes that observer from the subject so it stops receiving OnNext calls. It's the IObservable equivalent of <code>-=</code>.</details><details><summary>Why does a unit of work help consistency?</summary>It collects all changes of one business operation and commits them in a single step after validation (in EF Core, inside one transaction), so you never persist half of the operation.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Strategy pattern? Give a real example.</summary><div>A family of interchangeable algorithms behind a common interface, selected at runtime. Shipping options (standard, express, same-day) or payment methods each implement IShippingStrategy/IPaymentStrategy, and checkout uses whichever the customer chooses.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How are C# events related to the Observer pattern?</summary><div>An event is a built-in implementation of Observer: the publisher keeps a multicast delegate list, subscribers add handlers with +=, and the publisher invokes them when something happens, without knowing who they are.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Repository pattern?</summary><div>An abstraction that exposes collection-like operations for an entity or aggregate and hides how data is stored, so business logic doesn't depend on the database and can be tested with in-memory fakes.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you register and resolve multiple implementations of one interface in .NET DI?</summary><div>Register each with the same service type; inject IEnumerable&lt;T&gt; to receive all in registration order (often converted to a dictionary by key). Resolving T alone returns the last registration. In .NET 8+ you can also use keyed services: AddKeyedSingleton and [FromKeyedServices(key)].</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Events vs IObservable&lt;T&gt;: when would you choose each?</summary><div>Events for simple in-process notifications tied to an object. IObservable for streams of values over time that need completion/error signals, can be passed around as objects, and benefit from Rx operators like Throttle or Buffer.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is a separate Unit of Work needed with EF Core?</summary><div>Usually not: DbContext is already a unit of work and DbSet a repository. Teams add an IUnitOfWork wrapper mainly to keep the domain independent of EF Core or to coordinate several contexts, accepting the extra abstraction cost.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Structural patterns: Decorator, Adapter, and patterns inside .NET</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Add behaviour such as caching and logging without touching the original class, wrap third-party SDKs behind your own interfaces, and recognise the patterns the .NET libraries are built from.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Structural pattern</dt><dd>A pattern about composing classes and objects into larger structures: Decorator, Adapter, Facade, Composite, Proxy.</dd></div><div class="def"><dt>Decorator</dt><dd>Wraps an object that implements an interface with another implementation of the same interface, adding behaviour before/after delegating.</dd></div><div class="def"><dt>Wrapper / inner</dt><dd>The decorator holds a reference to the inner (decorated) object and forwards calls to it.</dd></div><div class="def"><dt>Cross-cutting concern</dt><dd>Behaviour needed in many places but unrelated to business logic: logging, caching, retries, metrics, authorisation.</dd></div><div class="def"><dt>Adapter</dt><dd>Converts the interface of an existing class (often third-party) into the interface your code expects.</dd></div><div class="def"><dt>Adaptee</dt><dd>The class being adapted, e.g. a vendor SDK client.</dd></div><div class="def"><dt>Anti-corruption layer</dt><dd>A boundary of adapters that keeps a third-party model from leaking into your domain.</dd></div><div class="def"><dt>Facade</dt><dd>A simple interface over a complex subsystem.</dd></div><div class="def"><dt>Proxy</dt><dd>Same interface as the real object, controlling access to it (lazy loading, remote calls, permissions).</dd></div><div class="def"><dt>Chain of Responsibility</dt><dd>A request passes along a chain of handlers; each can handle it, modify it or pass it on.</dd></div><div class="def"><dt>Iterator</dt><dd>Sequential access to elements without exposing the underlying structure: IEnumerable/IEnumerator.</dd></div><div class="def"><dt>TimeProvider</dt><dd>.NET 8 abstraction over the system clock, useful for testable expiry logic.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Decorator and the wrapped class implement the <b>same</b> interface; callers can't tell the difference.</li><li>Decorators stack: order matters (logging outside caching logs hits and misses; inside it logs only misses).</li><li>Adapter changes the <b>shape</b> of an API; Decorator keeps the shape and adds behaviour.</li><li>Wrap every third-party SDK behind an interface you own; your domain should never reference vendor types.</li><li>Many .NET APIs are patterns: Stream wrappers (Decorator), middleware and HttpClient handlers (Chain of Responsibility), IEnumerable (Iterator).</li><li>In ASP.NET Core you'll register decorators with a factory lambda or the Scrutor library's <code>Decorate</code>.</li></ul></div>
+
+<h3>1. Decorator — caching and timing around a catalogue</h3>
+<div class="code"><div class="fname">Catalog/ProductCatalog.cs</div><pre><code class="language-csharp">using System.Diagnostics;
+
+namespace Catalog;
+
+public record Product(string Sku, string Name, decimal Price);
+
+public interface IProductCatalog
+{
+    Product? GetBySku(string sku);
+}
+
+// The real implementation: slow, like a database round-trip
+public sealed class DbProductCatalog : IProductCatalog
+{
+    private readonly Dictionary&lt;string, Product&gt; _rows = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["SKU-TEA"]  = new("SKU-TEA", "Assam tea 500 g", 245m),
+        ["SKU-GHEE"] = new("SKU-GHEE", "Desi ghee 1 L", 650m)
+    };
+    public int Queries { get; private set; }
+
+    public Product? GetBySku(string sku)
+    {
+        Queries++;
+        Thread.Sleep(200);                                // simulate latency
+        return _rows.GetValueOrDefault(sku);
+    }
+}
+
+// Decorator 1: caching (same interface, wraps an inner catalogue)
+public sealed class CachingProductCatalog(IProductCatalog inner, TimeProvider time, TimeSpan ttl) : IProductCatalog
+{
+    private readonly Dictionary&lt;string, (Product? Product, DateTimeOffset Expires)&gt; _cache = new(StringComparer.OrdinalIgnoreCase);
+
+    public Product? GetBySku(string sku)
+    {
+        var now = time.GetUtcNow();
+        if (_cache.TryGetValue(sku, out var entry) &amp;&amp; entry.Expires &gt; now)
+            return entry.Product;                         // hit: inner never called
+
+        var product = inner.GetBySku(sku);                // miss: delegate
+        _cache[sku] = (product, now + ttl);
+        return product;
+    }
+}
+
+// Decorator 2: timing/logging
+public sealed class TimedProductCatalog(IProductCatalog inner) : IProductCatalog
+{
+    public Product? GetBySku(string sku)
+    {
+        var sw = Stopwatch.StartNew();
+        var product = inner.GetBySku(sku);
+        Console.WriteLine($"[catalog] {sku} → {product?.Name ?? "not found"} in {sw.ElapsedMilliseconds} ms");
+        return product;
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Catalog;
+
+var db = new DbProductCatalog();
+IProductCatalog catalog = new TimedProductCatalog(
+                              new CachingProductCatalog(db, TimeProvider.System, TimeSpan.FromMinutes(5)));
+
+catalog.GetBySku("SKU-TEA");     // [catalog] SKU-TEA → Assam tea 500 g in 201 ms
+catalog.GetBySku("sku-tea");     // [catalog] sku-tea → Assam tea 500 g in 0 ms
+catalog.GetBySku("SKU-RICE");    // [catalog] SKU-RICE → not found in 200 ms
+catalog.GetBySku("SKU-RICE");    // [catalog] SKU-RICE → not found in 0 ms   (misses are cached too)
+Console.WriteLine(db.Queries);   // 2</code></pre></div>
+<h4>Registering decorators with the container</h4>
+<div class="code"><div class="fname">Program.cs (DI, fragment)</div><pre><code class="language-csharp">services.AddSingleton&lt;DbProductCatalog&gt;();
+services.AddSingleton(TimeProvider.System);
+services.AddSingleton&lt;IProductCatalog&gt;(sp =&gt;
+    new TimedProductCatalog(
+        new CachingProductCatalog(sp.GetRequiredService&lt;DbProductCatalog&gt;(),
+                                  sp.GetRequiredService&lt;TimeProvider&gt;(),
+                                  TimeSpan.FromMinutes(5))));
+
+// Consumers just ask for IProductCatalog and get the whole stack</code></pre></div>
+<div class="note warn"><b>Production note.</b> This hand-rolled cache uses a plain <code>Dictionary</code>, which isn't thread-safe and never evicts. In real services use <code>IMemoryCache</code> (Microsoft.Extensions.Caching.Memory) or a distributed cache inside the decorator; the pattern stays the same.</div>
+<div class="tbl"><table><tr><th></th><th>Inheritance (subclass and override)</th><th>Decorator</th></tr><tr><td>Adds behaviour</td><td>At compile time, to one class</td><td>At runtime, to any implementation of the interface</td></tr><tr><td>Combining features</td><td>Class explosion: CachedLoggedDbCatalog…</td><td>Stack wrappers in any order</td></tr><tr><td>Needs a virtual member</td><td>Yes</td><td>No — only an interface</td></tr><tr><td>Works on sealed / third-party classes</td><td>No</td><td>Yes, if they implement (or are adapted to) the interface</td></tr></table></div>
+
+<h3>2. Adapter — wrapping a third-party payment SDK</h3>
+<p>The vendor SDK speaks in paise, string currency codes and numeric status codes. Your checkout wants rupees and a clear result. The adapter translates between the two, and is the only class that references the vendor's namespace.</p>
+<div class="code"><div class="fname">ThirdParty/PayQuickSdk.cs (simulated)</div><pre><code class="language-csharp">// ---- Third-party SDK (you can't change it) ----
+namespace PayQuick.Sdk
+{
+    public sealed record PqResponse(int StatusCode, string? ChargeId, string? ErrorCode);
+
+    public sealed class PayQuickClient(string apiKey)
+    {
+        public PqResponse CreateCharge(long amountInPaise, string currency, string merchantRef) =&gt;
+            amountInPaise &lt;= 0
+                ? new PqResponse(400, null, "AMOUNT_INVALID")
+                : new PqResponse(200, $"pq_{merchantRef}_{amountInPaise}", null);
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Checkout/Payments/PayQuickAdapter.cs</div><pre><code class="language-csharp">using PayQuick.Sdk;
+
+namespace Checkout.Payments;
+
+// ---- Your interface, in your terms ----
+public record PaymentResult(bool Success, string? PaymentId, string? Error);
+
+public interface IPaymentGateway
+{
+    PaymentResult Charge(string orderId, decimal amountInRupees);
+}
+
+// ---- The adapter ----
+public sealed class PayQuickAdapter(PayQuickClient client) : IPaymentGateway
+{
+    public PaymentResult Charge(string orderId, decimal amountInRupees)
+    {
+        long paise = (long)Math.Round(amountInRupees * 100m, MidpointRounding.AwayFromZero);
+        PqResponse r = client.CreateCharge(paise, "INR", orderId);
+
+        return r.StatusCode == 200
+            ? new PaymentResult(true, r.ChargeId, null)
+            : new PaymentResult(false, null, Translate(r.ErrorCode));
+    }
+
+    private static string Translate(string? code) =&gt; code switch
+    {
+        "AMOUNT_INVALID" =&gt; "The amount must be greater than zero.",
+        "CARD_DECLINED"  =&gt; "Your bank declined the payment.",
+        _                =&gt; "Payment failed. Please try again."
+    };
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">using Checkout.Payments;
+using PayQuick.Sdk;      // only the composition root and the adapter see the vendor namespace
+
+IPaymentGateway gateway = new PayQuickAdapter(new PayQuickClient("test_key"));
+
+Console.WriteLine(gateway.Charge("ORD-77", 1_249.50m));
+// PaymentResult { Success = True, PaymentId = pq_ORD-77_124950, Error =  }
+Console.WriteLine(gateway.Charge("ORD-78", 0m).Error);
+// The amount must be greater than zero.</code></pre></div>
+<p>Switching vendors later means writing one new adapter. The same idea applies to SMS: wrap a vendor's <code>SendMessage(route, sender, mobile, text)</code> behind your <code>ISmsSender.Send(mobile, text)</code>.</p>
+<div class="tbl"><table><tr><th>Pattern</th><th>Interface</th><th>Purpose</th></tr><tr><td>Adapter</td><td>Different from the wrapped object</td><td>Make an incompatible API fit yours</td></tr><tr><td>Decorator</td><td>Same as the wrapped object</td><td>Add behaviour (cache, log, retry)</td></tr><tr><td>Proxy</td><td>Same as the wrapped object</td><td>Control access (lazy load, remote, permission check)</td></tr><tr><td>Facade</td><td>New, simpler interface over many objects</td><td>Hide a complex subsystem behind one entry point</td></tr></table></div>
+
+<h3>3. Decorators in System.IO</h3>
+<div class="code"><div class="fname">StreamDecorators.cs</div><pre><code class="language-csharp">using System.IO.Compression;
+using System.Security.Cryptography;
+
+// Each Stream wraps another Stream and adds one capability
+using (FileStream file = File.Create("sales-2026-11.csv.gz"))              // the real data sink
+using (var buffered = new BufferedStream(file, 64 * 1024))                  // Decorator: buffering
+using (var gzip = new GZipStream(buffered, CompressionLevel.Optimal))        // Decorator: compression
+using (var writer = new StreamWriter(gzip))                                  // Adapter: text API over a byte Stream
+{
+    writer.WriteLine("City,Revenue");
+    writer.WriteLine("Pune,125000");
+}
+
+// Add encryption by inserting one more wrapper — nothing else changes
+using var aes = Aes.Create();
+using var output = File.Create("secret.bin");
+using var crypto = new CryptoStream(output, aes.CreateEncryptor(), CryptoStreamMode.Write);
+crypto.Write("PAN: XXXXX1234X"u8);</code></pre></div>
+
+<h3>4. Chain of Responsibility: middleware and HttpClient handlers</h3>
+<div class="code"><div class="fname">Program.cs (web project, fragment)</div><pre><code class="language-csharp">// ASP.NET Core middleware (Week 17) — each component can act, short-circuit or call next
+var app = WebApplication.CreateBuilder(args).Build();
+
+app.Use(async (context, next) =&gt;
+{
+    var sw = Stopwatch.StartNew();
+    await next(context);                                              // pass along the chain
+    Console.WriteLine($"{context.Request.Path} → {context.Response.StatusCode} in {sw.ElapsedMilliseconds} ms");
+});
+
+app.Use(async (context, next) =&gt;
+{
+    if (!context.Request.Headers.ContainsKey("X-Api-Key"))
+    {
+        context.Response.StatusCode = 401;                            // short-circuit: later links never run
+        return;
+    }
+    await next(context);
+});
+
+app.MapGet("/orders", () =&gt; "[]");
+app.Run();</code></pre></div>
+<div class="code"><div class="fname">CorrelationIdHandler.cs</div><pre><code class="language-csharp">// HttpClient handlers: DelegatingHandler wraps an inner handler (Decorator + Chain of Responsibility)
+var client = new HttpClient(new CorrelationIdHandler { InnerHandler = new HttpClientHandler() });
+// In ASP.NET Core: services.AddHttpClient&lt;PaymentsApi&gt;().AddHttpMessageHandler&lt;CorrelationIdHandler&gt;();
+
+public sealed class CorrelationIdHandler : DelegatingHandler
+{
+    protected override Task&lt;HttpResponseMessage&gt; SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        request.Headers.TryAddWithoutValidation("X-Correlation-Id", Guid.NewGuid().ToString());
+        return base.SendAsync(request, ct);                           // forward to the inner handler
+    }
+}</code></pre></div>
+
+<h3>5. Recognising patterns in .NET</h3>
+<div class="tbl"><table><tr><th>You use…</th><th>Pattern(s)</th><th>Why</th></tr><tr><td><code>BufferedStream</code>, <code>GZipStream</code>, <code>CryptoStream</code></td><td>Decorator</td><td>Same Stream interface, extra behaviour, stackable</td></tr><tr><td><code>StreamReader</code> / <code>StreamWriter</code></td><td>Adapter</td><td>Text API over a byte stream</td></tr><tr><td>ASP.NET Core middleware</td><td>Chain of Responsibility</td><td>Each component handles, short-circuits or passes on</td></tr><tr><td><code>DelegatingHandler</code> in HttpClient</td><td>Chain of Responsibility / Decorator</td><td>Retries, auth headers, logging around the real handler</td></tr><tr><td><code>IEnumerable&lt;T&gt;</code> / <code>IEnumerator&lt;T&gt;</code>, <code>yield</code></td><td>Iterator</td><td>Walk any collection without knowing its structure (Week 4)</td></tr><tr><td><code>ILogger&lt;T&gt;</code> + logging providers</td><td>Abstraction (DIP) + Strategy/Composite</td><td>Code logs to one interface; providers (console, file, Application Insights) are plug-ins, and one log call fans out to all</td></tr><tr><td><code>ILoggerFactory</code>, <code>IHttpClientFactory</code></td><td>Factory</td><td>Create configured instances</td></tr><tr><td><code>StringBuilder</code>, <code>WebApplication.CreateBuilder</code></td><td>Builder</td><td>Step-by-step construction, then Build/ToString</td></tr><tr><td>C# events, <code>IObservable&lt;T&gt;</code></td><td>Observer</td><td>Publish/subscribe</td></tr><tr><td><code>IComparer&lt;T&gt;</code> passed to Sort</td><td>Strategy</td><td>Pluggable comparison algorithm (Week 4)</td></tr><tr><td><code>Lazy&lt;T&gt;</code>, EF Core lazy-loading proxies</td><td>Proxy / lazy initialisation</td><td>Defer expensive work until first use</td></tr><tr><td><code>HttpClient</code> itself</td><td>Facade</td><td>Simple API over connection pooling, DNS, TLS, HTTP/2</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> In interviews, "name a pattern you've used" is best answered with a .NET example plus why: "Middleware is a chain of responsibility; I wrote one that adds a correlation id and short-circuits unauthenticated requests."</div>
+
+<h3>Common mistakes</h3><ul><li>Decorators that don't implement the full interface, so some calls bypass the added behaviour.</li><li>Putting business logic in a decorator; keep decorators for cross-cutting concerns.</li><li>Letting vendor types (<code>PqResponse</code>) leak through the adapter into controllers and domain code.</li><li>Converting rupees to paise from a <code>double</code>: <code>(long)(19.99 * 100)</code> is 1998, not 1999. Keep money in <code>decimal</code> and round before casting.</li><li>Forgetting to call <code>next</code> in middleware, accidentally short-circuiting every request.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a <code>RetryingProductCatalog</code> decorator that retries up to 3 times on <code>TimeoutException</code>, and stack it under the cache.</li><li>Create an <code>ISmsSender</code> interface and an adapter for a fake vendor class <code>BulkSmsClient.Push(string route, string senderId, string msisdn, string text)</code> that returns "OK:id" or "ERR:code".</li><li>Wrap a <code>FileStream</code> in a custom <code>CountingStream : Stream</code> decorator that counts bytes written, and put it between a <code>GZipStream</code> and the file to measure compressed size.</li></ol>
+<h3>Self-check questions</h3><details><summary>What makes a class a Decorator rather than just a wrapper?</summary>It implements the same interface as the object it wraps and forwards to it, so it can be substituted transparently and stacked with other decorators.</details><details><summary>Why should a third-party SDK sit behind an adapter?</summary>So your code depends on your own interface: the vendor can be replaced or faked in tests, and its types, units and error codes don't spread through your domain.</details><details><summary>Which pattern does ASP.NET Core middleware implement?</summary>Chain of Responsibility: each middleware receives the request and a <code>next</code> delegate, and decides whether to handle it, modify it, or pass it on.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Decorator pattern? Give a .NET example.</summary><div>A wrapper that implements the same interface as the object it wraps, adding behaviour before or after delegating. Examples: GZipStream wrapping a FileStream, a caching repository wrapping a database repository, DelegatingHandler in HttpClient.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the Adapter pattern?</summary><div>It converts one interface into another that clients expect, e.g. wrapping a vendor payment SDK that works in paise and status codes behind your IPaymentGateway that works in rupees and PaymentResult.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Name three design patterns used inside .NET itself.</summary><div>Iterator (IEnumerable/yield), Decorator (Stream wrappers), Chain of Responsibility (ASP.NET Core middleware), Builder (StringBuilder, WebApplicationBuilder), Observer (events), Factory (IHttpClientFactory).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you add caching to a repository without changing it?</summary><div>Write a CachingRepository that implements the same interface, takes the real repository in its constructor, checks a cache first and delegates on a miss. Register it in DI so consumers receive the decorated instance (factory lambda or Scrutor's Decorate).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Decorator vs Proxy vs Adapter?</summary><div>All wrap another object. Adapter changes the interface to fit a client. Decorator keeps the interface and adds behaviour. Proxy keeps the interface and controls access (lazy creation, remote calls, permission checks).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How is a DelegatingHandler both a Decorator and a link in a chain?</summary><div>It wraps an InnerHandler with the same SendAsync signature (decorator), and handlers are linked so each passes the request to the next until the primary HttpClientHandler sends it (chain of responsibility). Each can modify the request, short-circuit, or inspect the response.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Micro-project 7: Parking lot system — design first, then code</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Practise the classic low-level-design interview: turn requirements into a class diagram, then into a working Core library and console app with levels, sized slots, vehicles, tickets and live availability. Budget: about 4 hours.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Low-level design (LLD)</dt><dd>Designing classes, their responsibilities and relationships for one component; a standard interview round.</dd></div><div class="def"><dt>Noun/verb analysis</dt><dd>Underline nouns in the requirements (candidate classes) and verbs (candidate methods).</dd></div><div class="def"><dt>Composition</dt><dd>A whole that owns its parts' lifetime: a lot owns its levels, a level owns its slots.</dd></div><div class="def"><dt>Slot allocation</dt><dd>The rule that picks which free slot a vehicle gets.</dd></div><div class="def"><dt>Smallest fit</dt><dd>Give a vehicle the smallest free slot it fits, so big slots stay free for big vehicles.</dd></div><div class="def"><dt>Ticket</dt><dd>The record of one stay: vehicle, slot, entry time, exit time and amount.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Design on paper first: requirements → nouns and verbs → class diagram → code.</li><li>Core holds every rule; the console app only reads input and prints results.</li><li>Today's pricing is a deliberate <code>switch</code>; tomorrow you refactor it to Strategy (OCP in action).</li><li>Slots are built by hand in Program.cs today; tomorrow a Factory builds them from configuration.</li><li>Inject <code>IClock</code> (from Week 2) so you can fast-forward time to test fees.</li></ul></div>
+
+<h3>1. Requirements</h3>
+<ul>
+<li>The lot has one or more <b>levels</b>; each level has numbered <b>slots</b> of three sizes: <b>Small</b>, <b>Medium</b>, <b>Large</b>.</li>
+<li>Vehicles are <b>Bike</b>, <b>Car</b> or <b>Truck</b>, identified by an Indian registration number (e.g. <code>KA01AB1234</code>), normalised to upper case without spaces or dashes.</li>
+<li>A bike needs Small, a car Medium, a truck Large. A vehicle may use a <i>larger</i> slot if its own size is full (bike in a car slot), never a smaller one.</li>
+<li><b>Allocation:</b> smallest fitting size first, then lowest level, then lowest slot number.</li>
+<li>Parking issues a <b>ticket</b> (<code>T0001</code>, <code>T0002</code>…) with entry time; the same vehicle can't be parked twice.</li>
+<li>Exiting with a ticket id frees the slot, records the exit time and charges a fee: ₹10/h bike, ₹40/h car, ₹100/h truck, any part hour counts as an hour, minimum one hour.</li>
+<li><b>Availability display:</b> free/total per size per level, plus how many more bikes, cars and trucks fit.</li>
+<li>Console menu: availability, park, exit, open tickets, find a vehicle, advance the clock (for testing).</li>
+</ul>
+
+<h3>2. From nouns and verbs to classes</h3>
+<div class="tbl"><table><tr><th>Noun / verb in the requirements</th><th>Becomes</th></tr><tr><td>lot, level, slot, vehicle, ticket</td><td>Classes: <code>ParkingLotService</code>, <code>Level</code>, <code>ParkingSlot</code>, <code>Vehicle</code>, <code>Ticket</code></td></tr><tr><td>Small / Medium / Large, Bike / Car / Truck</td><td>Enums: <code>SlotSize</code>, <code>VehicleType</code></td></tr><tr><td>park, exit</td><td><code>ParkingLotService.Park(Vehicle)</code>, <code>Exit(ticketId)</code> returning <code>Result&lt;Ticket&gt;</code></td></tr><tr><td>fits</td><td><code>ParkingSlot.CanFit(VehicleType)</code> — the slot knows its own rule (information expert)</td></tr><tr><td>free / total per level</td><td><code>Availability()</code> returning small records</td></tr><tr><td>time, fee</td><td><code>IClock</code> (injected), fee calculation (a switch today, a strategy tomorrow)</td></tr></table></div>
+
+<h3>3. Class diagram</h3>
+<pre class="mermaid">
+classDiagram
+  direction LR
+  class ParkingLotService
+  ParkingLotService : +string Name
+  ParkingLotService : +Park(Vehicle) Result~Ticket~
+  ParkingLotService : +Exit(string ticketId) Result~Ticket~
+  ParkingLotService : +Availability() List~LevelAvailability~
+  ParkingLotService : +FreeSlotsFor(VehicleType) int
+  class Level
+  Level : +int Number
+  Level : +List~ParkingSlot~ Slots
+  class ParkingSlot
+  ParkingSlot : +string Id
+  ParkingSlot : +SlotSize Size
+  ParkingSlot : +Vehicle Occupant
+  ParkingSlot : +CanFit(VehicleType) bool
+  class Vehicle
+  Vehicle : +string Number
+  Vehicle : +VehicleType Type
+  class Ticket
+  Ticket : +string Id
+  Ticket : +DateTime EntryTime
+  Ticket : +DateTime ExitTime
+  Ticket : +decimal Amount
+  class IClock
+  &lt;&lt;interface&gt;&gt; IClock
+  IClock : +DateTime Now
+  ParkingLotService "1" *-- "1..*" Level : levels
+  Level "1" *-- "1..*" ParkingSlot : slots
+  ParkingSlot --&gt; "0..1" Vehicle : occupant
+  ParkingLotService --&gt; "*" Ticket : issues
+  Ticket --&gt; Vehicle
+  ParkingLotService ..&gt; IClock : uses
+</pre>
+<p class="muted">Filled diamonds (<code>*--</code>) are composition: levels and slots don't exist without their lot. Draw this on paper before reading the code below — in an interview the diagram is half the marks.</p>
+
+<h3>4. Scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new sln -n ParkingLot
+dotnet new classlib -n ParkingLot.Core
+dotnet new console  -n ParkingLot.App
+dotnet sln add ParkingLot.Core ParkingLot.App
+dotnet add ParkingLot.App reference ParkingLot.Core
+rm ParkingLot.Core/Class1.cs</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">ParkingLot/
+├─ ParkingLot.sln
+├─ ParkingLot.Core/
+│  ├─ Result.cs
+│  ├─ Clock.cs
+│  ├─ Models/
+│  │  ├─ Enums.cs
+│  │  ├─ Vehicle.cs
+│  │  ├─ ParkingSlot.cs
+│  │  ├─ Level.cs
+│  │  ├─ Ticket.cs
+│  │  └─ Availability.cs
+│  └─ Services/
+│     └─ ParkingLotService.cs
+└─ ParkingLot.App/
+   ├─ ConsoleInput.cs
+   └─ Program.cs</code></pre></div>
+
+<h3>Step 1 — Result and clock</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Result.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core;
+
+public readonly record struct Result&lt;T&gt;(bool Success, T? Value, string? Error)
+{
+    public static Result&lt;T&gt; Ok(T value) =&gt; new(true, value, null);
+    public static Result&lt;T&gt; Fail(string error) =&gt; new(false, default, error);
+}</code></pre></div>
+<div class="code"><div class="fname">ParkingLot.Core/Clock.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core;
+
+public interface IClock
+{
+    DateTime Now { get; }
+}
+
+public sealed class SystemClock : IClock
+{
+    public DateTime Now =&gt; DateTime.Now;
+}
+
+// For the console demo and for tests: time only moves when you say so
+public sealed class ManualClock(DateTime start) : IClock
+{
+    public DateTime Now { get; private set; } = start;
+
+    public void Advance(TimeSpan by)
+    {
+        if (by &lt; TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(by), "Time can't go backwards");
+        Now += by;
+    }
+}</code></pre></div>
+
+<h3>Step 2 — Enums and Vehicle</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Models/Enums.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core.Models;
+
+public enum VehicleType { Bike, Car, Truck }
+
+// Explicit values so sizes can be compared: Small &lt; Medium &lt; Large
+public enum SlotSize { Small = 1, Medium = 2, Large = 3 }</code></pre></div>
+<div class="code"><div class="fname">ParkingLot.Core/Models/Vehicle.cs</div><pre><code class="language-csharp">using System.Text.RegularExpressions;
+
+namespace ParkingLot.Core.Models;
+
+public sealed record Vehicle
+{
+    // Simplified Indian format: state code, RTO number, 0–3 series letters, 4 digits (KA01AB1234, DL3CAF0001)
+    private static readonly Regex Format = new(@"^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{4}$", RegexOptions.Compiled);
+
+    public string Number { get; }
+    public VehicleType Type { get; }
+
+    public Vehicle(string number, VehicleType type)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(number);
+        if (!Enum.IsDefined(type)) throw new ArgumentOutOfRangeException(nameof(type));
+
+        string normalised = Normalise(number);
+        if (!Format.IsMatch(normalised))
+            throw new ArgumentException($"'{number}' is not a valid registration number", nameof(number));
+
+        Number = normalised;
+        Type = type;
+    }
+
+    public static string Normalise(string number) =&gt;
+        number.Replace(" ", "").Replace("-", "").ToUpperInvariant();
+
+    public override string ToString() =&gt; $"{Type} {Number}";
+}</code></pre></div>
+
+<h3>Step 3 — ParkingSlot and Level</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Models/ParkingSlot.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core.Models;
+
+public class ParkingSlot
+{
+    public string Id { get; }
+    public int Level { get; }
+    public SlotSize Size { get; }
+    public Vehicle? Occupant { get; private set; }
+    public bool IsFree =&gt; Occupant is null;
+
+    public ParkingSlot(string id, int level, SlotSize size)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(id);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(level);
+        if (!Enum.IsDefined(size)) throw new ArgumentOutOfRangeException(nameof(size));
+        (Id, Level, Size) = (id, level, size);
+    }
+
+    public static SlotSize RequiredSize(VehicleType type) =&gt; type switch
+    {
+        VehicleType.Bike  =&gt; SlotSize.Small,
+        VehicleType.Car   =&gt; SlotSize.Medium,
+        VehicleType.Truck =&gt; SlotSize.Large,
+        _ =&gt; throw new ArgumentOutOfRangeException(nameof(type))
+    };
+
+    // A vehicle fits its own size or anything larger
+    public bool CanFit(VehicleType type) =&gt; Size &gt;= RequiredSize(type);
+
+    public virtual string Describe() =&gt; Id;          // subclasses (EV slots, tomorrow) add detail
+
+    internal void Assign(Vehicle vehicle)
+    {
+        if (!IsFree) throw new InvalidOperationException($"Slot {Id} is occupied by {Occupant}");
+        if (!CanFit(vehicle.Type)) throw new InvalidOperationException($"A {vehicle.Type} doesn't fit slot {Id}");
+        Occupant = vehicle;
+    }
+
+    internal void Release()
+    {
+        if (IsFree) throw new InvalidOperationException($"Slot {Id} is already free");
+        Occupant = null;
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">ParkingLot.Core/Models/Level.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core.Models;
+
+public class Level
+{
+    public int Number { get; }
+    public IReadOnlyList&lt;ParkingSlot&gt; Slots { get; }
+
+    public Level(int number, IEnumerable&lt;ParkingSlot&gt; slots)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
+        var list = slots.ToList();
+        if (list.Count == 0)
+            throw new ArgumentException($"Level {number} has no slots", nameof(slots));
+        if (list.Any(s =&gt; s.Level != number))
+            throw new ArgumentException($"Every slot on level {number} must belong to level {number}", nameof(slots));
+
+        Number = number;
+        Slots = list.AsReadOnly();
+    }
+}</code></pre></div>
+
+<h3>Step 4 — Ticket and availability records</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Models/Ticket.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core.Models;
+
+public class Ticket
+{
+    public string Id { get; }
+    public Vehicle Vehicle { get; }
+    public string SlotId { get; }
+    public int Level { get; }
+    public DateTime EntryTime { get; }
+    public DateTime? ExitTime { get; private set; }
+    public decimal? Amount { get; private set; }
+    public bool IsOpen =&gt; ExitTime is null;
+
+    internal Ticket(string id, Vehicle vehicle, ParkingSlot slot, DateTime entryTime)
+    {
+        Id = id;
+        Vehicle = vehicle;
+        SlotId = slot.Id;
+        Level = slot.Level;
+        EntryTime = entryTime;
+    }
+
+    public TimeSpan Duration(DateTime now) =&gt; (ExitTime ?? now) - EntryTime;
+
+    internal void Close(DateTime exitTime, decimal amount)
+    {
+        if (!IsOpen) throw new InvalidOperationException($"Ticket {Id} is already closed");
+        if (exitTime &lt; EntryTime) throw new ArgumentException("Exit can't be before entry", nameof(exitTime));
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        ExitTime = exitTime;
+        Amount = amount;
+    }
+
+    public override string ToString() =&gt;
+        $"{Id}  {Vehicle,-16} {SlotId,-7} in {EntryTime:ddd HH:mm}" +
+        (ExitTime is { } exit ? $"  out {exit:ddd HH:mm}  ₹{Amount:N2}" : "");
+}</code></pre></div>
+<div class="code"><div class="fname">ParkingLot.Core/Models/Availability.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core.Models;
+
+public sealed record SlotCount(SlotSize Size, int Free, int Total);
+
+public sealed record LevelAvailability(int Level, IReadOnlyList&lt;SlotCount&gt; Counts);</code></pre></div>
+
+<h3>Step 5 — ParkingLotService</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Services/ParkingLotService.cs</div><pre><code class="language-csharp">using ParkingLot.Core.Models;
+
+namespace ParkingLot.Core.Services;
+
+public class ParkingLotService
+{
+    private readonly IReadOnlyList&lt;Level&gt; _levels;
+    private readonly IClock _clock;
+    private readonly Dictionary&lt;string, ParkingSlot&gt; _slotsById;
+    private readonly Dictionary&lt;string, Ticket&gt; _openById = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary&lt;string, Ticket&gt; _openByVehicle = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List&lt;Ticket&gt; _closed = [];
+    private int _ticketSequence;
+
+    public string Name { get; }
+    public IReadOnlyList&lt;Level&gt; Levels =&gt; _levels;
+    public IReadOnlyCollection&lt;Ticket&gt; OpenTickets =&gt; _openById.Values;
+    public IReadOnlyList&lt;Ticket&gt; ClosedTickets =&gt; _closed;
+
+    public ParkingLotService(string name, IEnumerable&lt;Level&gt; levels, IClock clock)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        Name = name;
+        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _levels = levels.OrderBy(l =&gt; l.Number).ToList();
+        if (_levels.Count == 0) throw new ArgumentException("A lot needs at least one level", nameof(levels));
+        if (_levels.Select(l =&gt; l.Number).Distinct().Count() != _levels.Count)
+            throw new ArgumentException("Level numbers must be unique", nameof(levels));
+
+        // Throws ArgumentException on duplicate slot ids — a configuration bug we want to catch at startup
+        _slotsById = _levels.SelectMany(l =&gt; l.Slots).ToDictionary(s =&gt; s.Id, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public Result&lt;Ticket&gt; Park(Vehicle vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        if (_openByVehicle.TryGetValue(vehicle.Number, out var existing))
+            return Result&lt;Ticket&gt;.Fail($"{vehicle.Number} is already parked at {existing.SlotId} (ticket {existing.Id})");
+
+        ParkingSlot? slot = FindSlot(vehicle.Type);
+        if (slot is null)
+            return Result&lt;Ticket&gt;.Fail($"No free slot for a {vehicle.Type}");
+
+        slot.Assign(vehicle);
+        var ticket = new Ticket($"T{++_ticketSequence:D4}", vehicle, slot, _clock.Now);
+        _openById.Add(ticket.Id, ticket);
+        _openByVehicle.Add(vehicle.Number, ticket);
+        return Result&lt;Ticket&gt;.Ok(ticket);
+    }
+
+    public Result&lt;Ticket&gt; Exit(string ticketId)
+    {
+        if (string.IsNullOrWhiteSpace(ticketId) || !_openById.Remove(ticketId.Trim(), out var ticket))
+            return Result&lt;Ticket&gt;.Fail($"No open ticket '{ticketId}'");
+
+        DateTime now = _clock.Now;
+        ticket.Close(now, CalculateFee(ticket.Vehicle.Type, ticket.EntryTime, now));
+        _openByVehicle.Remove(ticket.Vehicle.Number);
+        _slotsById[ticket.SlotId].Release();
+        _closed.Add(ticket);
+        return Result&lt;Ticket&gt;.Ok(ticket);
+    }
+
+    public Ticket? FindByVehicle(string number) =&gt;
+        _openByVehicle.GetValueOrDefault(Vehicle.Normalise(number));
+
+    public int FreeSlotsFor(VehicleType type) =&gt;
+        _slotsById.Values.Count(s =&gt; s.IsFree &amp;&amp; s.CanFit(type));
+
+    public IReadOnlyList&lt;LevelAvailability&gt; Availability() =&gt;
+        _levels.Select(level =&gt; new LevelAvailability(level.Number,
+                    Enum.GetValues&lt;SlotSize&gt;()
+                        .Select(size =&gt; new SlotCount(size,
+                            Free:  level.Slots.Count(s =&gt; s.Size == size &amp;&amp; s.IsFree),
+                            Total: level.Slots.Count(s =&gt; s.Size == size)))
+                        .ToList()))
+               .ToList();
+
+    // Smallest fitting size first, then lowest level, then slot order (OrderBy is stable)
+    private ParkingSlot? FindSlot(VehicleType type) =&gt;
+        _levels.SelectMany(l =&gt; l.Slots)
+               .Where(s =&gt; s.IsFree &amp;&amp; s.CanFit(type))
+               .OrderBy(s =&gt; s.Size)
+               .ThenBy(s =&gt; s.Level)
+               .FirstOrDefault();
+
+    // ⚠ Saturday version: a switch we'll have to edit for every pricing change. Sunday → Strategy.
+    private static decimal CalculateFee(VehicleType type, DateTime entry, DateTime exit)
+    {
+        decimal ratePerHour = type switch
+        {
+            VehicleType.Bike  =&gt; 10m,
+            VehicleType.Car   =&gt; 40m,
+            VehicleType.Truck =&gt; 100m,
+            _ =&gt; throw new ArgumentOutOfRangeException(nameof(type))
+        };
+        int hours = Math.Max(1, (int)Math.Ceiling((exit - entry).TotalHours));
+        return hours * ratePerHour;
+    }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> <code>Result&lt;Ticket&gt;</code> is for expected outcomes (lot full, already parked, unknown ticket). Exceptions remain for bugs and invalid input, such as an invalid registration number or assigning an occupied slot.</div>
+
+<h3>Step 6 — Console input helper</h3>
+<div class="code"><div class="fname">ParkingLot.App/ConsoleInput.cs</div><pre><code class="language-csharp">namespace ParkingLot.App;
+
+public static class ConsoleInput
+{
+    public static string ReadText(string prompt)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            string line = Console.ReadLine() ?? throw new InvalidOperationException("Input closed");
+            if (!string.IsNullOrWhiteSpace(line)) return line.Trim();
+            Console.WriteLine("  Please enter a value.");
+        }
+    }
+
+    public static int ReadChoice(string prompt, int min, int max)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            string line = Console.ReadLine() ?? throw new InvalidOperationException("Input closed");
+            if (int.TryParse(line, out int n) &amp;&amp; n &gt;= min &amp;&amp; n &lt;= max) return n;
+            Console.WriteLine($"  Enter a number from {min} to {max}.");
+        }
+    }
+}</code></pre></div>
+
+<h3>Step 7 — Program.cs</h3>
+<div class="code"><div class="fname">ParkingLot.App/Program.cs</div><pre><code class="language-csharp">using ParkingLot.App;
+using ParkingLot.Core;
+using ParkingLot.Core.Models;
+using ParkingLot.Core.Services;
+
+var clock = new ManualClock(new DateTime(2026, 11, 13, 9, 0, 0));      // Fri 13 Nov 2026, 09:00
+var lot = new ParkingLotService("City Centre Parking, Pune", BuildLevels(levelCount: 2), clock);
+
+int choice;
+do
+{
+    Console.WriteLine($"\n==== {lot.Name} · {clock.Now:ddd dd MMM HH:mm} ====");
+    Console.WriteLine("1) Availability  2) Park  3) Exit  4) Open tickets  5) Find vehicle  6) Advance clock  0) Quit");
+    choice = ConsoleInput.ReadChoice("Choose: ", 0, 6);
+    try
+    {
+        switch (choice)
+        {
+            case 1: ShowAvailability(); break;
+            case 2: Park(); break;
+            case 3: Leave(); break;
+            case 4:
+                foreach (var t in lot.OpenTickets) Console.WriteLine($"  {t}");
+                if (lot.OpenTickets.Count == 0) Console.WriteLine("  (no vehicles parked)");
+                break;
+            case 5:
+                var found = lot.FindByVehicle(ConsoleInput.ReadText("Registration: "));
+                Console.WriteLine(found is null ? "  Not in the lot" : $"  {found}");
+                break;
+            case 6:
+                clock.Advance(TimeSpan.FromMinutes(ConsoleInput.ReadChoice("Minutes: ", 1, 7 * 24 * 60)));
+                break;
+        }
+    }
+    catch (ArgumentException ex)                       // invalid registration number etc.
+    {
+        Console.WriteLine($"  ✗ {ex.Message}");
+    }
+} while (choice != 0);
+
+void Park()
+{
+    var type = (VehicleType)(ConsoleInput.ReadChoice("1) Bike  2) Car  3) Truck: ", 1, 3) - 1);
+    var vehicle = new Vehicle(ConsoleInput.ReadText("Registration: "), type);
+    var r = lot.Park(vehicle);
+    Console.WriteLine(r.Success
+        ? $"  ✓ Ticket {r.Value!.Id}: {vehicle} → {r.Value.SlotId} (level {r.Value.Level}) at {r.Value.EntryTime:HH:mm}"
+        : $"  ✗ {r.Error}");
+}
+
+void Leave()
+{
+    var r = lot.Exit(ConsoleInput.ReadText("Ticket id: "));
+    if (!r.Success) { Console.WriteLine($"  ✗ {r.Error}"); return; }
+    var t = r.Value!;
+    Console.WriteLine($"  ✓ {t.Vehicle} left at {t.ExitTime:HH:mm} after {Format(t.Duration(clock.Now))} → ₹{t.Amount:N2}");
+}
+
+void ShowAvailability()
+{
+    Console.WriteLine($"  {"Level",-7}{"Small",-9}{"Medium",-9}{"Large",-9}");
+    foreach (var level in lot.Availability())
+    {
+        Console.Write($"  L{level.Level,-6}");
+        foreach (var c in level.Counts) Console.Write($"{c.Free + "/" + c.Total,-9}");
+        Console.WriteLine();
+    }
+    Console.WriteLine("  Free for → " + string.Join("  ",
+        Enum.GetValues&lt;VehicleType&gt;().Select(t =&gt; $"{t}: {lot.FreeSlotsFor(t)}")));
+}
+
+static string Format(TimeSpan d) =&gt; $"{(int)d.TotalHours}h {d.Minutes:D2}m";
+
+// Today: built by hand. Tomorrow: a factory builds this from configuration.
+static List&lt;Level&gt; BuildLevels(int levelCount)
+{
+    var levels = new List&lt;Level&gt;();
+    for (int lvl = 1; lvl &lt;= levelCount; lvl++)
+    {
+        var slots = new List&lt;ParkingSlot&gt;();
+        int n = 1;
+        for (int i = 0; i &lt; 2; i++) slots.Add(new ParkingSlot($"L{lvl}-S{n++:D2}", lvl, SlotSize.Small));
+        for (int i = 0; i &lt; 3; i++) slots.Add(new ParkingSlot($"L{lvl}-M{n++:D2}", lvl, SlotSize.Medium));
+        slots.Add(new ParkingSlot($"L{lvl}-L{n++:D2}", lvl, SlotSize.Large));
+        levels.Add(new Level(lvl, slots));
+    }
+    return levels;
+}</code></pre></div>
+
+<h3>Run it</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet run --project ParkingLot.App</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">==== City Centre Parking, Pune · Fri 13 Nov 09:00 ====
+Choose: 2
+1) Bike  2) Car  3) Truck: 2
+Registration: ka 01 ab 1234
+  ✓ Ticket T0001: Car KA01AB1234 → L1-M03 (level 1) at 09:00
+Choose: 2
+1) Bike  2) Car  3) Truck: 3
+Registration: MH12TR0001
+  ✓ Ticket T0002: Truck MH12TR0001 → L1-L06 (level 1) at 09:00
+Choose: 1
+  Level  Small    Medium   Large
+  L1     2/2      2/3      0/1
+  L2     2/2      3/3      1/1
+  Free for → Bike: 10  Car: 6  Truck: 1
+Choose: 6
+Minutes: 150
+Choose: 3
+Ticket id: t0001
+  ✓ Car KA01AB1234 left at 11:30 after 2h 30m → ₹120.00
+Choose: 2
+1) Bike  2) Car  3) Truck: 2
+Registration: HELLO
+  ✗ 'HELLO' is not a valid registration number (Parameter 'number')</code></pre></div>
+<p class="muted">The menu header is printed before every "Choose:"; it's omitted above for brevity. <code>ArgumentException.Message</code> appends the parameter name — strip it with a custom exception (Week 3) if you want a cleaner message.</p>
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Add a <code>Lost ticket</code> option: find the open ticket by registration number and charge a ₹200 penalty on top.</li>
+<li>Make overflow configurable: a flag that stops bikes from taking car slots.</li>
+<li>Print a level map: <code>[S·][S·][M■][M·][M·][L■]</code> where ■ is occupied.</li>
+<li>Show today's revenue and the busiest hour from <code>ClosedTickets</code> using LINQ (Week 5).</li>
+</ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How do you approach a low-level design question like "design a parking lot"?</summary><div>Clarify requirements and scope (vehicle types, slot sizes, pricing, multiple levels, payment?), list nouns and verbs, draw a class diagram with responsibilities and relationships, call out extension points (pricing, allocation), then code the core flows: park, exit, availability.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why does ParkingSlot own CanFit instead of the service?</summary><div>Information expert: the slot has the data (its size) needed to decide, so the rule lives with the data. The service only orchestrates; changing the fit rule touches one class.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why keep two dictionaries of open tickets (by id and by vehicle)?</summary><div>They give O(1) lookup for both access paths: exiting by ticket id and checking or finding a vehicle by registration number. The cost is keeping them consistent, so they're only modified together inside Park and Exit.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you make Park safe if two entry gates call it at the same time?</summary><div>Today's in-memory service isn't thread-safe: two gates could get the same free slot. Wrap the find-and-assign step in a lock (or use one lock per lot), or in a database use a transaction with a conditional update (UPDATE slot SET occupied = 1 WHERE id = @id AND occupied = 0) and retry if no row changed.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Parking lot: Strategy pricing, slot Factory, Observer alerts — then README and revision</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Refactor yesterday's parking lot with the week's patterns: pluggable pricing strategies, slots created by a factory from configuration, and observers for "lot full" alerts. Then test it, document it and revise.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Pricing strategy</dt><dd>An interchangeable fee algorithm: hourly, flat-rate per day, or a peak/weekend surcharge.</dd></div><div class="def"><dt>Grace period</dt><dd>A short free window (e.g. 10 minutes) for drivers who enter and leave immediately.</dd></div><div class="def"><dt>Peak pricing</dt><dd>A multiplier applied when entry falls in busy hours or on weekends.</dd></div><div class="def"><dt>Layout configuration</dt><dd>Data describing how many slots of each size each level has, instead of hard-coded loops.</dd></div><div class="def"><dt>Capacity event</dt><dd>A notification raised when free slots for a vehicle type drop to zero or become available again.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Pricing moves out of the service into <code>IPricingStrategy</code> implementations; the service never changes for new tariffs.</li><li><code>PeakPricing</code> wraps another strategy — Strategy and Decorator together.</li><li><code>ISlotFactory</code> + <code>LotFactory</code> build levels from <code>LevelConfig</code> records; an <code>EvSlotFactory</code> adds EV slots without touching the others.</li><li><code>ParkingLotService</code> raises <code>LotFull</code> and <code>SpaceAvailable</code>; the display board and manager alert subscribe.</li><li>Program.cs becomes a composition root that picks concrete strategies, factories and observers.</li></ul></div>
+
+<h3>1. Pricing via Strategy</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Pricing/PricingStrategies.cs</div><pre><code class="language-csharp">using ParkingLot.Core.Models;
+
+namespace ParkingLot.Core.Pricing;
+
+public interface IPricingStrategy
+{
+    string Name { get; }
+    decimal Calculate(VehicleType type, DateTime entry, DateTime exit);
+}
+
+internal static class Stay
+{
+    public static TimeSpan Length(DateTime entry, DateTime exit) =&gt;
+        exit &gt;= entry ? exit - entry : throw new ArgumentException("Exit can't be before entry", nameof(exit));
+
+    public static void RequireAllTypes(IReadOnlyDictionary&lt;VehicleType, decimal&gt; rates, string paramName)
+    {
+        foreach (var type in Enum.GetValues&lt;VehicleType&gt;())
+        {
+            if (!rates.TryGetValue(type, out var rate))
+                throw new ArgumentException($"No rate for {type}", paramName);
+            if (rate &lt; 0) throw new ArgumentOutOfRangeException(paramName, $"Rate for {type} is negative");
+        }
+    }
+}
+
+// Per vehicle type, per started hour, with a free grace period
+public sealed class HourlyPricing : IPricingStrategy
+{
+    private readonly IReadOnlyDictionary&lt;VehicleType, decimal&gt; _ratePerHour;
+    private readonly TimeSpan _grace;
+
+    public HourlyPricing(IReadOnlyDictionary&lt;VehicleType, decimal&gt; ratePerHour, TimeSpan? grace = null)
+    {
+        Stay.RequireAllTypes(ratePerHour, nameof(ratePerHour));
+        _ratePerHour = ratePerHour;
+        _grace = grace ?? TimeSpan.FromMinutes(10);
+    }
+
+    public string Name =&gt; "Hourly";
+
+    public decimal Calculate(VehicleType type, DateTime entry, DateTime exit)
+    {
+        TimeSpan length = Stay.Length(entry, exit);
+        if (length &lt;= _grace) return 0m;
+        int hours = (int)Math.Ceiling(length.TotalHours);
+        return hours * _ratePerHour[type];
+    }
+}
+
+// One price per started 24 hours, per vehicle type
+public sealed class FlatRatePricing : IPricingStrategy
+{
+    private readonly IReadOnlyDictionary&lt;VehicleType, decimal&gt; _ratePerDay;
+
+    public FlatRatePricing(IReadOnlyDictionary&lt;VehicleType, decimal&gt; ratePerDay)
+    {
+        Stay.RequireAllTypes(ratePerDay, nameof(ratePerDay));
+        _ratePerDay = ratePerDay;
+    }
+
+    public string Name =&gt; "Flat per day";
+
+    public decimal Calculate(VehicleType type, DateTime entry, DateTime exit)
+    {
+        int days = Math.Max(1, (int)Math.Ceiling(Stay.Length(entry, exit).TotalDays));
+        return days * _ratePerDay[type];
+    }
+}
+
+// Wraps ANY strategy: weekends and weekday evenings (17:00–21:00) cost more, judged by entry time
+public sealed class PeakPricing(IPricingStrategy inner, decimal multiplier = 1.5m) : IPricingStrategy
+{
+    private readonly decimal _multiplier = multiplier &gt;= 1m
+        ? multiplier
+        : throw new ArgumentOutOfRangeException(nameof(multiplier), "Peak multiplier must be at least 1");
+
+    public string Name =&gt; $"{inner.Name} + peak ×{_multiplier}";
+
+    public static bool IsPeak(DateTime t) =&gt;
+        t.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday || (t.Hour &gt;= 17 &amp;&amp; t.Hour &lt; 21);
+
+    public decimal Calculate(VehicleType type, DateTime entry, DateTime exit)
+    {
+        decimal basePrice = inner.Calculate(type, entry, exit);
+        return IsPeak(entry) ? Math.Round(basePrice * _multiplier, 0, MidpointRounding.AwayFromZero) : basePrice;
+    }
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Car stay</th><th>Hourly</th><th>Peak(Hourly)</th><th>Flat per day</th></tr><tr><td>Fri 09:00 → 09:08</td><td>₹0 (grace)</td><td>₹0</td><td>₹200</td></tr><tr><td>Fri 09:00 → 09:11</td><td>₹40</td><td>₹40</td><td>₹200</td></tr><tr><td>Fri 09:00 → 11:30</td><td>₹120</td><td>₹120</td><td>₹200</td></tr><tr><td>Fri 18:00 → 20:00</td><td>₹80</td><td>₹120 (evening peak)</td><td>₹200</td></tr><tr><td>Sat 10:00 → 13:00</td><td>₹120</td><td>₹180 (weekend)</td><td>₹200</td></tr><tr><td>Fri 09:00 → Sat 11:00 (26 h)</td><td>₹1,040</td><td>₹1,040 (entry not peak)</td><td>₹400</td></tr></table></div>
+
+<h3>2. Slots via Factory</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Models/EvChargingSlot.cs</div><pre><code class="language-csharp">namespace ParkingLot.Core.Models;
+
+// An EV bay is a Medium slot with a charger; only the description differs for now
+public sealed class EvChargingSlot(string id, int level) : ParkingSlot(id, level, SlotSize.Medium)
+{
+    public override string Describe() =&gt; $"{Id} (EV charger)";
+}</code></pre></div>
+<div class="code"><div class="fname">ParkingLot.Core/Setup/SlotFactories.cs</div><pre><code class="language-csharp">using ParkingLot.Core.Models;
+
+namespace ParkingLot.Core.Setup;
+
+public sealed record LevelConfig(int Level, int Small, int Medium, int Large);
+
+public interface ISlotFactory
+{
+    ParkingSlot Create(int level, SlotSize size, int position);
+}
+
+// The one place that knows the id format: L1-S01, L1-M03, L2-L06
+public sealed class StandardSlotFactory : ISlotFactory
+{
+    public static string IdFor(int level, SlotSize size, int position)
+    {
+        char code = size switch
+        {
+            SlotSize.Small =&gt; 'S',
+            SlotSize.Medium =&gt; 'M',
+            SlotSize.Large =&gt; 'L',
+            _ =&gt; throw new ArgumentOutOfRangeException(nameof(size))
+        };
+        return $"L{level}-{code}{position:D2}";
+    }
+
+    public ParkingSlot Create(int level, SlotSize size, int position) =&gt;
+        new(IdFor(level, size, position), level, size);
+}
+
+// Makes every Medium slot on one level an EV bay; delegates everything else
+public sealed class EvSlotFactory(ISlotFactory inner, int evLevel) : ISlotFactory
+{
+    public ParkingSlot Create(int level, SlotSize size, int position) =&gt;
+        level == evLevel &amp;&amp; size == SlotSize.Medium
+            ? new EvChargingSlot(StandardSlotFactory.IdFor(level, size, position), level)
+            : inner.Create(level, size, position);
+}
+
+public static class LotFactory
+{
+    public static IReadOnlyList&lt;Level&gt; CreateLevels(IEnumerable&lt;LevelConfig&gt; layout, ISlotFactory slotFactory)
+    {
+        var levels = new List&lt;Level&gt;();
+        var seen = new HashSet&lt;int&gt;();
+
+        foreach (var cfg in layout)
+        {
+            if (!seen.Add(cfg.Level))
+                throw new ArgumentException($"Level {cfg.Level} is configured twice", nameof(layout));
+            if (cfg.Small &lt; 0 || cfg.Medium &lt; 0 || cfg.Large &lt; 0)
+                throw new ArgumentException($"Level {cfg.Level} has a negative slot count", nameof(layout));
+
+            var slots = new List&lt;ParkingSlot&gt;();
+            int position = 1;
+            foreach (var (size, count) in new[] { (SlotSize.Small, cfg.Small), (SlotSize.Medium, cfg.Medium), (SlotSize.Large, cfg.Large) })
+                for (int i = 0; i &lt; count; i++)
+                    slots.Add(slotFactory.Create(cfg.Level, size, position++));
+
+            levels.Add(new Level(cfg.Level, slots));       // Level rejects a level with zero slots
+        }
+        return levels;
+    }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> The layout could now come from <code>appsettings.json</code> (Week 18 configuration) instead of code: the factory doesn't care where <code>LevelConfig</code> records come from.</div>
+
+<h3>3. Observer for "lot full" alerts — the updated service</h3>
+<div class="code"><div class="fname">ParkingLot.Core/Services/ParkingLotService.cs (replaces Saturday's)</div><pre><code class="language-csharp">using ParkingLot.Core.Models;
+using ParkingLot.Core.Pricing;
+
+namespace ParkingLot.Core.Services;
+
+public sealed class CapacityEventArgs(VehicleType vehicleType, int freeSlots, DateTime at) : EventArgs
+{
+    public VehicleType VehicleType { get; } = vehicleType;
+    public int FreeSlots { get; } = freeSlots;
+    public DateTime At { get; } = at;
+}
+
+public class ParkingLotService
+{
+    private readonly IReadOnlyList&lt;Level&gt; _levels;
+    private readonly IClock _clock;
+    private readonly Dictionary&lt;string, ParkingSlot&gt; _slotsById;
+    private readonly Dictionary&lt;string, Ticket&gt; _openById = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary&lt;string, Ticket&gt; _openByVehicle = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List&lt;Ticket&gt; _closed = [];
+    private IPricingStrategy _pricing;
+    private int _ticketSequence;
+
+    public event EventHandler&lt;CapacityEventArgs&gt;? LotFull;          // no slot left for this vehicle type
+    public event EventHandler&lt;CapacityEventArgs&gt;? SpaceAvailable;   // first slot freed after being full
+
+    public string Name { get; }
+    public string PricingName =&gt; _pricing.Name;
+    public IReadOnlyList&lt;Level&gt; Levels =&gt; _levels;
+    public IReadOnlyCollection&lt;Ticket&gt; OpenTickets =&gt; _openById.Values;
+    public IReadOnlyList&lt;Ticket&gt; ClosedTickets =&gt; _closed;
+
+    public ParkingLotService(string name, IEnumerable&lt;Level&gt; levels, IPricingStrategy pricing, IClock clock)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        Name = name;
+        _pricing = pricing ?? throw new ArgumentNullException(nameof(pricing));
+        _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _levels = levels.OrderBy(l =&gt; l.Number).ToList();
+        if (_levels.Count == 0) throw new ArgumentException("A lot needs at least one level", nameof(levels));
+        if (_levels.Select(l =&gt; l.Number).Distinct().Count() != _levels.Count)
+            throw new ArgumentException("Level numbers must be unique", nameof(levels));
+        _slotsById = _levels.SelectMany(l =&gt; l.Slots).ToDictionary(s =&gt; s.Id, StringComparer.OrdinalIgnoreCase);
+    }
+
+    public void ChangePricing(IPricingStrategy pricing) =&gt;
+        _pricing = pricing ?? throw new ArgumentNullException(nameof(pricing));
+
+    public Result&lt;Ticket&gt; Park(Vehicle vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        if (_openByVehicle.TryGetValue(vehicle.Number, out var existing))
+            return Result&lt;Ticket&gt;.Fail($"{vehicle.Number} is already parked at {existing.SlotId} (ticket {existing.Id})");
+
+        ParkingSlot? slot = FindSlot(vehicle.Type);
+        if (slot is null)
+            return Result&lt;Ticket&gt;.Fail($"No free slot for a {vehicle.Type}");
+
+        var before = FreeByType();
+        slot.Assign(vehicle);
+        var ticket = new Ticket($"T{++_ticketSequence:D4}", vehicle, slot, _clock.Now);
+        _openById.Add(ticket.Id, ticket);
+        _openByVehicle.Add(vehicle.Number, ticket);
+        RaiseCapacityChanges(before);
+        return Result&lt;Ticket&gt;.Ok(ticket);
+    }
+
+    public Result&lt;Ticket&gt; Exit(string ticketId)
+    {
+        if (string.IsNullOrWhiteSpace(ticketId) || !_openById.Remove(ticketId.Trim(), out var ticket))
+            return Result&lt;Ticket&gt;.Fail($"No open ticket '{ticketId}'");
+
+        var before = FreeByType();
+        DateTime now = _clock.Now;
+        ticket.Close(now, _pricing.Calculate(ticket.Vehicle.Type, ticket.EntryTime, now));   // ← Strategy
+        _openByVehicle.Remove(ticket.Vehicle.Number);
+        _slotsById[ticket.SlotId].Release();
+        _closed.Add(ticket);
+        RaiseCapacityChanges(before);
+        return Result&lt;Ticket&gt;.Ok(ticket);
+    }
+
+    public string DescribeSlot(string slotId) =&gt; _slotsById[slotId].Describe();
+
+    public Ticket? FindByVehicle(string number) =&gt;
+        _openByVehicle.GetValueOrDefault(Vehicle.Normalise(number));
+
+    public int FreeSlotsFor(VehicleType type) =&gt;
+        _slotsById.Values.Count(s =&gt; s.IsFree &amp;&amp; s.CanFit(type));
+
+    public IReadOnlyList&lt;LevelAvailability&gt; Availability() =&gt;
+        _levels.Select(level =&gt; new LevelAvailability(level.Number,
+                    Enum.GetValues&lt;SlotSize&gt;()
+                        .Select(size =&gt; new SlotCount(size,
+                            Free:  level.Slots.Count(s =&gt; s.Size == size &amp;&amp; s.IsFree),
+                            Total: level.Slots.Count(s =&gt; s.Size == size)))
+                        .ToList()))
+               .ToList();
+
+    protected virtual void OnLotFull(CapacityEventArgs e) =&gt; LotFull?.Invoke(this, e);
+    protected virtual void OnSpaceAvailable(CapacityEventArgs e) =&gt; SpaceAvailable?.Invoke(this, e);
+
+    private Dictionary&lt;VehicleType, int&gt; FreeByType() =&gt;
+        Enum.GetValues&lt;VehicleType&gt;().ToDictionary(t =&gt; t, FreeSlotsFor);
+
+    // One park can fill several types at once (a car taking the last Large slot also fills trucks)
+    private void RaiseCapacityChanges(Dictionary&lt;VehicleType, int&gt; before)
+    {
+        foreach (var type in Enum.GetValues&lt;VehicleType&gt;())
+        {
+            int now = FreeSlotsFor(type);
+            if (before[type] &gt; 0 &amp;&amp; now == 0)
+                OnLotFull(new CapacityEventArgs(type, 0, _clock.Now));
+            else if (before[type] == 0 &amp;&amp; now &gt; 0)
+                OnSpaceAvailable(new CapacityEventArgs(type, now, _clock.Now));
+        }
+    }
+
+    private ParkingSlot? FindSlot(VehicleType type) =&gt;
+        _levels.SelectMany(l =&gt; l.Slots)
+               .Where(s =&gt; s.IsFree &amp;&amp; s.CanFit(type))
+               .OrderBy(s =&gt; s.Size)
+               .ThenBy(s =&gt; s.Level)
+               .FirstOrDefault();
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Saturday</th><th>Sunday</th></tr><tr><td><code>CalculateFee</code> switch inside the service</td><td><code>IPricingStrategy</code> injected; swap at runtime with <code>ChangePricing</code></td></tr><tr><td>Slots built with loops in Program.cs</td><td><code>LotFactory.CreateLevels(layout, slotFactory)</code></td></tr><tr><td>No notifications</td><td><code>LotFull</code> / <code>SpaceAvailable</code> events</td></tr><tr><td>Program.cs does everything</td><td>Program.cs is a composition root</td></tr></table></div>
+
+<h3>4. Observers in the app</h3>
+<div class="code"><div class="fname">ParkingLot.App/EntranceDisplay.cs</div><pre><code class="language-csharp">using ParkingLot.Core.Services;
+
+namespace ParkingLot.App;
+
+// Observer: the LED board at the entrance
+public sealed class EntranceDisplay
+{
+    public void Attach(ParkingLotService lot)
+    {
+        lot.LotFull += OnLotFull;
+        lot.SpaceAvailable += OnSpaceAvailable;
+    }
+
+    public void Detach(ParkingLotService lot)
+    {
+        lot.LotFull -= OnLotFull;
+        lot.SpaceAvailable -= OnSpaceAvailable;
+    }
+
+    private void OnLotFull(object? sender, CapacityEventArgs e)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"  ▣ DISPLAY: {e.VehicleType.ToString().ToUpperInvariant()} PARKING FULL");
+        Console.ResetColor();
+    }
+
+    private void OnSpaceAvailable(object? sender, CapacityEventArgs e) =&gt;
+        Console.WriteLine($"  ▣ DISPLAY: {e.VehicleType} parking open again ({e.FreeSlots} free)");
+}</code></pre></div>
+
+<h3>5. Program.cs as a composition root</h3>
+<div class="code"><div class="fname">ParkingLot.App/Program.cs (replaces Saturday's)</div><pre><code class="language-csharp">using ParkingLot.App;
+using ParkingLot.Core;
+using ParkingLot.Core.Models;
+using ParkingLot.Core.Pricing;
+using ParkingLot.Core.Services;
+using ParkingLot.Core.Setup;
+
+// ---------- Composition root: every concrete choice lives here ----------
+var clock = new ManualClock(new DateTime(2026, 11, 13, 9, 0, 0));       // Fri 13 Nov 2026, 09:00
+
+LevelConfig[] layout =
+[
+    new(Level: 1, Small: 2, Medium: 3, Large: 1),
+    new(Level: 2, Small: 2, Medium: 3, Large: 1)
+];
+var levels = LotFactory.CreateLevels(layout, new EvSlotFactory(new StandardSlotFactory(), evLevel: 1));
+
+var hourlyRates = new Dictionary&lt;VehicleType, decimal&gt;
+    { [VehicleType.Bike] = 10m, [VehicleType.Car] = 40m, [VehicleType.Truck] = 100m };
+var dailyRates = new Dictionary&lt;VehicleType, decimal&gt;
+    { [VehicleType.Bike] = 50m, [VehicleType.Car] = 200m, [VehicleType.Truck] = 500m };
+
+var pricingOptions = new Dictionary&lt;string, IPricingStrategy&gt;(StringComparer.OrdinalIgnoreCase)
+{
+    ["hourly"] = new HourlyPricing(hourlyRates),
+    ["peak"]   = new PeakPricing(new HourlyPricing(hourlyRates)),
+    ["flat"]   = new FlatRatePricing(dailyRates)
+};
+
+var lot = new ParkingLotService("City Centre Parking, Pune", levels, pricingOptions["peak"], clock);
+
+new EntranceDisplay().Attach(lot);
+lot.LotFull += (_, e) =&gt; Console.WriteLine($"  [SMS → manager] {e.VehicleType} slots full at {e.At:HH:mm}");
+// ------------------------------------------------------------------------
+
+int choice;
+do
+{
+    Console.WriteLine($"\n==== {lot.Name} · {clock.Now:ddd dd MMM HH:mm} · {lot.PricingName} ====");
+    Console.WriteLine("1) Availability  2) Park  3) Exit  4) Open tickets  5) Find vehicle  6) Advance clock  7) Pricing  0) Quit");
+    choice = ConsoleInput.ReadChoice("Choose: ", 0, 7);
+    try
+    {
+        switch (choice)
+        {
+            case 1: ShowAvailability(); break;
+            case 2: Park(); break;
+            case 3: Leave(); break;
+            case 4:
+                foreach (var t in lot.OpenTickets) Console.WriteLine($"  {t}");
+                if (lot.OpenTickets.Count == 0) Console.WriteLine("  (no vehicles parked)");
+                break;
+            case 5:
+                var found = lot.FindByVehicle(ConsoleInput.ReadText("Registration: "));
+                Console.WriteLine(found is null ? "  Not in the lot" : $"  {found}");
+                break;
+            case 6:
+                clock.Advance(TimeSpan.FromMinutes(ConsoleInput.ReadChoice("Minutes: ", 1, 7 * 24 * 60)));
+                break;
+            case 7: ChoosePricing(); break;
+        }
+    }
+    catch (ArgumentException ex)
+    {
+        Console.WriteLine($"  ✗ {ex.Message}");
+    }
+} while (choice != 0);
+
+void Park()
+{
+    var type = (VehicleType)(ConsoleInput.ReadChoice("1) Bike  2) Car  3) Truck: ", 1, 3) - 1);
+    var vehicle = new Vehicle(ConsoleInput.ReadText("Registration: "), type);
+    var r = lot.Park(vehicle);
+    Console.WriteLine(r.Success
+        ? $"  ✓ Ticket {r.Value!.Id}: {vehicle} → {lot.DescribeSlot(r.Value.SlotId)} at {r.Value.EntryTime:HH:mm}"
+        : $"  ✗ {r.Error}");
+}
+
+void Leave()
+{
+    var r = lot.Exit(ConsoleInput.ReadText("Ticket id: "));
+    if (!r.Success) { Console.WriteLine($"  ✗ {r.Error}"); return; }
+    var t = r.Value!;
+    Console.WriteLine($"  ✓ {t.Vehicle} left at {t.ExitTime:HH:mm} after {Format(t.Duration(clock.Now))} → ₹{t.Amount:N2} ({lot.PricingName})");
+}
+
+void ChoosePricing()
+{
+    string key = ConsoleInput.ReadText($"Pricing ({string.Join(", ", pricingOptions.Keys)}): ");
+    if (pricingOptions.TryGetValue(key, out var strategy))
+    {
+        lot.ChangePricing(strategy);
+        Console.WriteLine($"  ✓ Now using {strategy.Name}");
+    }
+    else Console.WriteLine($"  ✗ Unknown pricing '{key}'");
+}
+
+void ShowAvailability()
+{
+    Console.WriteLine($"  {"Level",-7}{"Small",-9}{"Medium",-9}{"Large",-9}");
+    foreach (var level in lot.Availability())
+    {
+        Console.Write($"  L{level.Level,-6}");
+        foreach (var c in level.Counts) Console.Write($"{c.Free + "/" + c.Total,-9}");
+        Console.WriteLine();
+    }
+    Console.WriteLine("  Free for → " + string.Join("  ",
+        Enum.GetValues&lt;VehicleType&gt;().Select(t =&gt; $"{t}: {lot.FreeSlotsFor(t)}")));
+}
+
+static string Format(TimeSpan d) =&gt; $"{(int)d.TotalHours}h {d.Minutes:D2}m";</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">==== City Centre Parking, Pune · Fri 13 Nov 09:00 · Hourly + peak ×1.5 ====
+Choose: 2
+1) Bike  2) Car  3) Truck: 2
+Registration: KA01AB1234
+  ✓ Ticket T0001: Car KA01AB1234 → L1-M03 (EV charger) at 09:00
+Choose: 2
+1) Bike  2) Car  3) Truck: 3
+Registration: MH12TR0001
+  ✓ Ticket T0002: Truck MH12TR0001 → L1-L06 at 09:00
+Choose: 2
+1) Bike  2) Car  3) Truck: 3
+Registration: MH12TR0002
+  ▣ DISPLAY: TRUCK PARKING FULL
+  [SMS → manager] Truck slots full at 09:00
+  ✓ Ticket T0003: Truck MH12TR0002 → L2-L06 at 09:00
+Choose: 2
+1) Bike  2) Car  3) Truck: 3
+Registration: GJ05TR7788
+  ✗ No free slot for a Truck
+Choose: 6
+Minutes: 150
+Choose: 3
+Ticket id: T0001
+  ✓ Car KA01AB1234 left at 11:30 after 2h 30m → ₹120.00 (Hourly + peak ×1.5)
+Choose: 3
+Ticket id: T0002
+  ▣ DISPLAY: Truck parking open again (1 free)
+  ✓ Truck MH12TR0001 left at 11:30 after 2h 30m → ₹300.00 (Hourly + peak ×1.5)</code></pre></div>
+
+<h3>6. Try to break it</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected</th></tr><tr><td>Park KA01AB1234 twice</td><td>"KA01AB1234 is already parked at L1-M03 (ticket T0001)"</td></tr><tr><td>Registration <code>HELLO</code> or empty</td><td>✗ not a valid registration number / Please enter a value</td></tr><tr><td>Registration <code>ka-01-ab-1234</code></td><td>Accepted and normalised to KA01AB1234</td></tr><tr><td>Exit T9999, or exit T0001 twice</td><td>"No open ticket 'T9999'" / second exit fails the same way</td></tr><tr><td>5 bikes when 4 Small slots exist</td><td>5th bike gets L1-M03 (overflow to the smallest larger slot)</td></tr><tr><td>Park 2 trucks</td><td>LotFull(Truck) fires once: display + manager SMS; 3rd truck rejected</td></tr><tr><td>Park 8 cars (6 Medium slots + 2 Large)</td><td>Cars 7 and 8 take the Large slots; the 8th raises LotFull for both Car and Truck, though no truck parked</td></tr><tr><td>Exit one truck when trucks were full</td><td>SpaceAvailable(Truck, 1 free)</td></tr><tr><td>Car in and out within 8 minutes (hourly or peak)</td><td>₹0 grace</td></tr><tr><td>Car Fri 18:00 → 20:00 with peak pricing</td><td>₹120 (₹80 × 1.5)</td></tr><tr><td>Switch to flat, car stays 26 h</td><td>₹400 (2 started days)</td></tr><tr><td>Pricing key <code>FLAT</code> (upper case)</td><td>Accepted — case-insensitive dictionary</td></tr><tr><td><code>LevelConfig</code> with level 1 listed twice</td><td>ArgumentException at startup: "Level 1 is configured twice"</td></tr><tr><td><code>new LevelConfig(3, 0, 0, 0)</code></td><td>ArgumentException from Level: "Level 3 has no slots"</td></tr><tr><td><code>new PeakPricing(inner, 0.8m)</code></td><td>ArgumentOutOfRangeException: multiplier must be at least 1</td></tr><tr><td><code>clock.Advance(TimeSpan.FromMinutes(-5))</code> in code</td><td>ArgumentOutOfRangeException: time can't go backwards</td></tr></table></div>
+
+<h3>7. README and push</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-markdown"># Parking Lot System
+
+Micro-project 7 of my .NET full-stack roadmap (Week 9: SOLID and design patterns).
+
+## Features
+- Multi-level lot with Small / Medium / Large slots; bikes, cars and trucks
+- Smallest-fit allocation (lowest level first), overflow to larger slots
+- Tickets with entry/exit times; fees on exit; live availability per level
+- Pricing strategies: hourly (with grace period), flat per day, peak/weekend surcharge
+- Slots created by a factory from a layout configuration (EV bays on level 1)
+- "Lot full" / "space available" alerts via events (entrance display, manager SMS)
+
+## Design
+| Pattern | Where |
+|---|---|
+| Strategy | `IPricingStrategy`: `HourlyPricing`, `FlatRatePricing`, `PeakPricing` |
+| Decorator | `PeakPricing` wraps another strategy; `EvSlotFactory` wraps a slot factory |
+| Factory | `ISlotFactory`, `LotFactory.CreateLevels(LevelConfig[])` |
+| Observer | `ParkingLotService.LotFull` / `SpaceAvailable` events |
+| DIP / DI | `IClock`, strategies and factories chosen in the composition root (Program.cs) |
+
+## Run
+```bash
+dotnet run --project ParkingLot.App
+```</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">git init                                    # if this is a new repo
+dotnet new gitignore
+git add .
+git commit -m "Parking lot: levels, slots, tickets, availability"
+# after Sunday's refactor
+git add .
+git commit -m "Parking lot: pricing strategies, slot factory, lot-full observers"
+git branch -M main
+git remote add origin https://github.com/&lt;you&gt;/parking-lot.git
+git push -u origin main</code></pre></div>
+
+<h3>8. Week 9 revision checklist</h3>
+<ul>
+<li>State each SOLID principle in one sentence and give a violation and a fix</li>
+<li>SRP: reasons to change; the InvoiceService split; thin orchestrators</li>
+<li>OCP: rules as classes; when a switch is fine; delegate tables</li>
+<li>LSP: Rectangle/Square; ReadOnlyCollection as ICollection; contract rules</li>
+<li>ISP: role interfaces (IPrinter, IScanner); DIP: who owns the interface</li>
+<li>DI: constructor injection, composition root, Singleton/Scoped/Transient, captive dependencies, ValidateScopes</li>
+<li>Singleton with Lazy&lt;T&gt;; why DI singletons are preferred</li>
+<li>Simple factory vs Factory Method vs Abstract Factory; fluent Builder with validation</li>
+<li>Strategy selected via dictionary/IEnumerable/keyed services; Observer via events and IObservable&lt;T&gt;</li>
+<li>Repository and Unit of Work; how DbContext maps onto them</li>
+<li>Decorator vs Adapter vs Proxy vs Facade; patterns inside .NET (streams, middleware, handlers, iterators, ILogger)</li>
+<li>Parking lot: draw the class diagram from memory in 10 minutes</li>
+</ul>
+
+<h3>9. Quick quiz — predict the output</h3>
+<details><summary>Q1. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var rates = new Lazy&lt;string&gt;(() =&gt; { Console.Write("load "); return "GST"; });
+Console.Write("start ");
+Console.Write(rates.Value);
+Console.Write(rates.Value);</code></pre></div><b>start load GSTGST</b>. The factory runs on first access to <code>Value</code>, once; the second access returns the cached value.</details>
+<details><summary>Q2. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddScoped&lt;Cart&gt;();
+using var provider = services.BuildServiceProvider();
+using var s1 = provider.CreateScope();
+using var s2 = provider.CreateScope();
+
+var a = s1.ServiceProvider.GetRequiredService&lt;Cart&gt;();
+var b = s1.ServiceProvider.GetRequiredService&lt;Cart&gt;();
+var c = s2.ServiceProvider.GetRequiredService&lt;Cart&gt;();
+Console.WriteLine($"{ReferenceEquals(a, b)} {ReferenceEquals(a, c)}");
+
+class Cart { }</code></pre></div><b>True False</b>. Scoped means one instance per scope: same within <code>s1</code>, different in <code>s2</code>.</details>
+<details><summary>Q3. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">IMessage msg = new Twice(new Star(new Hello()));
+Console.WriteLine(msg.Text());
+
+interface IMessage { string Text(); }
+class Hello : IMessage { public string Text() =&gt; "hi"; }
+class Star(IMessage inner) : IMessage { public string Text() =&gt; "*" + inner.Text(); }
+class Twice(IMessage inner) : IMessage { public string Text() =&gt; inner.Text() + inner.Text(); }</code></pre></div><b>*hi*hi</b>. Decorators apply from the inside out: Star gives "*hi", Twice repeats it. Swapping the order (<code>new Star(new Twice(...))</code>) gives "*hihi".</details>
+<details><summary>Q4. Does this compile, and what happens when it runs?</summary>
+<div class="code nofile"><pre><code class="language-csharp">using System.Collections.ObjectModel;
+
+ICollection&lt;int&gt; scores = new ReadOnlyCollection&lt;int&gt;(new List&lt;int&gt; { 90 });
+scores.Add(75);
+Console.WriteLine(scores.Count);</code></pre></div><b>It compiles, then throws NotSupportedException</b> on <code>Add</code>. ReadOnlyCollection implements ICollection&lt;T&gt; explicitly — a textbook LSP violation in the BCL. Use <code>IReadOnlyCollection&lt;int&gt;</code> to get a compile-time error instead.</details>
+<details><summary>Q5. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var lot = new Lot();
+EventHandler alert = (_, _) =&gt; Console.Write("FULL ");
+lot.Full += alert;
+lot.Full += alert;
+lot.Full -= alert;
+lot.Raise();
+
+class Lot
+{
+    public event EventHandler? Full;
+    public void Raise() =&gt; Full?.Invoke(this, EventArgs.Empty);
+}</code></pre></div><b>FULL</b> (once). Subscribing the same delegate twice adds it twice; <code>-=</code> removes only the last occurrence.</details>
+
+<div class="note tip"><b>Next week:</b> Week 10 — Git in depth (branching, merging, rebase, resolving conflicts, pull requests and a clean commit history) and the <b>Phase 1 exit check</b>: a timed review of Weeks 1–9 (C# fundamentals, OOP, collections, LINQ, SOLID and patterns) to confirm you're ready for Phase 2.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How did you apply the Strategy pattern in the parking lot?</summary><div>Fee calculation is behind IPricingStrategy with HourlyPricing, FlatRatePricing and PeakPricing. The service only calls Calculate on whichever strategy it was given, so a new tariff (e.g. monthly pass) is a new class and one line in the composition root.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why did you use events for "lot full" instead of printing from the service?</summary><div>The service shouldn't know about displays, SMS or logging. It announces a fact (no slots left for trucks) and any number of observers react. New reactions don't change the service, and it stays testable.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>PeakPricing wraps another IPricingStrategy. Which pattern is that, and why is it useful?</summary><div>It's a Decorator applied to a strategy: same interface, added behaviour (a multiplier). It composes with any base tariff — peak hourly or peak flat — without writing a PeakHourlyPricing and PeakFlatPricing class for every combination.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What would change to support online pre-booking and multiple entry gates?</summary><div>Add a Reservation entity and a slot state (Free, Reserved, Occupied); make allocation honour reservations; protect find-and-assign with a lock or a database transaction with a conditional update; move storage behind repositories and a unit of work; and expose Park/Exit through a Web API (Phase 2).</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week9-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

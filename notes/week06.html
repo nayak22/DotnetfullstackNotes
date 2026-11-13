@@ -1,0 +1,2310 @@
+<title>.NET Notes · Week 6</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 6</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">Files &amp; streams</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">System.Text.Json</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">IDisposable</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Logging</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Configuration</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: expenses</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Reports &amp; revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 1 · Week 6 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">C# 12</span><span class="chip">~18 hrs</span><span class="chip">Micro-project 4</span></div>
+  <h1>Week 6 — File I/O and serialization</h1>
+  <p>Until now every program forgot everything when it closed. This week your apps start remembering: you'll read and write files safely across operating systems, turn objects into JSON and back, release resources deterministically, and replace Console.WriteLine debugging with real logging and configuration, using the same building blocks ASP.NET Core uses. You'll finish with an expense tracker that stores ₹ amounts in JSON, saves atomically and reports monthly budgets.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>System.IO: files, paths, streams and encodings</h3><p>Path.Combine vs Join, File vs FileInfo vs FileStream, ReadLines, async I/O, BOMs and ₹.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>System.Text.Json</h3><p>Options, attributes, records, required, polymorphism, JsonDocument/JsonNode, source gen.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>IDisposable and the Dispose pattern</h3><p>using forms, disposal order, full pattern, SafeHandle, IAsyncDisposable, leaks.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Logging with ILogger</h3><p>LoggerFactory, levels, message templates, scopes, filters, LoggerMessage.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Configuration and the Generic Host</h3><p>appsettings layers, env vars, command line, options binding, user secrets, Host.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Micro-project 4: Expense tracker</h3><p>Expense record, IExpenseStore, atomic JSON save, add/list/edit/delete, config, ILogger.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Reports, budgets, CSV and hardening</h3><p>Monthly LINQ summaries, budget alerts, CSV export, try-to-break, README, quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>System.IO: files, directories, paths, streams and encodings</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Read and write files safely on Windows, Linux and macOS: build paths correctly, pick between one-shot helpers and streams, stream big files line by line, use the async APIs, and avoid encoding surprises with ₹ and Indian-language text.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>System.IO</dt><dd>The namespace for files, directories, paths and streams. It's included by implicit usings in console projects.</dd></div><div class="def"><dt>Path</dt><dd>Static helpers that build and take apart path strings (Combine, Join, GetFileName, GetExtension…). They don't touch the disk.</dd></div><div class="def"><dt>File / Directory</dt><dd>Static one-call helpers that do touch the disk: read, write, copy, move, delete, enumerate.</dd></div><div class="def"><dt>FileInfo / DirectoryInfo</dt><dd>Object versions of File/Directory. They cache metadata like Length and LastWriteTime until you call Refresh().</dd></div><div class="def"><dt>Absolute vs relative path</dt><dd>An absolute path starts at a root (<code>C:\</code> or <code>/</code>). A relative path is resolved against the <b>current working directory</b>.</dd></div><div class="def"><dt>Current directory</dt><dd>The folder the process was started from (<code>Directory.GetCurrentDirectory()</code>). This is not always the folder the .dll is in.</dd></div><div class="def"><dt>Stream</dt><dd>A sequence of bytes you read or write in order. <code>FileStream</code>, <code>MemoryStream</code> and network streams all derive from <code>Stream</code>.</dd></div><div class="def"><dt>StreamReader / StreamWriter</dt><dd>Wrappers that turn a byte stream into text (and back) using an encoding.</dd></div><div class="def"><dt>Buffer</dt><dd>An in-memory block that collects small reads and writes into fewer, larger disk operations. Data sits in it until it's flushed.</dd></div><div class="def"><dt>Flush</dt><dd>Push buffered data down to the next layer. Dispose flushes automatically.</dd></div><div class="def"><dt>FileMode / FileAccess / FileShare</dt><dd>Open options: create or open the file, read or write it, and what other processes may do with it while you have it open.</dd></div><div class="def"><dt>Encoding</dt><dd>The rules that turn characters into bytes. UTF-8 is the .NET default; ₹ takes 3 bytes in UTF-8.</dd></div><div class="def"><dt>BOM</dt><dd>Byte Order Mark: optional bytes at the start of a file (EF BB BF for UTF-8) that mark its encoding.</dd></div><div class="def"><dt>Lazy reading</dt><dd><code>File.ReadLines</code> returns an IEnumerable that reads one line at a time as you loop (Week 4's deferred execution).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Build paths with <code>Path.Combine</code> or <code>Path.Join</code>. Never join them with <code>"\\"</code> or <code>"/"</code> by hand.</li><li><code>File.ReadAllText</code>/<code>WriteAllText</code> are fine for small files. Use <code>File.ReadLines</code> or a stream for big ones.</li><li><code>File.WriteAllText</code> overwrites the file without asking. Use <code>AppendAllText</code> to add to it.</li><li>Always dispose streams (<code>using</code>). An undisposed writer can lose its buffered data and keep the file locked.</li><li>Default text encoding is UTF-8 without a BOM. <code>Encoding.UTF8</code> writes a BOM, but <code>new UTF8Encoding(false)</code> doesn't.</li><li>A relative path depends on where the user ran the app from. For app data, use a known folder.</li></ul></div>
+
+<h3>1. Paths that work on every OS</h3>
+<p>Windows separates folders with <code>\</code>, Linux and macOS with <code>/</code>. If you hard-code either one, your app breaks on the other OS. The <code>Path</code> class uses the right separator for you. It only works with strings and never checks whether the file exists.</p>
+<div class="code"><div class="fname">Paths.cs</div><pre><code class="language-csharp">string dataDir = Path.Combine("data", "2026", "invoices");   // data/2026/invoices (Linux) or data\2026\invoices (Windows)
+string file = Path.Combine(dataDir, "INV-1001.json");
+
+Console.WriteLine(Path.GetFileName(file));                   // INV-1001.json
+Console.WriteLine(Path.GetFileNameWithoutExtension(file));   // INV-1001
+Console.WriteLine(Path.GetExtension(file));                  // .json
+Console.WriteLine(Path.GetDirectoryName(file));              // data/2026/invoices
+Console.WriteLine(Path.ChangeExtension(file, ".pdf"));       // data/2026/invoices/INV-1001.pdf
+Console.WriteLine(Path.GetFullPath(file));                   // /home/priya/app/data/2026/invoices/INV-1001.json (depends on current directory)
+Console.WriteLine(Path.DirectorySeparatorChar);              // '/' on Linux/macOS, '\' on Windows
+Console.WriteLine(Path.IsPathRooted("/etc/hosts"));          // True</code></pre></div>
+<div class="note warn"><b>Security.</b> <code>Path.Combine("uploads", "/etc/passwd")</code> returns <code>/etc/passwd</code>. If any later argument is rooted, Combine throws away everything before it. With user input that's a path-traversal hole. <code>Path.Join</code> just joins the parts (<code>uploads/etc/passwd</code>). For names that users type, also strip folders with <code>Path.GetFileName(input)</code> and check that the final <code>GetFullPath</code> still starts with your base folder.</div>
+<div class="code nofile"><pre><code class="language-csharp">static string SafeUploadPath(string baseFolder, string userFileName)
+{
+    string fullBase = Path.GetFullPath(baseFolder);
+    string name = Path.GetFileName(userFileName);               // "../../secrets.txt" → "secrets.txt"
+    if (name.IndexOfAny(Path.GetInvalidFileNameChars()) &gt;= 0)
+        throw new ArgumentException($"Invalid file name: {userFileName}");
+
+    string full = Path.GetFullPath(Path.Join(fullBase, name));
+    if (!full.StartsWith(fullBase + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        throw new UnauthorizedAccessException("Path escapes the upload folder");
+    return full;
+}</code></pre></div>
+<h4>Where should your app keep its files?</h4>
+<div class="code nofile"><pre><code class="language-csharp">Console.WriteLine(Directory.GetCurrentDirectory());   // where the user ran the command from
+Console.WriteLine(AppContext.BaseDirectory);          // where the .dll lives, e.g. .../bin/Debug/net8.0/
+
+string appData = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ExpenseTracker");
+// Windows: C:\Users\&lt;you&gt;\AppData\Local\ExpenseTracker
+// Linux:   ~/.local/share/ExpenseTracker
+
+string temp = Path.GetTempPath();                     // OS temp folder</code></pre></div>
+<div class="tbl"><table><tr><th>Folder</th><th>Use it for</th><th>Watch out</th></tr><tr><td>Current directory</td><td>Files the user named on the command line</td><td>Changes depending on where the app was launched</td></tr><tr><td><code>AppContext.BaseDirectory</code></td><td>Read-only files shipped with the app (appsettings.json)</td><td>Usually not writable once installed (Program Files)</td></tr><tr><td><code>LocalApplicationData</code></td><td>The app's own data: databases, JSON stores, caches</td><td>Per user; create the subfolder yourself</td></tr><tr><td><code>Path.GetTempPath()</code></td><td>Short-lived scratch files</td><td>The OS may clean it up at any time</td></tr></table></div>
+
+<h3>2. File and Directory: one-call helpers</h3>
+<div class="code"><div class="fname">FileHelpers.cs</div><pre><code class="language-csharp">string folder = Path.Combine(Path.GetTempPath(), "gst-demo");
+Directory.CreateDirectory(folder);                       // creates missing parents too; no error if it already exists
+
+string path = Path.Combine(folder, "customers.txt");
+File.WriteAllText(path, "Asha Rao,Pune,411001\n");       // creates or OVERWRITES
+File.AppendAllText(path, "Ravi Kumar,Chennai,600001\n");
+File.AppendAllLines(path, ["Meena Iyer,Kochi,682001"]);  // adds a line ending after each line
+
+string all = File.ReadAllText(path);                     // whole file as one string
+string[] lines = File.ReadAllLines(path);
+Console.WriteLine(lines.Length);                         // 3
+Console.WriteLine(File.Exists(path));                    // True
+
+File.Copy(path, path + ".bak", overwrite: true);
+File.Move(path + ".bak", Path.Combine(folder, "customers-backup.txt"), overwrite: true);   // overwrite: .NET Core 3.0+
+
+foreach (string f in Directory.EnumerateFiles(folder, "*.txt"))   // lazy; GetFiles builds a full array first
+    Console.WriteLine(Path.GetFileName(f));              // order is not guaranteed
+
+File.Delete(Path.Combine(folder, "missing.txt"));        // no exception if the file doesn't exist</code></pre></div>
+<div class="code"><div class="fname">FileInfoDemo.cs</div><pre><code class="language-csharp">var info = new FileInfo(path);
+Console.WriteLine($"{info.Name}: {info.Length} bytes, modified {info.LastWriteTime:dd MMM HH:mm}");
+File.AppendAllText(path, "Imran Shaikh,Mumbai,400001\n");
+Console.WriteLine(info.Length);                          // OLD value — FileInfo cached it
+info.Refresh();
+Console.WriteLine(info.Length);                          // new value
+
+var dir = new DirectoryInfo(folder);
+long totalBytes = dir.EnumerateFiles("*", SearchOption.AllDirectories).Sum(f =&gt; f.Length);
+Console.WriteLine($"{dir.Name} uses {totalBytes} bytes");
+
+Directory.Delete(folder, recursive: true);               // without recursive: true, a non-empty folder throws IOException</code></pre></div>
+<div class="note tip"><b>Tip.</b> <code>if (File.Exists(p)) File.ReadAllText(p)</code> can still fail, because another process could delete or lock the file between the two calls. Use Exists for friendly messages, but still handle <code>FileNotFoundException</code>, <code>IOException</code> and <code>UnauthorizedAccessException</code>.</div>
+
+<h3>3. File.ReadLines vs File.ReadAllLines</h3>
+<p>Last week's grade analyser read a small CSV, so loading the whole file was fine. A year of UPI transactions exported from a bank can run to millions of rows. <code>ReadAllLines</code> loads every line into a <code>string[]</code> before you see the first one. <code>ReadLines</code> is lazy: it reads one line, hands it to your loop, then reads the next.</p>
+<div class="code"><div class="fname">StatementTotals.cs</div><pre><code class="language-csharp">using System.Globalization;
+
+// upi-statement.csv
+// Date,Payee,Amount
+// 2026-11-01,Swiggy,456.00
+// 2026-11-02,BESCOM,1830.50
+// ... 2 million rows
+
+decimal total = 0;
+int rows = 0;
+foreach (string line in File.ReadLines("upi-statement.csv").Skip(1))   // skip the header; memory stays flat
+{
+    string[] parts = line.Split(',');
+    total += decimal.Parse(parts[2], CultureInfo.InvariantCulture);    // invariant: '.' is always the decimal point
+    rows++;
+}
+Console.WriteLine($"{rows} payments, total ₹{total:N2}");
+
+// Stops reading at the first match. ReadAllLines would load the whole file first.
+string? firstRefund = File.ReadLines("upi-statement.csv").FirstOrDefault(l =&gt; l.Contains("REFUND"));</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>File.ReadAllLines</th><th>File.ReadLines</th></tr><tr><td>Returns</td><td><code>string[]</code> (all lines)</td><td><code>IEnumerable&lt;string&gt;</code> (lazy)</td></tr><tr><td>Memory</td><td>Whole file at once</td><td>About one line at a time</td></tr><tr><td>First line available</td><td>After the whole file is read</td><td>Immediately</td></tr><tr><td>Can stop early</td><td>No, it's already read everything</td><td>Yes (break, First, Take)</td></tr><tr><td>Enumerate twice</td><td>Free (it's an array)</td><td>Re-reads the file each time</td></tr><tr><td>File stays open</td><td>Only during the call</td><td>Until the loop finishes or is disposed</td></tr><tr><td>Use for</td><td>Small files you need random access to</td><td>Big files, one pass, early exit</td></tr></table></div>
+
+<h3>4. Streams: FileStream, StreamReader, StreamWriter</h3>
+<p>The one-call helpers use streams internally. Use streams yourself when you need control: append to a log while keeping it open, read a huge file in parts, set sharing, or copy binary data. Think in layers: <code>FileStream</code> moves bytes to and from disk, and <code>StreamWriter</code>/<code>StreamReader</code> convert between text and bytes and buffer it.</p>
+<div class="code"><div class="fname">Streams.cs</div><pre><code class="language-csharp">using System.Text;
+
+// Writing: FileStream (bytes) wrapped by StreamWriter (text → bytes)
+using (var fs = new FileStream("orders.log", FileMode.Append, FileAccess.Write, FileShare.Read, bufferSize: 64 * 1024))
+using (var writer = new StreamWriter(fs, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
+{
+    writer.WriteLine($"{DateTime.Now:O} ORD-1001 placed ₹1,180");
+    writer.WriteLine($"{DateTime.Now:O} ORD-1002 placed ₹2,360");
+}   // Dispose: StreamWriter flushes its buffer, then disposes the FileStream, which releases the OS handle
+
+// Reading line by line with a convenience constructor (opens the FileStream for you)
+using (var reader = new StreamReader("orders.log"))       // detects a BOM if there is one, else assumes UTF-8
+{
+    string? line;
+    while ((line = reader.ReadLine()) is not null)
+        Console.WriteLine(line);
+}
+
+// Binary copy: no encoding involved
+using (var source = File.OpenRead("invoice-1001.pdf"))
+using (var target = File.Create("invoice-1001-copy.pdf"))
+{
+    source.CopyTo(target);                                // copies in chunks; works for any size
+}</code></pre></div>
+<p>Wednesday covers <code>using</code> in depth. For now: anything you open, you dispose.</p>
+<div class="tbl"><table><tr><th>FileMode</th><th>If the file exists</th><th>If it doesn't</th></tr><tr><td><code>CreateNew</code></td><td>IOException</td><td>Creates it</td></tr><tr><td><code>Create</code></td><td>Truncates to 0 bytes</td><td>Creates it</td></tr><tr><td><code>Open</code></td><td>Opens it</td><td>FileNotFoundException</td></tr><tr><td><code>OpenOrCreate</code></td><td>Opens it (keeps content)</td><td>Creates it</td></tr><tr><td><code>Truncate</code></td><td>Opens and empties it</td><td>FileNotFoundException</td></tr><tr><td><code>Append</code></td><td>Opens, positions at the end (write only)</td><td>Creates it</td></tr></table></div>
+<div class="tbl"><table><tr><th>FileShare</th><th>Other processes may…</th></tr><tr><td><code>None</code></td><td>Not open the file at all until you close it</td></tr><tr><td><code>Read</code></td><td>Read it (typical for a log you're writing)</td></tr><tr><td><code>Write</code> / <code>ReadWrite</code></td><td>Also write to it</td></tr><tr><td><code>Delete</code></td><td>Delete or rename it</td></tr></table></div>
+<div class="note warn"><b>Buffering.</b> Buffered data lives in memory until it's flushed. If the process crashes before Flush/Dispose, those lines are lost. <code>writer.AutoFlush = true</code> flushes after every write, which is safer but slower. For important data, write to a temp file and swap it in (Saturday's project does this).</div>
+
+<h3>5. Async file APIs</h3>
+<p>Disk I/O is slow compared to the CPU. The async methods let the thread do other work while the OS reads or writes, which matters in web servers and UI apps. You'll study async/await properly next week. For now, treat <code>await</code> as "wait for this without blocking the thread".</p>
+<div class="code"><div class="fname">AsyncFiles.cs</div><pre><code class="language-csharp">// Whole file
+string settingsJson = await File.ReadAllTextAsync("settings.json");
+await File.WriteAllTextAsync("report.txt", "Total GST collected: ₹12,400");
+await File.AppendAllLinesAsync("audit.log", ["asha approved R-88"]);
+
+// Stream lines asynchronously (.NET 7+): an IAsyncEnumerable&lt;string&gt;
+int errorCount = 0;
+await foreach (string line in File.ReadLinesAsync("app.log"))
+    if (line.Contains("ERROR", StringComparison.Ordinal)) errorCount++;
+Console.WriteLine($"{errorCount} errors");
+
+// Full control: FileStreamOptions (.NET 6+) with real OS-level async I/O
+var options = new FileStreamOptions
+{
+    Mode = FileMode.Create,
+    Access = FileAccess.Write,
+    Share = FileShare.None,
+    Options = FileOptions.Asynchronous,
+    BufferSize = 64 * 1024
+};
+await using var fs = new FileStream("big-export.csv", options);
+await using var csv = new StreamWriter(fs);
+await csv.WriteLineAsync("OrderId,Amount");
+await csv.WriteLineAsync("ORD-1001,1180");</code></pre></div>
+<div class="note tip"><b>Tip.</b> In a console app that reads one small file, sync and async behave about the same. Use the async versions in ASP.NET Core (Phase 2), where a blocked thread is a thread that can't serve another request.</div>
+
+<h3>6. Encodings, BOMs and the ₹ sign</h3>
+<div class="code"><div class="fname">Encodings.cs</div><pre><code class="language-csharp">using System.Text;
+
+string price = "₹499";
+Console.WriteLine(price.Length);                           // 4 chars (UTF-16 code units)
+Console.WriteLine(Encoding.UTF8.GetByteCount(price));      // 6 bytes: ₹ = E2 82 B9, plus 3 ASCII digits
+Console.WriteLine(Encoding.Unicode.GetByteCount(price));   // 8 bytes in UTF-16
+
+File.WriteAllText("a.txt", price);                         // UTF-8 without BOM (the default)
+File.WriteAllText("b.txt", price, Encoding.UTF8);          // UTF-8 WITH BOM: Encoding.UTF8 writes EF BB BF
+File.WriteAllText("c.txt", price, new UTF8Encoding(false));// explicitly no BOM
+Console.WriteLine(new FileInfo("a.txt").Length);           // 6
+Console.WriteLine(new FileInfo("b.txt").Length);           // 9
+
+// Reading a legacy Windows-1252 export from an old accounting tool
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);   // enables code pages like 1252 on .NET Core+
+string legacy = File.ReadAllText("old-ledger.csv", Encoding.GetEncoding(1252));
+
+// Make the Windows console print ₹ and Hindi text correctly
+Console.OutputEncoding = Encoding.UTF8;</code></pre></div>
+<div class="tbl"><table><tr><th>Situation</th><th>Encoding to use</th></tr><tr><td>Anything new: JSON, logs, CSV for other programs</td><td>UTF-8 without BOM (the default)</td></tr><tr><td>CSV you expect people to open in Excel</td><td>UTF-8 <b>with</b> BOM. Without it, Excel often shows ₹ as garbage like <code>â‚¹</code></td></tr><tr><td>Files from old Windows tools</td><td>Their code page (often 1252), after registering CodePagesEncodingProvider</td></tr><tr><td>Talking to Windows APIs / some legacy formats</td><td>UTF-16 (<code>Encoding.Unicode</code>)</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Joining paths with string concatenation (<code>dir + "\\" + file</code>), which breaks on Linux and in Docker.</li><li>Using relative paths for data files, then being surprised the file appears in a different folder depending on where the app was launched.</li><li><code>File.ReadAllLines</code> on a multi-GB file, causing OutOfMemoryException or a long freeze.</li><li>Forgetting to dispose a StreamWriter: the last lines are never written and the file stays locked.</li><li>Using <code>Encoding.UTF8</code> to get "UTF-8" and accidentally adding a BOM that breaks a strict parser (or leaving it off when Excel needs it).</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Write a console app that takes a folder path as an argument and prints, per file extension, the count and total size (use <code>DirectoryInfo.EnumerateFiles</code> with <code>SearchOption.AllDirectories</code>). Show sizes in KB/MB.</li><li>Generate a 500,000-line CSV of fake UPI payments (date, payee, amount). Then total it once with <code>ReadAllLines</code> and once with <code>ReadLines</code>, and compare time and <code>GC.GetTotalMemory(false)</code> / <code>Process.GetCurrentProcess().PeakWorkingSet64</code>.</li><li>Write <code>AppendAudit(string user, string action)</code> that opens <code>audit.log</code> with <code>FileMode.Append</code> and <code>FileShare.Read</code> and writes a timestamped line. Open the file in an editor while the app runs, then check the line is there after the call returns.</li></ol>
+<h3>Self-check questions</h3><details><summary>What's the difference between Path.Combine and Path.Join?</summary>Both add the right separator. Combine restarts from any later argument that is rooted (an absolute path), so earlier parts are thrown away. Join just joins all the parts. Join is safer when part of the path comes from a user.</details><details><summary>Why can File.ReadLines handle a 5 GB file when ReadAllLines can't?</summary>ReadLines is lazy: it gives you one line at a time, so memory stays about one line plus a buffer. ReadAllLines builds an array holding every line in memory.</details><details><summary>What happens to text written to a StreamWriter that is never flushed or disposed?</summary>It stays in the writer's memory buffer and may never reach the file. The file handle also stays open, which can lock the file on Windows.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between File, FileInfo and FileStream?</summary><div>File has static one-call helpers that work on a path (ReadAllText, Copy, Delete). FileInfo is an object for one file that caches its metadata (Length, timestamps) and has instance methods. FileStream is an open handle for reading and writing bytes, with your choice of mode, access, sharing and buffering.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you write paths that work on Windows and Linux?</summary><div>Use Path.Combine or Path.Join, never hard-coded \ or /. Use Path.GetFullPath, Path.GetDirectoryName and friends to take paths apart, and Environment.GetFolderPath for well-known folders. Also remember Linux file names are case-sensitive.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When would you use a stream instead of File.ReadAllText?</summary><div>For large files (to avoid loading everything into memory), when you need to process data as it arrives, append over time while keeping the file open, read or write binary data, control sharing and locking, or pass data to an API that takes a Stream without saving it first.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a BOM and why does it matter?</summary><div>A Byte Order Mark is a byte sequence at the start of a text file that marks its encoding (EF BB BF for UTF-8). .NET writes UTF-8 without a BOM by default, but Encoding.UTF8 includes one. Some parsers reject a BOM, while Excel needs one to read UTF-8 CSV correctly, so choose deliberately.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What do FileMode, FileAccess and FileShare control?</summary><div>FileMode says what to do depending on whether the file exists (Create, CreateNew, Open, OpenOrCreate, Truncate, Append). FileAccess is what you will do (Read, Write, ReadWrite). FileShare is what other handles may do at the same time. FileShare.None gives you exclusive access on Windows. On Unix, .NET uses advisory locks, so only cooperating processes respect it.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why isn't checking File.Exists before opening enough?</summary><div>It's a time-of-check/time-of-use race: the file can be deleted, renamed or locked between the check and the open. You still need to handle FileNotFoundException, IOException and UnauthorizedAccessException. Exists is only a hint for friendlier messages.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>System.Text.Json: serialization, options, attributes and dynamic JSON</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Turn C# objects into JSON and back with System.Text.Json: shape the output with options and attributes, round-trip records and immutable types, handle polymorphic data, and read unknown JSON with JsonDocument and JsonNode.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Serialization</dt><dd>Converting an object into a format you can store or send, such as JSON text or UTF-8 bytes.</dd></div><div class="def"><dt>Deserialization</dt><dd>Rebuilding an object from that format.</dd></div><div class="def"><dt>System.Text.Json (STJ)</dt><dd>The JSON library built into .NET Core 3.0+. It's fast, UTF-8 based and the default in ASP.NET Core.</dd></div><div class="def"><dt>JsonSerializer</dt><dd>The static entry point: <code>Serialize</code>, <code>Deserialize&lt;T&gt;</code>, plus async versions that work on streams.</dd></div><div class="def"><dt>JsonSerializerOptions</dt><dd>Settings for naming, indentation, null handling, enum format, converters and escaping. Create it once and reuse it.</dd></div><div class="def"><dt>Naming policy</dt><dd>Rule that maps C# names to JSON names, e.g. camelCase (<code>customerName</code>) or snake_case (.NET 8).</dd></div><div class="def"><dt>Converter</dt><dd>A class that controls how one type is written and read, e.g. <code>JsonStringEnumConverter</code>.</dd></div><div class="def"><dt>[JsonPropertyName]</dt><dd>Attribute that sets one property's JSON name.</dd></div><div class="def"><dt>[JsonIgnore]</dt><dd>Attribute that skips a property, always or only under a condition.</dd></div><div class="def"><dt>[JsonRequired]</dt><dd>.NET 7+ attribute: deserialization fails if the property is missing from the JSON.</dd></div><div class="def"><dt>Type discriminator</dt><dd>An extra JSON property (e.g. <code>"mode": "upi"</code>) that records which derived type an object was.</dd></div><div class="def"><dt>JsonDocument</dt><dd>Read-only, fast DOM over JSON. Uses pooled memory, so dispose it.</dd></div><div class="def"><dt>JsonNode</dt><dd>Mutable DOM (<code>JsonObject</code>, <code>JsonArray</code>, <code>JsonValue</code>) for reading and editing JSON without a C# class.</dd></div><div class="def"><dt>Source generation</dt><dd>A compile-time generator that writes the serialization code for you. It avoids reflection and is required for Native AOT.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Defaults: property names unchanged (PascalCase), case-sensitive reading, compact output, enums as numbers, nulls written.</li><li>Only public properties are serialized by default; fields are ignored unless you set <code>IncludeFields</code> or use <code>[JsonInclude]</code>.</li><li>Unknown JSON properties are silently ignored when reading (configurable in .NET 8).</li><li>Create a <code>JsonSerializerOptions</code> once and reuse it. It caches type metadata, and it can't be changed after first use.</li><li>Non-ASCII characters (₹, हिंदी) are escaped as <code>\uXXXX</code> by default. That's valid JSON but hard to read.</li><li>Nullable annotations aren't enforced when reading unless you opt in (.NET 9).</li></ul></div>
+
+<h3>1. Serialize and deserialize</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using System.Text.Json;
+
+var invoice = new Invoice
+{
+    Number = "INV-1001",
+    CustomerName = "Asha Traders",
+    IssuedOn = new DateOnly(2026, 11, 10),
+    Amount = 1180.5m,
+    Status = InvoiceStatus.Issued,
+    Items = ["Pen", "Notebook"]
+};
+
+string json = JsonSerializer.Serialize(invoice);
+Console.WriteLine(json);
+// {"Number":"INV-1001","CustomerName":"Asha Traders","Gstin":null,"IssuedOn":"2026-11-10",
+//  "Amount":1180.5,"Status":1,"Items":["Pen","Notebook"]}
+
+Invoice? back = JsonSerializer.Deserialize&lt;Invoice&gt;(json);   // null if the JSON is literally "null"
+Console.WriteLine(back?.CustomerName);                        // Asha Traders
+
+// Lowercase keys don't match by default: case-sensitive
+Invoice? lower = JsonSerializer.Deserialize&lt;Invoice&gt;("{\"number\":\"INV-9\"}");
+Console.WriteLine(lower!.Number == "");                       // True — "number" was ignored
+
+// Types go after top-level statements
+public enum InvoiceStatus { Draft, Issued, Paid }
+
+public class Invoice
+{
+    public string Number { get; set; } = "";
+    public string CustomerName { get; set; } = "";
+    public string? Gstin { get; set; }
+    public DateOnly IssuedOn { get; set; }          // DateOnly/TimeOnly supported since .NET 7
+    public decimal Amount { get; set; }
+    public InvoiceStatus Status { get; set; }
+    public List&lt;string&gt; Items { get; set; } = [];
+}</code></pre></div>
+<p>Serialize also has <code>SerializeToUtf8Bytes</code> and <code>SerializeAsync(stream, value)</code>. Writing straight to a FileStream skips the intermediate string, which matters for big files.</p>
+
+<h3>2. JsonSerializerOptions: shape the output</h3>
+<div class="code"><div class="fname">JsonDefaults.cs</div><pre><code class="language-csharp">using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
+
+public static class JsonDefaults
+{
+    // One shared instance: options cache per-type metadata, and become read-only after first use
+    public static readonly JsonSerializerOptions Options = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,          // CustomerName → customerName
+        PropertyNameCaseInsensitive = true,                         // read "CustomerName" or "customername" too
+        WriteIndented = true,                                       // human-readable
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,   // omit null properties
+        Converters = { new JsonStringEnumConverter() },             // "Issued" instead of 1
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)       // keep ₹ and हिंदी as-is instead of \u20B9
+    };
+}</code></pre></div>
+<div class="code"><div class="fname">JsonSerializer.Serialize(invoice, JsonDefaults.Options)</div><pre><code class="language-json">{
+  "number": "INV-1001",
+  "customerName": "Asha Traders",
+  "issuedOn": "2026-11-10",
+  "amount": 1180.5,
+  "status": "Issued",
+  "items": [
+    "Pen",
+    "Notebook"
+  ]
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">var note = new { Note = "₹500 चाय" };
+Console.WriteLine(JsonSerializer.Serialize(note));                          // {"Note":"\u20B9500 \u091A\u093E\u092F"}
+Console.WriteLine(JsonSerializer.Serialize(note, JsonDefaults.Options));    // { "note": "₹500 चाय" } (indented)
+
+// Web defaults: camelCase + case-insensitive + numbers may arrive as strings ("amount": "499")
+var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+// .NET 9 also has a ready-made read-only instance: JsonSerializerOptions.Web
+
+// .NET 8 naming policies
+var snake = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };   // customer_name</code></pre></div>
+<div class="tbl"><table><tr><th>Option</th><th>Default</th><th>Common choice</th></tr><tr><td><code>PropertyNamingPolicy</code></td><td>null (names unchanged)</td><td><code>CamelCase</code> for web APIs</td></tr><tr><td><code>PropertyNameCaseInsensitive</code></td><td>false</td><td>true when reading JSON people edit by hand</td></tr><tr><td><code>WriteIndented</code></td><td>false</td><td>true for files people read; false for APIs</td></tr><tr><td><code>DefaultIgnoreCondition</code></td><td>Never</td><td><code>WhenWritingNull</code></td></tr><tr><td>Enum format</td><td>Number</td><td><code>JsonStringEnumConverter</code> (stable if you reorder members)</td></tr><tr><td><code>Encoder</code></td><td>Escapes non-ASCII and HTML-sensitive characters</td><td><code>JavaScriptEncoder.Create(UnicodeRanges.All)</code> for files</td></tr><tr><td><code>NumberHandling</code></td><td>Strict</td><td><code>AllowReadingFromString</code> (Web defaults)</td></tr><tr><td><code>UnmappedMemberHandling</code> (.NET 8)</td><td>Skip unknown properties</td><td><code>Disallow</code> for strict contracts</td></tr></table></div>
+<div class="note warn"><b>Performance.</b> Writing <code>new JsonSerializerOptions { ... }</code> inside a method that runs per request or per record throws away the metadata cache each time. That makes it much slower, and in older .NET versions it also leaked memory. Store options in a <code>static readonly</code> field.</div>
+
+<h3>3. Attributes for per-property control</h3>
+<p>Options apply to every type. Attributes change a single property, which is useful when you match an external contract like a payment webhook with snake_case names.</p>
+<div class="code"><div class="fname">UpiWebhook.cs</div><pre><code class="language-csharp">using System.Text.Json.Serialization;
+
+public class UpiWebhook
+{
+    [JsonPropertyName("txn_id")]
+    public string TransactionId { get; set; } = "";
+
+    [JsonRequired]                                   // .NET 7+: missing "amount" → JsonException
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("payer_vpa")]
+    public string? PayerVpa { get; set; }            // e.g. asha@okhdfc
+
+    [JsonIgnore]                                     // never read or written
+    public string? InternalNotes { get; set; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    [JsonPropertyName("retry_count")]
+    public int RetryCount { get; set; }              // left out of the output when 0
+
+    [JsonInclude]                                    // non-public setter is used when reading
+    [JsonPropertyName("received_at")]
+    public DateTime ReceivedAt { get; private set; } = DateTime.UtcNow;
+
+    [JsonPropertyOrder(-1)]                          // written first
+    [JsonPropertyName("event")]
+    public string Event { get; set; } = "payment.captured";
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">string body = """{"event":"payment.captured","txn_id":"T2611101234","amount":2360,"payer_vpa":"asha@okhdfc","InternalNotes":"x"}""";
+var hook = JsonSerializer.Deserialize&lt;UpiWebhook&gt;(body)!;
+Console.WriteLine($"{hook.TransactionId} {hook.Amount} {hook.InternalNotes ?? "(ignored)"}");
+// T2611101234 2360 (ignored)
+
+try
+{
+    JsonSerializer.Deserialize&lt;UpiWebhook&gt;("""{"txn_id":"T1"}""");
+}
+catch (JsonException ex)
+{
+    Console.WriteLine(ex.Message);   // JSON deserialization for type 'UpiWebhook' was missing required properties, including the following: amount
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Attribute</th><th>Effect</th></tr><tr><td><code>[JsonPropertyName("x")]</code></td><td>Use this JSON name (overrides the naming policy)</td></tr><tr><td><code>[JsonIgnore]</code></td><td>Skip always; with <code>Condition</code>: WhenWritingNull / WhenWritingDefault</td></tr><tr><td><code>[JsonRequired]</code> or C# <code>required</code></td><td>Must be present when reading (.NET 7+)</td></tr><tr><td><code>[JsonInclude]</code></td><td>Include a field, or use non-public accessors</td></tr><tr><td><code>[JsonConstructor]</code></td><td>Pick which constructor to use when reading</td></tr><tr><td><code>[JsonPropertyOrder(n)]</code></td><td>Control output order</td></tr><tr><td><code>[JsonConverter(typeof(...))]</code></td><td>Custom converter for this property or type</td></tr><tr><td><code>[JsonNumberHandling(...)]</code></td><td>Allow numbers as strings for this member</td></tr></table></div>
+
+<h3>4. Records, immutable types and missing data</h3>
+<p>STJ can create objects through a constructor. It matches each parameter to a property with the same name (ignoring case), which is why positional records just work.</p>
+<div class="code"><div class="fname">Records.cs</div><pre><code class="language-csharp">using System.Text.Json;
+
+var e = new Expense(1, new DateOnly(2026, 11, 3), "Groceries", 1249.75m, "BigBasket order");
+string json = JsonSerializer.Serialize(e, JsonDefaults.Options);
+Expense copy = JsonSerializer.Deserialize&lt;Expense&gt;(json, JsonDefaults.Options)!;
+Console.WriteLine(copy == e);            // True — value equality, built through the constructor
+
+var c = JsonSerializer.Deserialize&lt;Customer&gt;("""{"name":"Ravi Kumar","pin":"600001"}""", JsonDefaults.Options)!;
+Console.WriteLine($"{c.Name} {c.Pin}");  // Ravi Kumar 600001
+
+// ❌ A missing value for a non-nullable property is NOT an error by default
+var bad = JsonSerializer.Deserialize&lt;Expense&gt;("""{"id":2,"date":"2026-11-04","amount":99}""", JsonDefaults.Options)!;
+Console.WriteLine(bad.Category is null); // True — even though Category is declared as non-nullable string
+
+// .NET 9 opt-ins make it strict
+var strict = new JsonSerializerOptions(JsonDefaults.Options)   // copy constructor
+{
+    RespectNullableAnnotations = true,            // null for a non-nullable property → JsonException
+    RespectRequiredConstructorParameters = true   // missing non-optional constructor parameter → JsonException
+};
+
+public sealed record Expense(int Id, DateOnly Date, string Category, decimal Amount, string? Note = null);
+
+public sealed class Customer
+{
+    public required string Name { get; init; }    // C# 11 required: STJ (.NET 7+) enforces it like [JsonRequired]
+    public required string Pin { get; init; }
+    public string? Email { get; init; }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> Validate after deserializing, whatever the options say. JSON from files and APIs is user input: check ranges, enums (<code>Enum.IsDefined</code>) and business rules. Saturday's <code>Expense.Validate()</code> does exactly this.</div>
+
+<h3>5. Polymorphism with [JsonDerivedType] (.NET 7+)</h3>
+<p>If you serialize a <code>List&lt;Payment&gt;</code> without help, STJ writes only the base type's properties and can't tell which subtype to create when reading. Declare the derived types and a discriminator property.</p>
+<div class="code"><div class="fname">Payments.cs</div><pre><code class="language-csharp">using System.Text.Json.Serialization;
+
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "mode")]   // default name is "$type"
+[JsonDerivedType(typeof(UpiPayment), "upi")]
+[JsonDerivedType(typeof(CardPayment), "card")]
+[JsonDerivedType(typeof(CashPayment), "cash")]
+public abstract record Payment(decimal Amount);
+
+public sealed record UpiPayment(decimal Amount, string Vpa) : Payment(Amount);
+public sealed record CardPayment(decimal Amount, string Last4, string Network) : Payment(Amount);
+public sealed record CashPayment(decimal Amount) : Payment(Amount);</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">List&lt;Payment&gt; payments =
+[
+    new UpiPayment(450m, "ravi@okicici"),
+    new CardPayment(2999m, "4242", "RuPay"),
+    new CashPayment(120m)
+];
+
+string json = JsonSerializer.Serialize(payments, JsonDefaults.Options);
+// each object starts with "mode": "upi" / "card" / "cash", followed by its own properties
+
+List&lt;Payment&gt; back = JsonSerializer.Deserialize&lt;List&lt;Payment&gt;&gt;(json, JsonDefaults.Options)!;
+foreach (Payment p in back)
+{
+    Console.WriteLine(p switch
+    {
+        UpiPayment u  =&gt; $"UPI ₹{u.Amount} from {u.Vpa}",
+        CardPayment c =&gt; $"{c.Network} card ****{c.Last4}: ₹{c.Amount}",
+        CashPayment   =&gt; $"Cash ₹{p.Amount}",
+        _             =&gt; "Unknown"
+    });
+}
+// UPI ₹450 from ravi@okicici
+// RuPay card ****4242: ₹2999
+// Cash ₹120</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> The discriminator is written only when the <b>declared</b> type is the base: <code>Serialize&lt;Payment&gt;(upi)</code> or a <code>List&lt;Payment&gt;</code>. <code>Serialize(upi)</code>, where the declared type is UpiPayment, has no <code>mode</code> property, so you can't read it back as a Payment. Up to .NET 8 the discriminator must also be the first property in the JSON. .NET 9 adds <code>AllowOutOfOrderMetadataProperties</code>.</div>
+
+<h3>6. Dynamic JSON: JsonDocument and JsonNode, plus source generation</h3>
+<p>Sometimes you only need two fields from a big API response, or the shape isn't known in advance. You don't need to write a class for that.</p>
+<div class="code"><div class="fname">DynamicJson.cs</div><pre><code class="language-csharp">using System.Text.Json;
+using System.Text.Json.Nodes;
+
+string response = """
+    {
+      "pincode": "560001",
+      "postOffices": [
+        { "name": "Bangalore GPO", "district": "Bengaluru", "state": "Karnataka" },
+        { "name": "Vidhana Soudha", "district": "Bengaluru", "state": "Karnataka" }
+      ]
+    }
+    """;
+
+// JsonDocument: read-only and fast; rents pooled memory, so dispose it
+using (JsonDocument doc = JsonDocument.Parse(response))
+{
+    JsonElement root = doc.RootElement;
+    JsonElement offices = root.GetProperty("postOffices");
+    Console.WriteLine($"{offices[0].GetProperty("state").GetString()}: {offices.GetArrayLength()} offices");
+    // Karnataka: 2 offices
+
+    foreach (JsonElement office in offices.EnumerateArray())
+        Console.WriteLine(office.GetProperty("name").GetString());
+
+    if (!root.TryGetProperty("deliveryStatus", out _))       // GetProperty would throw KeyNotFoundException
+        Console.WriteLine("No deliveryStatus field");
+}
+
+// JsonNode: mutable; good for patching JSON
+JsonNode node = JsonNode.Parse(response)!;
+node["pincode"] = "560002";
+node["postOffices"]!.AsArray().Add(new JsonObject { ["name"] = "Shivajinagar", ["state"] = "Karnataka" });
+Console.WriteLine(node["postOffices"]![2]!["name"]!.GetValue&lt;string&gt;());   // Shivajinagar
+Console.WriteLine(node.ToJsonString());                                    // compact JSON with the changes</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>JsonSerializer + class</th><th>JsonDocument</th><th>JsonNode</th></tr><tr><td>Needs a C# type</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Editable</td><td>Edit the object</td><td>No (read-only)</td><td>Yes</td></tr><tr><td>Speed / memory</td><td>Fast</td><td>Fastest for reading parts</td><td>Slower, allocates more</td></tr><tr><td>Must dispose</td><td>No</td><td>Yes</td><td>No</td></tr><tr><td>Use for</td><td>Known contracts</td><td>Peeking into large or unknown JSON</td><td>Patching or building JSON on the fly</td></tr></table></div>
+<h4>Source generation (awareness)</h4>
+<div class="code"><div class="fname">AppJsonContext.cs</div><pre><code class="language-csharp">using System.Text.Json;
+using System.Text.Json.Serialization;
+
+[JsonSourceGenerationOptions(WriteIndented = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+                             UseStringEnumConverter = true)]            // UseStringEnumConverter: .NET 8
+[JsonSerializable(typeof(List&lt;Invoice&gt;))]
+internal partial class AppJsonContext : JsonSerializerContext { }
+
+// Usage: pass the generated type info instead of options
+string json = JsonSerializer.Serialize(invoices, AppJsonContext.Default.ListInvoice);
+List&lt;Invoice&gt;? list = JsonSerializer.Deserialize(json, AppJsonContext.Default.ListInvoice);</code></pre></div>
+<p>The generator writes the property-by-property code at compile time. That gives faster startup, no reflection, trimming safety and Native AOT support. You'll mainly see it in high-performance APIs and AOT-published tools. Reflection mode (everything above) is fine for most apps.</p>
+
+<h3>Common mistakes</h3><ul><li>Creating a new <code>JsonSerializerOptions</code> on every call.</li><li>Expecting lowercase JSON keys to bind to PascalCase properties without <code>PropertyNameCaseInsensitive</code> or a camelCase policy.</li><li>Storing enums as numbers in files, then reordering the enum members and silently corrupting old data.</li><li>Trusting deserialized data: missing required fields arrive as null/0 unless you mark them required, and values still need validating.</li><li>Forgetting to dispose <code>JsonDocument</code>, which leaks pooled buffers.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Model an Indian GST invoice: seller and buyer (name, GSTIN, state), line items (HSN code, qty, rate) and computed CGST/SGST or IGST. Serialize it with camelCase, indented output, string enums and nulls omitted, then read it back and assert the totals match.</li><li>Write a <code>UpiWebhook</code> class for a snake_case payload, mark <code>txn_id</code> and <code>amount</code> as required, and show what happens with a missing field, an unknown extra field, and <code>"amount": "499"</code> (try with and without Web defaults).</li><li>Use <code>JsonNode</code> to load a <code>settings.json</code>, change one nested value (e.g. <code>gst.ratePercent</code> to 12), add a new property, and write it back indented, without defining any C# class.</li></ol>
+<h3>Self-check questions</h3><details><summary>What are System.Text.Json's defaults for property names and enums?</summary>Property names stay as written in C# (PascalCase), matching is case-sensitive when reading, and enums are written as numbers. Use a naming policy and JsonStringEnumConverter to change this.</details><details><summary>How do you make a property mandatory when deserializing?</summary>Mark it [JsonRequired] or use the C# required modifier (both .NET 7+). If it's missing, deserialization throws JsonException. In .NET 9 you can also turn on RespectRequiredConstructorParameters for records.</details><details><summary>When would you use JsonDocument instead of a class?</summary>When you only need a few values from large or unknown JSON, or the shape varies. JsonDocument reads without allocating a full object graph. It's read-only and must be disposed.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How do you serialize an object to camelCase, indented JSON with string enums?</summary><div>Create a JsonSerializerOptions with PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true and Converters.Add(new JsonStringEnumConverter()). Store it in a static field and pass it to Serialize/Deserialize.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does [JsonIgnore] do, and what are its conditions?</summary><div>It excludes a property from serialization and deserialization. With Condition you can exclude it only WhenWritingNull or WhenWritingDefault, or explicitly Never. The global DefaultIgnoreCondition option applies the same rule to every property.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why should JsonSerializerOptions be reused?</summary><div>Each instance builds and caches metadata for every type it handles. Creating new options per call rebuilds that cache every time, which is slow and in old versions leaked memory. Options also become immutable after first use, so a shared static instance is the intended pattern.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does System.Text.Json deserialize immutable records?</summary><div>It uses the public constructor (or the one marked [JsonConstructor]) and matches each parameter to a property of the same name, ignoring case. JSON properties are matched to those properties first, so naming policies apply. Missing parameters get default values unless you enable .NET 9's RespectRequiredConstructorParameters.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you serialize a polymorphic hierarchy?</summary><div>Put [JsonPolymorphic] and one [JsonDerivedType(typeof(Sub), "discriminator")] per subtype on the base type (.NET 7+). Serialize through the base type so the discriminator is written. When reading, STJ uses it to pick the subtype. Before .NET 7 you needed a custom JsonConverter.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are the benefits of System.Text.Json source generation?</summary><div>The serializer code is generated at compile time from a JsonSerializerContext. That means no runtime reflection, faster startup, lower memory use, trimming safety and Native AOT support. The cost is declaring every root type with [JsonSerializable] and some extra build setup.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>IDisposable, using, the Dispose pattern and IAsyncDisposable</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Release files, sockets and other OS resources at the right moment: use <code>using</code> statements and declarations, implement IDisposable correctly (including the full pattern and why SafeHandle replaces finalizers), use <code>await using</code>, and spot resource leaks.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Managed resource</dt><dd>Memory the GC owns: ordinary .NET objects. The GC frees it eventually.</dd></div><div class="def"><dt>Unmanaged resource</dt><dd>Something outside the GC: file handles, sockets, database connections, OS locks, native memory.</dd></div><div class="def"><dt>IDisposable</dt><dd>Interface with one method, <code>Dispose()</code>, meaning "release your resources now".</dd></div><div class="def"><dt>Deterministic cleanup</dt><dd>Releasing a resource at a known point in the code, rather than whenever the GC runs.</dd></div><div class="def"><dt>using statement</dt><dd><code>using (var x = ...) { }</code>: calls Dispose at the closing brace, even if an exception is thrown.</dd></div><div class="def"><dt>using declaration</dt><dd>C# 8 <code>using var x = ...;</code>: calls Dispose at the end of the enclosing scope.</dd></div><div class="def"><dt>Finalizer</dt><dd><code>~ClassName()</code>: runs on the GC's finalizer thread at an unpredictable time. A last-chance cleanup.</dd></div><div class="def"><dt>GC.SuppressFinalize</dt><dd>Tells the GC that this object's finalizer no longer needs to run, because Dispose already cleaned up.</dd></div><div class="def"><dt>Dispose pattern</dt><dd><code>Dispose()</code> plus <code>protected virtual Dispose(bool disposing)</code>, so subclasses can add their own cleanup.</dd></div><div class="def"><dt>SafeHandle</dt><dd>A built-in wrapper around an OS handle that has its own reliable finalizer, so you don't write finalizers yourself.</dd></div><div class="def"><dt>ObjectDisposedException</dt><dd>Thrown when someone uses an object after it was disposed.</dd></div><div class="def"><dt>IAsyncDisposable</dt><dd>Interface with <code>ValueTask DisposeAsync()</code> for cleanup that does I/O (flushing to disk or the network).</dd></div><div class="def"><dt>await using</dt><dd>Calls DisposeAsync at the end of the scope.</dd></div><div class="def"><dt>Ownership</dt><dd>Whoever creates a disposable (or is handed ownership) is responsible for disposing it.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>The GC frees memory, not files or connections. Dispose releases those right away.</li><li>If a type implements IDisposable, assume you must dispose it, unless documentation says otherwise or a DI container owns it.</li><li><code>using</code> compiles into try/finally, so Dispose runs even when an exception is thrown.</li><li>With several using declarations, objects are disposed in reverse order.</li><li>Dispose must be safe to call more than once and shouldn't throw.</li><li>You almost never need a finalizer: wrap OS handles in SafeHandle, or just own other disposables.</li></ul></div>
+
+<h3>1. Why Dispose exists</h3>
+<p>The garbage collector runs when <i>memory</i> is low. It doesn't know that a small <code>FileStream</code> object is holding an OS file handle that another program needs. Until that object is collected and finalized, which could be minutes later or never in a short app, the file stays open.</p>
+<div class="code"><div class="fname">Leak.cs</div><pre><code class="language-csharp">// ❌ Never disposed
+var writer = new StreamWriter("audit.log");
+writer.WriteLine("Login: asha@example.com");
+// 1. The line is probably still in the writer's buffer, not on disk.
+// 2. The file handle is still open. On Windows:
+File.Delete("audit.log");   // IOException: The process cannot access the file because it is being used by another process.
+
+// ✓ Disposed: flushed and closed immediately
+using (var w = new StreamWriter("audit2.log"))
+{
+    w.WriteLine("Login: asha@example.com");
+}
+File.Delete("audit2.log");  // works</code></pre></div>
+
+<h3>2. using statements and using declarations</h3>
+<div class="code"><div class="fname">UsingForms.cs</div><pre><code class="language-csharp">// using statement: Dispose at the closing brace
+using (var reader = new StreamReader("orders.csv"))
+{
+    Console.WriteLine(reader.ReadLine());
+}   // reader.Dispose() here
+
+// using declaration (C# 8): Dispose at the end of the enclosing block
+static int CountOrders(string path)
+{
+    using var reader = new StreamReader(path);
+    int count = 0;
+    while (reader.ReadLine() is not null) count++;
+    return count;
+}   // reader.Dispose() here, even if ReadLine throws
+
+// What the compiler generates for a using statement (roughly)
+StreamReader r = new StreamReader("orders.csv");
+try
+{
+    Console.WriteLine(r.ReadLine());
+}
+finally
+{
+    r?.Dispose();
+}</code></pre></div>
+<h4>Disposal order</h4>
+<div class="code"><div class="fname">DisposeOrder.cs</div><pre><code class="language-csharp">using var connection = new Step("connection");
+using var transaction = new Step("transaction");
+Console.WriteLine("doing work");
+
+// doing work
+// dispose transaction
+// dispose connection        ← reverse order: inner resources first
+
+sealed class Step(string name) : IDisposable
+{
+    public void Dispose() =&gt; Console.WriteLine($"dispose {name}");
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> Use a using <b>statement</b> (with braces) when the resource should be released before the method ends, for example to unlock a file before you move it. A using <b>declaration</b> keeps it open until the end of the block, which is sometimes longer than you think.</div>
+
+<h3>3. Implementing IDisposable (the simple, sealed version)</h3>
+<p>Most classes you write don't own raw OS handles. They own <i>other disposables</i> (a StreamWriter, an HttpClient, a DbConnection). For a sealed class, Dispose just disposes what it owns.</p>
+<div class="code"><div class="fname">AuditLog.cs</div><pre><code class="language-csharp">using System.Text;
+
+public sealed class AuditLog : IDisposable
+{
+    private readonly StreamWriter _writer;
+    private bool _disposed;
+
+    public AuditLog(string path)
+    {
+        var stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+        _writer = new StreamWriter(stream, new UTF8Encoding(false));   // the writer now owns the stream
+    }
+
+    public void Write(string user, string action)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);              // .NET 7+
+        _writer.WriteLine($"{DateTime.UtcNow:O}\t{user}\t{action}");
+    }
+
+    public void Dispose()
+    {
+        if (_disposed) return;          // calling twice is harmless
+        _writer.Dispose();              // flushes, then disposes the FileStream
+        _disposed = true;
+    }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">using (var audit = new AuditLog("audit.log"))
+{
+    audit.Write("asha", "approved refund R-88");
+    audit.Write("ravi", "changed GSTIN for C-1042");
+}
+
+var closed = new AuditLog("audit.log");
+closed.Dispose();
+closed.Write("meena", "late write");   // ObjectDisposedException: Cannot access a disposed object. Object name: 'AuditLog'.</code></pre></div>
+
+<h3>4. The full Dispose pattern, finalizers and SafeHandle</h3>
+<p>If your class is <b>not sealed</b>, subclasses may own resources too. The standard pattern gives them a <code>protected virtual Dispose(bool)</code> to override.</p>
+<div class="code"><div class="fname">ReportExporter.cs</div><pre><code class="language-csharp">public class ReportExporter : IDisposable
+{
+    private readonly FileStream _output;
+    private bool _disposed;
+
+    public ReportExporter(string path) =&gt; _output = File.Create(path);
+
+    protected Stream Output =&gt; _output;
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);       // if a subclass adds a finalizer, it no longer needs to run
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed) return;
+        if (disposing)
+        {
+            _output.Dispose();           // managed objects: only touch them when called from Dispose()
+        }
+        // raw unmanaged resources (IntPtr handles) would be freed here — but use SafeHandle instead
+        _disposed = true;
+    }
+}
+
+public class GstReportExporter : ReportExporter
+{
+    private readonly StreamWriter _summary;
+    private bool _disposed;
+
+    public GstReportExporter(string path) : base(path) =&gt;
+        _summary = new StreamWriter(path + ".summary.txt");
+
+    protected override void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing) _summary.Dispose();
+            _disposed = true;
+        }
+        base.Dispose(disposing);         // always let the base class clean up too
+    }
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Called from</th><th>disposing</th><th>Safe to touch other managed objects?</th></tr><tr><td><code>Dispose()</code> (your code)</td><td>true</td><td>Yes: they're still alive</td></tr><tr><td>Finalizer (GC thread)</td><td>false</td><td>No: they may already be finalized; free only raw unmanaged resources</td></tr></table></div>
+<h4>Finalizers: awareness only</h4>
+<div class="code nofile"><pre><code class="language-csharp">// Only if a class DIRECTLY holds a raw unmanaged resource (rare in modern .NET):
+~ReportExporter() =&gt; Dispose(disposing: false);
+// Costs: the object survives at least one extra GC, the finalizer runs on a single
+// background thread at an unknown time, and it may not run at all if the process is killed.</code></pre></div>
+<p>Instead of an <code>IntPtr</code> plus a finalizer, .NET wraps OS handles in <code>SafeHandle</code> subclasses (<code>SafeFileHandle</code>, <code>SafeWaitHandle</code>…). They already have a reliable finalizer, so <i>your</i> class only owns a disposable and uses the simple pattern.</p>
+<div class="code"><div class="fname">SafeHandleDemo.cs</div><pre><code class="language-csharp">using Microsoft.Win32.SafeHandles;
+
+// .NET 6+: open a raw handle and read at an offset without a FileStream
+using SafeFileHandle handle = File.OpenHandle("ledger.dat", FileMode.Open, FileAccess.Read);
+byte[] header = new byte[16];
+int read = RandomAccess.Read(handle, header, fileOffset: 0);
+Console.WriteLine($"Read {read} header bytes, file is {RandomAccess.GetLength(handle)} bytes");</code></pre></div>
+
+<h3>5. IAsyncDisposable and await using</h3>
+<p>Disposing a writer flushes its buffer, which is I/O. <code>DisposeAsync</code> lets that flush happen without blocking a thread. Types like <code>FileStream</code>, <code>StreamWriter</code>, <code>DbConnection</code> and <code>Utf8JsonWriter</code> implement both interfaces.</p>
+<div class="code"><div class="fname">CsvExportWriter.cs</div><pre><code class="language-csharp">public sealed class CsvExportWriter : IAsyncDisposable
+{
+    private readonly StreamWriter _writer;
+
+    public CsvExportWriter(string path) =&gt;
+        _writer = new StreamWriter(new FileStream(path, FileMode.Create, FileAccess.Write,
+                                                  FileShare.None, bufferSize: 4096, useAsync: true));
+
+    public Task WriteRowAsync(params string[] cells) =&gt; _writer.WriteLineAsync(string.Join(',', cells));
+
+    public async ValueTask DisposeAsync()
+    {
+        await _writer.FlushAsync();      // flush without blocking a thread
+        await _writer.DisposeAsync();    // also disposes the FileStream
+    }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">await using (var csv = new CsvExportWriter("gstr1-nov-2026.csv"))
+{
+    await csv.WriteRowAsync("Invoice", "GSTIN", "Taxable", "GST");
+    await csv.WriteRowAsync("INV-1001", "29ABCDE1234F1Z5", "1000", "180");
+}   // await csv.DisposeAsync() here
+
+// declaration form
+await using var another = new CsvExportWriter("gstr1-dec-2026.csv");</code></pre></div>
+<div class="note tip"><b>Tip.</b> If a type implements both interfaces, <code>await using</code> calls DisposeAsync and <code>using</code> calls Dispose. In async methods, prefer <code>await using</code> for anything that flushes.</div>
+
+<h3>6. Ownership and common leaks</h3>
+<div class="code"><div class="fname">Ownership.cs</div><pre><code class="language-csharp">// A StreamReader disposes the stream it wraps — unless you say leaveOpen
+using var file = File.OpenRead("orders.csv");
+using (var reader = new StreamReader(file, leaveOpen: true))
+{
+    Console.WriteLine(reader.ReadLine());   // header
+}
+file.Position = 0;                           // still usable because of leaveOpen: true
+
+// A method that RETURNS a disposable transfers ownership to the caller
+static StreamWriter OpenDailyLog(DateOnly day) =&gt;
+    new StreamWriter(Path.Combine("logs", $"{day:yyyy-MM-dd}.log"), append: true);
+
+using var log = OpenDailyLog(DateOnly.FromDateTime(DateTime.Today));   // caller disposes</code></pre></div>
+<div class="tbl"><table><tr><th>Leak</th><th>What happens</th><th>Fix</th></tr><tr><td>Stream or writer not disposed</td><td>File locked, last data lost</td><td><code>using</code> / <code>await using</code></td></tr><tr><td>Disposing a stream the caller still needs</td><td>ObjectDisposedException later</td><td><code>leaveOpen: true</code>, or don't dispose what you don't own</td></tr><tr><td><code>new HttpClient()</code> per request, disposed each time</td><td>Sockets pile up in TIME_WAIT (socket exhaustion)</td><td>Reuse one instance or use IHttpClientFactory (Phase 2)</td></tr><tr><td>Event subscriptions never removed (Week 3)</td><td>Publisher keeps subscribers alive</td><td>Unsubscribe in Dispose</td></tr><tr><td><code>Timer</code> not disposed</td><td>Callbacks keep firing</td><td>Dispose it when done</td></tr><tr><td><code>CancellationTokenSource</code> with CancelAfter not disposed</td><td>Internal timer kept alive</td><td><code>using var cts = ...</code></td></tr><tr><td>Disposing services you got from DI</td><td>Breaks other users of the shared instance</td><td>The container owns what it creates</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Relying on the GC (or a finalizer) to close files and connections.</li><li>Writing a finalizer "just in case" in a class that only owns managed disposables. It adds GC cost and gives no benefit.</li><li>Touching other managed objects inside the <code>disposing == false</code> path.</li><li>Disposing an object you don't own: a stream passed in by the caller, or a service resolved from DI.</li><li>Forgetting that a using declaration keeps the resource open until the end of the block, e.g. trying to move a file you still have open.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Write a sealed <code>TempWorkspace : IDisposable</code> that creates a unique folder under <code>Path.GetTempPath()</code> in its constructor and deletes it (recursively) in Dispose. Make Dispose idempotent and make other members throw ObjectDisposedException after disposal.</li><li>Write <code>Step(string name)</code> as in the notes and nest three using declarations and one using statement inside a method that throws halfway. Predict the printed order first, then run it.</li><li>Convert <code>AuditLog</code> to also implement <code>IAsyncDisposable</code> with a <code>WriteAsync</code> method. Use it with <code>await using</code> and check the last line is on disk after the block.</li></ol>
+<h3>Self-check questions</h3><details><summary>Does the GC call Dispose?</summary>No. The GC only calls finalizers, and only for objects that have one. Dispose is called by your code (using) or by a DI container that owns the object.</details><details><summary>Why call GC.SuppressFinalize(this) in Dispose()?</summary>Dispose has already cleaned up, so the finalizer is unnecessary. Suppressing it lets the object be collected in one GC instead of being queued for finalization first.</details><details><summary>When is Dispose called for a using declaration?</summary>At the end of the enclosing scope (block or method), including when an exception leaves that scope. Multiple declarations are disposed in reverse order.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is IDisposable and why is it needed in a garbage-collected language?</summary><div>It's the contract for deterministic cleanup. The GC reclaims memory, but it doesn't know when to release OS resources like file handles, sockets or DB connections, and may not run for a long time. Dispose releases them immediately when you're done.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between a using statement and a using declaration?</summary><div>A using statement has its own block and disposes at the closing brace. A using declaration (C# 8) has no braces and disposes at the end of the enclosing scope. Both compile to try/finally, so disposal also happens on exceptions.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain Dispose vs Finalize.</summary><div>Dispose is called explicitly (deterministic) and can clean up both managed and unmanaged resources. A finalizer is called by the GC at a nondeterministic time on the finalizer thread, may never run, delays collection, and must only free unmanaged resources. Modern code uses SafeHandle instead of writing finalizers.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Describe the full Dispose pattern and when you need it.</summary><div>Public Dispose() calls protected virtual Dispose(true) and then GC.SuppressFinalize(this). Dispose(bool disposing) frees managed resources only when disposing is true, frees unmanaged ones in both cases, and guards with a _disposed flag. Subclasses override Dispose(bool) and call base. You need it for unsealed classes that own resources. Sealed classes can use a simple Dispose.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is SafeHandle and why prefer it over a finalizer?</summary><div>SafeHandle is a built-in abstract wrapper around an OS handle. It has a critical finalizer and reference counting that protects against handle recycling and early release during native calls. Wrapping handles in SafeHandle means your own classes never need finalizers.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When should a type implement IAsyncDisposable?</summary><div>When cleanup involves I/O that has an async version, such as flushing a buffered stream or closing a network or database connection. DisposeAsync lets that work run without blocking a thread. Types often implement both interfaces, and await using prefers DisposeAsync.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Logging with ILogger in a console app</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Replace Console.WriteLine debugging with Microsoft.Extensions.Logging: create loggers from a LoggerFactory, pick the right log level, write structured messages with templates, add scopes, and filter noise by category.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Microsoft.Extensions.Logging (MEL)</dt><dd>The standard .NET logging abstraction used by ASP.NET Core, EF Core and the Generic Host.</dd></div><div class="def"><dt>ILogger / ILogger&lt;T&gt;</dt><dd>The interface you log through. <code>ILogger&lt;OrderImporter&gt;</code> uses the type's full name as its category.</dd></div><div class="def"><dt>ILoggerFactory</dt><dd>Creates loggers and owns the providers. Dispose it to flush pending messages.</dd></div><div class="def"><dt>Logging provider</dt><dd>A destination: Console, Debug, EventLog, or third-party ones like Serilog sinks and OpenTelemetry exporters.</dd></div><div class="def"><dt>Category</dt><dd>A logger's name, usually the class name. Filters are applied by category prefix.</dd></div><div class="def"><dt>Log level</dt><dd>How serious a message is: Trace, Debug, Information, Warning, Error, Critical (and None).</dd></div><div class="def"><dt>Message template</dt><dd>A message with named placeholders, <code>"Order {OrderId} paid"</code>, with the values passed separately.</dd></div><div class="def"><dt>Structured logging</dt><dd>Keeping each placeholder value as a named field, so log tools can search and aggregate (<code>OrderId = ORD-1042</code>).</dd></div><div class="def"><dt>EventId</dt><dd>A numeric ID (plus optional name) identifying a kind of event, useful for alerts and filtering.</dd></div><div class="def"><dt>Scope</dt><dd>Context (like a file name or request ID) attached to every message logged inside a <code>using (logger.BeginScope(...))</code> block.</dd></div><div class="def"><dt>Filter rule</dt><dd>A minimum level per category and/or provider, e.g. <code>"Microsoft": "Warning"</code>.</dd></div><div class="def"><dt>Formatter</dt><dd>How the console provider renders a message: simple, systemd or JSON.</dd></div><div class="def"><dt>LoggerMessage source generator</dt><dd>.NET 6+ attribute that generates fast, allocation-light logging methods at compile time.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Log through ILogger, not Console.WriteLine, so messages get levels, categories and filtering, and can go anywhere.</li><li>Use message templates, never <code>$"..."</code> interpolation, so values stay structured.</li><li>Exceptions go in the <b>first</b> argument: <code>LogError(ex, "Could not save {Path}", path)</code>.</li><li>Placeholders are filled by <b>position</b>, not by name.</li><li>The default minimum level is Information, so Debug and Trace are hidden until you lower it.</li><li>The console provider writes on a background thread. Dispose the factory (or host) so the last messages appear.</li></ul></div>
+
+<h3>1. Why not Console.WriteLine?</h3>
+<div class="tbl"><table><tr><th>Need</th><th>Console.WriteLine</th><th>ILogger</th></tr><tr><td>Severity</td><td>None: every line looks the same</td><td>Trace … Critical</td></tr><tr><td>Turn off noisy parts in production</td><td>Edit and redeploy code</td><td>Change config: <code>"OrderImporter": "Warning"</code></td></tr><tr><td>Know where a message came from</td><td>Only if you type it</td><td>Category = class name, plus EventId</td></tr><tr><td>Search "all failures for ORD-1042"</td><td>grep through text</td><td>Query the structured <code>OrderId</code> field</td></tr><tr><td>Send to files, Azure, Seq, Elastic</td><td>Rewrite every call</td><td>Add a provider; calls don't change</td></tr><tr><td>Exceptions with stack traces</td><td>Manual formatting</td><td><code>LogError(ex, ...)</code></td></tr><tr><td>Library code</td><td>Pollutes the app's console</td><td>Libraries accept an ILogger, and the app decides</td></tr></table></div>
+<p>Console.WriteLine is still right for <b>user-facing output</b>, like the menus and tables in your console apps. Logging is for <b>operators and developers</b>: what the program did, how long it took, and what went wrong.</p>
+
+<h3>2. Set up logging in a console app</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new console -n OrderImporter
+cd OrderImporter
+dotnet add package Microsoft.Extensions.Logging
+dotnet add package Microsoft.Extensions.Logging.Console</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Microsoft.Extensions.Logging;
+
+using ILoggerFactory factory = LoggerFactory.Create(builder =&gt;
+{
+    builder
+        .SetMinimumLevel(LogLevel.Debug)              // default would be Information
+        .AddSimpleConsole(options =&gt;
+        {
+            options.SingleLine = true;
+            options.TimestampFormat = "HH:mm:ss ";
+            options.IncludeScopes = true;
+        });
+});
+
+ILogger&lt;Program&gt; log = factory.CreateLogger&lt;Program&gt;();          // category "Program"
+ILogger csvLog = factory.CreateLogger("OrderImporter.Csv");      // category by name
+
+log.LogInformation("Importer started with {ArgCount} arguments", args.Length);
+log.LogDebug("Working directory is {Directory}", Environment.CurrentDirectory);
+log.LogWarning("Disk space low: {FreeGb} GB left", 3.5);
+csvLog.LogTrace("This is hidden: Trace is below the Debug minimum");
+
+// 10:15:02 info: Program[0] Importer started with 0 arguments
+// 10:15:02 dbug: Program[0] Working directory is /home/priya/OrderImporter
+// 10:15:02 warn: Program[0] Disk space low: 3.5 GB left</code></pre></div>
+<p>The <code>[0]</code> is the EventId. When you pass a class as the type argument, as in <code>CreateLogger&lt;OrderImporter&gt;()</code>, the category is its full name, e.g. <code>OrderImporter.Services.CsvReader</code>. Classes don't create loggers themselves. They ask for one in the constructor, which is how DI will hand it over on Friday and in ASP.NET Core:</p>
+<div class="code"><div class="fname">OrderImporter.cs</div><pre><code class="language-csharp">using Microsoft.Extensions.Logging;
+
+public sealed class OrderImporter(ILogger&lt;OrderImporter&gt; logger)
+{
+    public int Import(string path)
+    {
+        logger.LogInformation("Importing {Path}", path);
+        int count = File.ReadLines(path).Skip(1).Count();
+        logger.LogInformation("Imported {Count} orders from {Path}", count, path);
+        return count;
+    }
+}
+
+// In Program.cs (no DI yet): new OrderImporter(factory.CreateLogger&lt;OrderImporter&gt;())</code></pre></div>
+
+<h3>3. Log levels</h3>
+<div class="tbl"><table><tr><th>Level</th><th>Value</th><th>Console tag</th><th>Use for</th><th>Example</th></tr><tr><td>Trace</td><td>0</td><td>trce</td><td>Very detailed internals; never on in production</td><td>"Parsed cell C7 = '456.00'"</td></tr><tr><td>Debug</td><td>1</td><td>dbug</td><td>Developer diagnostics</td><td>"Using data file /home/priya/.local/share/..."</td></tr><tr><td>Information</td><td>2</td><td>info</td><td>Normal milestones of the app</td><td>"Imported 1,240 orders in 84 ms"</td></tr><tr><td>Warning</td><td>3</td><td>warn</td><td>Unexpected but handled; might need attention</td><td>"Row 17 skipped: amount 'abc' is not a number"</td></tr><tr><td>Error</td><td>4</td><td>fail</td><td>An operation failed; the app continues</td><td>"Saving expenses failed" + exception</td></tr><tr><td>Critical</td><td>5</td><td>crit</td><td>The app can't continue or data is at risk</td><td>"Data file corrupt; refusing to start"</td></tr><tr><td>None</td><td>6</td><td></td><td>Used only in filters to switch a category off</td><td></td></tr></table></div>
+<div class="note tip"><b>Tip.</b> A useful test for Warning vs Error: did the <i>current operation</i> fail? A skipped bad row is a Warning (the import still succeeded). A failed save is an Error.</div>
+
+<h3>4. Structured logging with message templates</h3>
+<div class="code"><div class="fname">Structured.cs</div><pre><code class="language-csharp">string orderId = "ORD-1042";
+decimal amount = 2360m;
+
+// ❌ Interpolation: the logger gets one finished string. No OrderId field, and the string
+//    is built even when the level is filtered out.
+log.LogInformation($"Order {orderId} paid {amount}");
+
+// ✓ Template: the text and the values are kept separately
+log.LogInformation("Order {OrderId} paid {Amount} via {PaymentMode}", orderId, amount, "UPI");
+
+// Format specifiers work inside placeholders
+log.LogInformation("GST for {OrderId} is {Gst:N2}", orderId, amount * 0.18m);
+
+// Exceptions: always the FIRST argument, so providers record the type and stack trace
+try
+{
+    decimal.Parse("₹2,360");
+}
+catch (FormatException ex)
+{
+    log.LogError(ex, "Could not parse amount {RawAmount} in row {Row}", "₹2,360", 17);
+}
+
+// EventIds: stable numbers for events you want to alert on
+log.LogWarning(new EventId(4001, "DuplicateOrder"), "Duplicate order {OrderId} skipped", orderId);</code></pre></div>
+<p>Switch to the JSON formatter to see the structure. Log tools such as Seq, Elastic, Application Insights and Loki store these fields as searchable data:</p>
+<div class="code nofile"><pre><code class="language-csharp">// builder.AddJsonConsole(o =&gt; o.JsonWriterOptions = new System.Text.Json.JsonWriterOptions { Indented = true });</code></pre></div>
+<div class="code"><div class="fname">JSON console output (shape)</div><pre><code class="language-json">{
+  "EventId": 0,
+  "LogLevel": "Information",
+  "Category": "Program",
+  "Message": "Order ORD-1042 paid 2360 via UPI",
+  "State": {
+    "Message": "Order ORD-1042 paid 2360 via UPI",
+    "OrderId": "ORD-1042",
+    "Amount": 2360,
+    "PaymentMode": "UPI",
+    "{OriginalFormat}": "Order {OrderId} paid {Amount} via {PaymentMode}"
+  }
+}</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Placeholders are matched by <b>position</b>: <code>LogInformation("{Amount} for {OrderId}", orderId, amount)</code> stores the order ID under Amount. The name is only a label. Also keep personal data (full card numbers, Aadhaar, passwords, OTPs) out of logs. Log an ID or a masked value instead.</div>
+
+<h3>5. Scopes: context for a block of work</h3>
+<div class="code"><div class="fname">Scopes.cs</div><pre><code class="language-csharp">string[] files = ["orders_nov.csv", "orders_dec.csv"];
+foreach (string file in files)
+{
+    using (log.BeginScope("File {FileName}", file))
+    {
+        log.LogInformation("Import started");
+        for (int row = 1; row &lt;= 2; row++)
+        {
+            using (log.BeginScope("Row {Row}", row))
+            {
+                log.LogDebug("Row parsed");
+            }
+        }
+        log.LogInformation("Import finished");
+    }
+}
+// With IncludeScopes = true the console output looks roughly like:
+// 10:15:03 info: Program[0] =&gt; File orders_nov.csv Import started
+// 10:15:03 dbug: Program[0] =&gt; File orders_nov.csv =&gt; Row 1 Row parsed
+// 10:15:03 dbug: Program[0] =&gt; File orders_nov.csv =&gt; Row 2 Row parsed
+// 10:15:03 info: Program[0] =&gt; File orders_nov.csv Import finished</code></pre></div>
+<p>In ASP.NET Core the framework opens a scope per request (with a RequestId and TraceId), so every log line from that request can be tied together. Structured providers store scope values as fields too (<code>FileName</code>, <code>Row</code>).</p>
+
+<h3>6. Filtering, performance and the LoggerMessage generator</h3>
+<div class="code"><div class="fname">Filters.cs</div><pre><code class="language-csharp">using ILoggerFactory factory = LoggerFactory.Create(builder =&gt; builder
+    .AddSimpleConsole(o =&gt; o.SingleLine = true)
+    .SetMinimumLevel(LogLevel.Information)               // global floor
+    .AddFilter("OrderImporter.Csv", LogLevel.Debug)      // a category you're debugging right now
+    .AddFilter("System.Net.Http", LogLevel.Warning));    // a noisy library</code></pre></div>
+<p>The same rules usually live in configuration (tomorrow), so you can change them without recompiling. The longest matching category prefix wins:</p>
+<div class="code"><div class="fname">appsettings.json</div><pre><code class="language-json">{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "OrderImporter.Csv": "Debug",
+      "Microsoft": "Warning"
+    }
+  }
+}</code></pre></div>
+<div class="code"><div class="fname">LoggingPerformance.cs</div><pre><code class="language-csharp">// Skip building an expensive argument when the level is off
+if (log.IsEnabled(LogLevel.Debug))
+    log.LogDebug("Full order payload: {Payload}", System.Text.Json.JsonSerializer.Serialize(order));
+
+// Call site of the generated methods below: strongly typed, no boxing, level check built in
+Log.Imported(log, 1240, "orders_nov.csv", 84);
+
+// High-performance logging (.NET 6+): the generator writes the method body for you
+public static partial class Log
+{
+    [LoggerMessage(EventId = 2001, Level = LogLevel.Information,
+                   Message = "Imported {Count} orders from {FileName} in {ElapsedMs} ms")]
+    public static partial void Imported(ILogger logger, int count, string fileName, long elapsedMs);
+
+    [LoggerMessage(EventId = 4001, Level = LogLevel.Warning, Message = "Row {Row} skipped: {Reason}")]
+    public static partial void RowSkipped(ILogger logger, int row, string reason);
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Option</th><th>When</th></tr><tr><td>Plain <code>LogInformation(template, args)</code></td><td>Most code; it's fine</td></tr><tr><td><code>IsEnabled</code> check</td><td>When an argument is expensive to compute</td></tr><tr><td><code>[LoggerMessage]</code> source generator</td><td>Hot paths (per request or per row), libraries, or when you want a catalogue of event IDs</td></tr><tr><td>Serilog / NLog behind ILogger</td><td>When you need rolling files, many sinks or enrichers. Your code still uses ILogger</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Using string interpolation in log calls, which loses structure and allocates even when the level is filtered out.</li><li>Passing the exception as a placeholder argument (<code>LogError("Failed {Ex}", ex)</code>) instead of the first parameter.</li><li>Logging everything as Information, so real problems drown in noise.</li><li>Not disposing the LoggerFactory in a short console app, so the final messages never appear.</li><li>Logging secrets or personal data (passwords, OTPs, full card numbers, Aadhaar).</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Add logging to last week's grade analyser (or any earlier project): Information for start/finish with counts and elapsed ms, Warning for each skipped CSV row with the row number and reason, Error with the exception when the file can't be opened.</li><li>Wrap processing of each input file in a scope with the file name, turn on <code>IncludeScopes</code>, and process two files. Then switch to <code>AddJsonConsole</code> and look at the structured output.</li><li>Move the Warning and Information calls into a static partial <code>Log</code> class with <code>[LoggerMessage]</code> methods and EventIds 1000+. Add a filter that hides Information from your CSV category but keeps Warnings.</li></ol>
+<h3>Self-check questions</h3><details><summary>What's wrong with LogInformation($"User {id} logged in")?</summary>The logger receives an already-formatted string. There's no structured UserId field, every message has a different template so tools can't group them, and the string is built even when Information is disabled.</details><details><summary>What determines a logger's category?</summary>The name you pass to CreateLogger(name), or the full type name for ILogger&lt;T&gt;. Filters match on category prefixes.</details><details><summary>Why might the last log lines be missing when a console app exits?</summary>The console provider queues messages and writes them on a background thread. If the app exits without disposing the LoggerFactory or host, queued messages may never be written.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why use ILogger instead of Console.WriteLine?</summary><div>ILogger gives levels, categories, filtering by config, structured data, exception details, scopes and pluggable destinations (console, files, cloud) without changing calling code. Console.WriteLine is unfiltered plain text that only goes to stdout.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Name the log levels in order and when you'd use each.</summary><div>Trace (finest detail), Debug (developer diagnostics), Information (normal milestones), Warning (unexpected but handled), Error (an operation failed), Critical (app-wide failure or data at risk). None turns a category off in filters.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is structured logging?</summary><div>Logging with message templates whose placeholder values are kept as named properties rather than only merged into text. Log stores can then filter and aggregate by those fields, e.g. all Errors where OrderId = ORD-1042.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are logging scopes and when would you use them?</summary><div>BeginScope attaches context, such as a request ID, file name or order ID, to every log written inside the scope, including from deeper method calls that know nothing about it. ASP.NET Core opens one per request. Use them to correlate messages from one unit of work.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do log filter rules work?</summary><div>Each rule has an optional provider, a category prefix and a minimum level. For each message the most specific matching rule applies: the provider-specific rule first, then the longest matching category prefix, then Default. Rules come from code (AddFilter) or the Logging section of configuration.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does the LoggerMessage source generator give you?</summary><div>Compile-time generated logging methods. Templates are parsed once, IsEnabled is checked before any work, value types aren't boxed, and each event has a fixed EventId and a strongly typed signature. It's the recommended approach for hot paths and libraries.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Configuration in console apps and the Generic Host</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Stop hard-coding file paths, limits and keys: layer appsettings.json, environment-specific files, environment variables and command-line arguments, bind them to strongly typed options classes, keep secrets out of git, and see how Host.CreateApplicationBuilder bundles config, logging and DI exactly like ASP.NET Core.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Microsoft.Extensions.Configuration</dt><dd>The .NET configuration system: key/value settings collected from many providers into one view.</dd></div><div class="def"><dt>Configuration provider</dt><dd>A source of settings: JSON file, environment variables, command line, user secrets, Azure Key Vault…</dd></div><div class="def"><dt>IConfiguration</dt><dd>The merged view. Read values with <code>config["Section:Key"]</code>.</dd></div><div class="def"><dt>Configuration key</dt><dd>A path with colons for nesting: <code>Storage:DataFile</code>. Keys are case-insensitive.</dd></div><div class="def"><dt>Section</dt><dd>A subtree, <code>config.GetSection("Storage")</code>, which is also an IConfiguration.</dd></div><div class="def"><dt>Layering / precedence</dt><dd>Providers added later override earlier ones for the same key.</dd></div><div class="def"><dt>Environment name</dt><dd>Development, Staging or Production. Set with <code>DOTNET_ENVIRONMENT</code> (or <code>ASPNETCORE_ENVIRONMENT</code> for web apps). The default is Production.</dd></div><div class="def"><dt>Binding</dt><dd>Copying a section's values into a C# object's properties: <code>section.Get&lt;T&gt;()</code> or <code>section.Bind(obj)</code>.</dd></div><div class="def"><dt>Options pattern</dt><dd>Registering settings classes in DI and consuming them as <code>IOptions&lt;T&gt;</code>, <code>IOptionsSnapshot&lt;T&gt;</code> or <code>IOptionsMonitor&lt;T&gt;</code>.</dd></div><div class="def"><dt>User secrets</dt><dd>A development-only JSON file stored in your user profile, outside the project folder, so secrets never get committed.</dd></div><div class="def"><dt>Generic Host</dt><dd><code>IHost</code>: the object that wires up configuration, logging, dependency injection and app lifetime. ASP.NET Core is built on it.</dd></div><div class="def"><dt>HostApplicationBuilder</dt><dd>.NET 7+ builder from <code>Host.CreateApplicationBuilder(args)</code>, with sensible defaults already applied.</dd></div><div class="def"><dt>Dependency injection (DI)</dt><dd>The container creates your classes and passes in what their constructors ask for (covered in depth in Phase 2).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Order matters: JSON → environment JSON → user secrets (Development) → environment variables → command line. The last one wins.</li><li>Environment variables use <code>__</code> (double underscore) where config keys use <code>:</code>.</li><li>Mark <code>appsettings.json</code> as <b>copy to output</b>, or it won't be found next to the .dll.</li><li>Bind sections to small options classes, and validate them at startup rather than on first use.</li><li>Never commit secrets. Use user secrets locally and environment variables or a vault in production.</li><li>Everything here works exactly the same in ASP.NET Core, which uses the same libraries.</li></ul></div>
+
+<h3>1. Building a configuration from providers</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new console -n GstInvoicer
+cd GstInvoicer
+dotnet add package Microsoft.Extensions.Configuration.Json
+dotnet add package Microsoft.Extensions.Configuration.EnvironmentVariables
+dotnet add package Microsoft.Extensions.Configuration.CommandLine
+dotnet add package Microsoft.Extensions.Configuration.Binder</code></pre></div>
+<div class="code"><div class="fname">appsettings.json</div><pre><code class="language-json">{
+  "Company": {
+    "Name": "Sharma Stationers",
+    "Gstin": "27ABCDE1234F1Z5",
+    "State": "Maharashtra"
+  },
+  "Invoice": {
+    "Prefix": "INV",
+    "GstRatePercent": 18,
+    "DueInDays": 15,
+    "OutputFolder": "invoices"
+  },
+  "Smtp": {
+    "Host": "smtp.example.com",
+    "Port": 587,
+    "User": "billing@example.com",
+    "Password": ""
+  }
+}</code></pre></div>
+<div class="code"><div class="fname">GstInvoicer.csproj (add)</div><pre><code class="language-xml">&lt;ItemGroup&gt;
+  &lt;!-- copy appsettings.json and appsettings.*.json next to the .dll on build --&gt;
+  &lt;None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" /&gt;
+&lt;/ItemGroup&gt;</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Microsoft.Extensions.Configuration;
+
+string environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+
+IConfiguration config = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory)                              // look next to the .dll
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true)
+    .AddEnvironmentVariables(prefix: "INVOICER_")                       // only INVOICER_* variables, prefix removed
+    .AddCommandLine(args)
+    .Build();
+
+string company = config["Company:Name"] ?? "(not set)";
+int dueDays = config.GetValue&lt;int&gt;("Invoice:DueInDays");               // 15
+decimal gst = config.GetValue("Invoice:GstRatePercent", 18m);         // with a default
+string? smtpHost = config.GetSection("Smtp")["Host"];
+
+Console.WriteLine($"{company}: GST {gst}%, due in {dueDays} days ({environment})");
+// Sharma Stationers: GST 18%, due in 15 days (Production)</code></pre></div>
+
+<h3>2. Environment-specific files</h3>
+<p>Put only the <i>differences</i> in the environment file. Everything else comes from <code>appsettings.json</code>.</p>
+<div class="code"><div class="fname">appsettings.Development.json</div><pre><code class="language-json">{
+  "Invoice": {
+    "DueInDays": 7,
+    "OutputFolder": "invoices-dev"
+  },
+  "Smtp": {
+    "Host": "localhost",
+    "Port": 2525
+  }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">dotnet run                                          # due in 15 days (appsettings.json)
+DOTNET_ENVIRONMENT=Development dotnet run           # due in 7 days  (Development file overrides)
+
+# Windows PowerShell
+$env:DOTNET_ENVIRONMENT = "Development"; dotnet run</code></pre></div>
+
+<h3>3. Environment variables and command-line arguments</h3>
+<div class="tbl"><table><tr><th>Source</th><th>How you write Invoice:DueInDays = 30</th><th>Notes</th></tr><tr><td>JSON</td><td><code>"Invoice": { "DueInDays": 30 }</code></td><td>Nesting becomes <code>:</code></td></tr><tr><td>JSON array</td><td><code>"Categories": ["Food", "Rent"]</code></td><td>Keys <code>Categories:0</code>, <code>Categories:1</code></td></tr><tr><td>Environment variable</td><td><code>INVOICER_Invoice__DueInDays=30</code></td><td><code>__</code> → <code>:</code>; the prefix is removed</td></tr><tr><td>Command line</td><td><code>--Invoice:DueInDays=30</code> or <code>--Invoice:DueInDays 30</code></td><td>After <code>--</code> with dotnet run</td></tr><tr><td>User secrets</td><td><code>dotnet user-secrets set "Invoice:DueInDays" "30"</code></td><td>Development only</td></tr></table></div>
+<div class="code nofile"><pre><code class="language-bash">INVOICER_Invoice__DueInDays=30 dotnet run                                   # 30: env var beats JSON
+INVOICER_Invoice__DueInDays=30 dotnet run -- --Invoice:DueInDays=45         # 45: command line beats everything
+dotnet run -- --Smtp:Host smtp.office.example.com</code></pre></div>
+<div class="note tip"><b>Tip.</b> Containers, Kubernetes and Azure App Service all configure apps through environment variables, which is why <code>__</code> exists: many shells and platforms don't allow <code>:</code> in variable names.</div>
+
+<h3>4. Binding to strongly typed options classes</h3>
+<p>Reading <code>config["Invoice:DueInDays"]</code> all over the code spreads magic strings around and parses values over and over. Bind each section once to a small class.</p>
+<div class="code"><div class="fname">InvoiceOptions.cs</div><pre><code class="language-csharp">using System.ComponentModel.DataAnnotations;
+
+public sealed class InvoiceOptions
+{
+    public const string SectionName = "Invoice";
+
+    [Required, RegularExpression("^[A-Z]{2,5}$")]
+    public string Prefix { get; set; } = "INV";
+
+    [Range(typeof(decimal), "0", "28")]
+    public decimal GstRatePercent { get; set; } = 18;
+
+    [Range(1, 90)]
+    public int DueInDays { get; set; } = 15;
+
+    [Required]
+    public string OutputFolder { get; set; } = "invoices";
+}</code></pre></div>
+<div class="code"><div class="fname">Binding.cs</div><pre><code class="language-csharp">using System.ComponentModel.DataAnnotations;
+
+// Create and fill a new object (null if the section doesn't exist)
+InvoiceOptions invoice = config.GetSection(InvoiceOptions.SectionName).Get&lt;InvoiceOptions&gt;() ?? new();
+
+// Or fill an existing object; keys that are missing keep their defaults
+var options = new InvoiceOptions();
+config.GetSection(InvoiceOptions.SectionName).Bind(options);
+
+// Validate without a host
+var errors = new List&lt;ValidationResult&gt;();
+if (!Validator.TryValidateObject(invoice, new ValidationContext(invoice), errors, validateAllProperties: true))
+{
+    Console.Error.WriteLine("Invalid configuration: " + string.Join("; ", errors.Select(e =&gt; e.ErrorMessage)));
+    return 1;
+}
+Console.WriteLine($"{invoice.Prefix}, {invoice.GstRatePercent}% GST, {invoice.DueInDays} days");
+return 0;</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Binding is forgiving in some ways and strict in others. A misspelt key (<code>"DueInDay"</code>) is silently ignored and the default stays. A value that can't be converted (<code>"DueInDays": "fifteen"</code>) throws InvalidOperationException. Validation catches the first kind of problem.</div>
+
+<h3>5. User secrets (awareness)</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet user-secrets init                                   # adds &lt;UserSecretsId&gt; to the .csproj
+dotnet user-secrets set "Smtp:Password" "dev-only-password"
+dotnet user-secrets list
+# Stored OUTSIDE the project:
+#   Windows: %APPDATA%\Microsoft\UserSecrets\&lt;id&gt;\secrets.json
+#   Linux/macOS: ~/.microsoft/usersecrets/&lt;id&gt;/secrets.json</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">// dotnet add package Microsoft.Extensions.Configuration.UserSecrets
+var builder = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: false)
+    .AddUserSecrets&lt;Program&gt;(optional: true)    // usually only in Development
+    .AddEnvironmentVariables(prefix: "INVOICER_");</code></pre></div>
+<p>User secrets are <b>not encrypted</b>. They just keep secrets out of your repository. In production, use environment variables set by the platform or a vault such as Azure Key Vault (Phase 4).</p>
+
+<h3>6. The Generic Host: config + logging + DI in one line</h3>
+<p>Everything you wired by hand this week (configuration layers, logging, filters) is exactly what <code>Host.CreateApplicationBuilder</code> sets up for you. ASP.NET Core's <code>WebApplication.CreateBuilder</code> is the same idea with a web server added, so this is your bridge to Phase 2.</p>
+<div class="code nofile"><pre><code class="language-bash">dotnet add package Microsoft.Extensions.Hosting
+dotnet add package Microsoft.Extensions.Options.DataAnnotations</code></pre></div>
+<div class="code"><div class="fname">Program.cs (Generic Host)</div><pre><code class="language-csharp">using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);   // .NET 7+
+// Already done for you:
+//   appsettings.json, appsettings.{Environment}.json, user secrets (Development),
+//   environment variables, command line, console + debug logging with the "Logging" section, DI container
+
+builder.Services.AddOptions&lt;InvoiceOptions&gt;()
+    .Bind(builder.Configuration.GetSection(InvoiceOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();                           // checked when the host starts
+builder.Services.AddSingleton&lt;InvoiceNumberer&gt;();
+
+using IHost host = builder.Build();
+
+var numberer = host.Services.GetRequiredService&lt;InvoiceNumberer&gt;();   // DI creates it with its dependencies
+Console.WriteLine(numberer.Next());   // INV-2026-0001
+Console.WriteLine(numberer.Next());   // INV-2026-0002
+Console.WriteLine(host.Services.GetRequiredService&lt;IHostEnvironment&gt;().EnvironmentName);   // Production
+
+public sealed class InvoiceNumberer(IOptions&lt;InvoiceOptions&gt; options, ILogger&lt;InvoiceNumberer&gt; logger)
+{
+    private int _next = 1;
+
+    public string Next()
+    {
+        string number = $"{options.Value.Prefix}-{DateTime.Today.Year}-{_next++:D4}";
+        logger.LogInformation("Issued invoice number {InvoiceNumber}", number);
+        return number;
+    }
+}</code></pre></div>
+<div class="note warn"><b>Console apps.</b> <code>ValidateOnStart</code> runs when the host <b>starts</b> (<code>host.Run()</code> / <code>StartAsync</code>). In an interactive console app that only calls <code>Build()</code> and resolves services, validation happens the first time something reads <code>options.Value</code>, which throws OptionsValidationException. Also note that the host's content root is the <b>current directory</b> by default. Saturday's project sets it to <code>AppContext.BaseDirectory</code> so appsettings.json is found wherever the app is run from.</div>
+<div class="tbl"><table><tr><th>Interface</th><th>Lifetime</th><th>Sees config changes?</th><th>Use in</th></tr><tr><td><code>IOptions&lt;T&gt;</code></td><td>Singleton, read once</td><td>No</td><td>Most console apps and singletons</td></tr><tr><td><code>IOptionsSnapshot&lt;T&gt;</code></td><td>Scoped, re-read per scope (per web request)</td><td>Yes, next scope</td><td>Scoped services in web apps</td></tr><tr><td><code>IOptionsMonitor&lt;T&gt;</code></td><td>Singleton with <code>CurrentValue</code> and <code>OnChange</code></td><td>Yes, immediately</td><td>Long-running services, feature flags</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li><code>appsettings.json</code> not copied to the output folder, so the app silently runs on defaults (or fails when the file is required).</li><li>Using <code>:</code> in environment variable names on Linux, or forgetting the prefix, so the override never applies.</li><li>Committing real passwords or API keys in <code>appsettings.json</code>.</li><li>Reading <code>config["Some:Key"]</code> in dozens of places instead of binding once to an options class.</li><li>Assuming <code>ValidateOnStart</code> ran when the host was never started.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create <code>appsettings.json</code> and <code>appsettings.Development.json</code> for the invoicer above. Print the effective <code>InvoiceOptions</code> under Production, Development, with an <code>INVOICER_Invoice__DueInDays</code> environment variable, and with a command-line override. Write down which source won each time.</li><li>Add DataAnnotations to <code>InvoiceOptions</code> and make startup fail with a clear message when <code>GstRatePercent</code> is 35 or <code>Prefix</code> is lowercase.</li><li>Rewrite the program with <code>Host.CreateApplicationBuilder</code>: register InvoiceOptions with validation, inject <code>ILogger&lt;T&gt;</code> and <code>IOptions&lt;InvoiceOptions&gt;</code> into an <code>InvoiceService</code>, and set the console log level for your namespace to Debug through configuration only.</li></ol>
+<h3>Self-check questions</h3><details><summary>If appsettings.json sets DueInDays to 15 and the environment variable INVOICER_Invoice__DueInDays is 30, which wins?</summary>30, assuming AddEnvironmentVariables("INVOICER_") was added after the JSON file. Later providers override earlier ones.</details><details><summary>How do you represent the key Storage:DataFile in an environment variable?</summary>Storage__DataFile (double underscore for each colon), plus any prefix your app configured, e.g. EXPENSES_Storage__DataFile.</details><details><summary>What does Host.CreateApplicationBuilder add that ConfigurationBuilder doesn't?</summary>Default configuration sources (including environment files and user secrets in Development), logging configured from the Logging section, a DI container, the hosting environment and application lifetime management.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How does configuration precedence work in .NET?</summary><div>Providers are added in order and later ones override earlier ones for the same key. The default host order is appsettings.json, appsettings.{Environment}.json, user secrets (Development only), environment variables, then command-line arguments.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the options pattern?</summary><div>Binding a configuration section to a strongly typed class and consuming it through IOptions&lt;T&gt; (or Snapshot/Monitor) via DI. It removes magic strings, gives type conversion and validation, and keeps each class depending only on the settings it needs.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How should you store secrets for local development and production?</summary><div>Locally use user secrets (dotnet user-secrets), which live outside the repo. In production use environment variables injected by the platform, or a secret store such as Azure Key Vault, often with a managed identity. Never commit them to appsettings.json.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>IOptions vs IOptionsSnapshot vs IOptionsMonitor?</summary><div>IOptions is a singleton computed once, so it ignores later changes. IOptionsSnapshot is scoped and recomputed per scope (per request), so it picks up reloaded config and can't be injected into singletons. IOptionsMonitor is a singleton that exposes CurrentValue and an OnChange callback for live updates.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you validate configuration at startup?</summary><div>AddOptions&lt;T&gt;().Bind(section).ValidateDataAnnotations() (or .Validate(predicate) / IValidateOptions&lt;T&gt;), then .ValidateOnStart() so the host fails fast when it starts instead of on first use. Without a host, call Validator.TryValidateObject yourself after binding.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the Generic Host and why use it in a console app?</summary><div>IHost wires configuration, logging, DI and lifetime (graceful shutdown on Ctrl+C) in the same way as ASP.NET Core. It's worth it for anything beyond a toy: background workers (BackgroundService), apps with several services, or code you'll later move into a web API.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Micro-project 4: Expense tracker with JSON storage</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a console expense tracker that stores data in a JSON file: an immutable Expense record, an IExpenseStore abstraction with a JSON implementation that saves atomically, add/list/edit/delete, the data path from configuration, and ILogger throughout. Budget: about 4 hours.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Persistence</dt><dd>Keeping data after the program exits, here in a JSON file.</dd></div><div class="def"><dt>Atomic save</dt><dd>A write that either fully replaces the old file or leaves it untouched. It never leaves a half-written file.</dd></div><div class="def"><dt>Temp file + replace</dt><dd>Write the new content to <code>expenses.json.tmp</code>, then swap it into place in one rename-style step.</dd></div><div class="def"><dt>Schema version</dt><dd>A number stored in the file so future versions of the app know how to read old data.</dd></div><div class="def"><dt>Store abstraction</dt><dd><code>IExpenseStore</code>: the rest of the app doesn't know (or care) that data lives in JSON.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Expense is an immutable positional record; edits use <code>with</code>.</li><li>The JSON file wraps the list in an object with a <code>version</code> field.</li><li>Saves go to a temp file, which then replaces the real file and keeps a <code>.bak</code> of the previous version.</li><li>The service saves <b>first</b> and updates memory only if the save succeeded.</li><li>A corrupt data file stops the app at startup. It never silently starts empty and overwrites your data.</li><li>Tomorrow adds monthly LINQ reports, budget alerts from config and CSV export.</li></ul></div>
+
+<h3>Requirements</h3>
+<ul>
+<li><b>Expense</b>: Id, Date, Category (Food, Groceries, Rent, Transport, Utilities, Shopping, Health, Entertainment, Education, Other), Amount (₹, decimal, up to 2 places, max ₹10 lakh), PaymentMode (UPI, Card, Cash), optional Note (≤ 200 characters).</li>
+<li>Menu: list, add, edit, delete, exit. Each change is saved immediately.</li>
+<li>Storage: one JSON file, camelCase, indented, enums as strings, ₹ kept readable. Its location comes from configuration (<code>Storage:DataFile</code>) and can be overridden by environment variable or command line.</li>
+<li>Saving is atomic, and the previous version is kept as <code>.bak</code>.</li>
+<li>Missing file → start empty. Corrupt file → refuse to start, with a clear message and the line number.</li>
+<li>ILogger for every load, save and change; the console stays readable (Warning by default, Information for our namespace).</li>
+</ul>
+
+<h3>Scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new sln -n ExpenseTracker
+dotnet new classlib -n ExpenseTracker.Core
+dotnet new console  -n ExpenseTracker.App
+dotnet sln add ExpenseTracker.Core ExpenseTracker.App
+dotnet add ExpenseTracker.App reference ExpenseTracker.Core
+rm ExpenseTracker.Core/Class1.cs
+
+dotnet add ExpenseTracker.Core package Microsoft.Extensions.Logging.Abstractions
+dotnet add ExpenseTracker.Core package Microsoft.Extensions.Options
+dotnet add ExpenseTracker.App  package Microsoft.Extensions.Hosting
+dotnet new gitignore</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">ExpenseTracker/
+├─ ExpenseTracker.sln
+├─ .gitignore
+├─ ExpenseTracker.Core/
+│  ├─ Models/
+│  │  ├─ Category.cs
+│  │  ├─ PaymentMode.cs
+│  │  └─ Expense.cs
+│  ├─ Storage/
+│  │  ├─ IExpenseStore.cs
+│  │  ├─ StorageOptions.cs
+│  │  ├─ ExpenseStoreException.cs
+│  │  ├─ ExpenseDocument.cs
+│  │  └─ JsonFileExpenseStore.cs
+│  └─ Services/
+│     └─ ExpenseService.cs
+└─ ExpenseTracker.App/
+   ├─ appsettings.json
+   ├─ ConsoleInput.cs
+   └─ Program.cs</code></pre></div>
+<p>The Core library references only the logging and options <i>abstractions</i>. It doesn't know about the console or about the host. Only the App references <code>Microsoft.Extensions.Hosting</code>.</p>
+
+<h3>Step 1 — Enums and the Expense record</h3>
+<div class="code"><div class="fname">ExpenseTracker.Core/Models/Category.cs + PaymentMode.cs</div><pre><code class="language-csharp">namespace ExpenseTracker.Core.Models;
+
+// Start at 1 so a missing value (0) is detectable
+public enum Category
+{
+    Food = 1, Groceries, Rent, Transport, Utilities, Shopping, Health, Entertainment, Education, Other
+}
+
+public enum PaymentMode
+{
+    Upi = 1, Card, Cash
+}</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.Core/Models/Expense.cs</div><pre><code class="language-csharp">namespace ExpenseTracker.Core.Models;
+
+public sealed record Expense(
+    int Id,
+    DateOnly Date,
+    Category Category,
+    decimal Amount,
+    PaymentMode PaymentMode,
+    string? Note = null)
+{
+    public const decimal MaxAmount = 10_00_000m;    // ₹10 lakh: anything bigger is almost certainly a typo
+    public const int MaxNoteLength = 200;
+
+    // Lazy list of problems (Week 4's yield); empty means valid
+    public IEnumerable&lt;string&gt; Validate()
+    {
+        if (Id &lt;= 0)
+            yield return "Id must be positive";
+        if (Date &lt; new DateOnly(2000, 1, 1) || Date &gt; DateOnly.FromDateTime(DateTime.Today).AddDays(1))
+            yield return $"Date {Date:yyyy-MM-dd} is out of range";
+        if (!Enum.IsDefined(Category))
+            yield return $"Unknown category {(int)Category}";
+        if (!Enum.IsDefined(PaymentMode))
+            yield return $"Unknown payment mode {(int)PaymentMode}";
+        if (Amount &lt;= 0 || Amount &gt; MaxAmount)
+            yield return $"Amount must be between ₹0.01 and ₹{MaxAmount:N0}";
+        if (decimal.Round(Amount, 2) != Amount)
+            yield return "Amount can have at most 2 decimal places";
+        if (Note is { Length: &gt; MaxNoteLength })
+            yield return $"Note is longer than {MaxNoteLength} characters";
+    }
+}</code></pre></div>
+
+<h3>Step 2 — The store abstraction, options and exception</h3>
+<div class="code"><div class="fname">ExpenseTracker.Core/Storage/IExpenseStore.cs</div><pre><code class="language-csharp">using ExpenseTracker.Core.Models;
+
+namespace ExpenseTracker.Core.Storage;
+
+public interface IExpenseStore
+{
+    /// &lt;summary&gt;Where the data lives (a file path for the JSON store).&lt;/summary&gt;
+    string Location { get; }
+
+    Task&lt;IReadOnlyList&lt;Expense&gt;&gt; LoadAsync(CancellationToken ct = default);
+
+    /// &lt;summary&gt;Replaces ALL stored expenses with &lt;paramref name="expenses"/&gt;.&lt;/summary&gt;
+    Task SaveAsync(IReadOnlyList&lt;Expense&gt; expenses, CancellationToken ct = default);
+}</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.Core/Storage/StorageOptions.cs + ExpenseStoreException.cs</div><pre><code class="language-csharp">namespace ExpenseTracker.Core.Storage;
+
+public sealed class StorageOptions
+{
+    public const string SectionName = "Storage";
+
+    /// &lt;summary&gt;Absolute path, or a path relative to LocalApplicationData/ExpenseTracker.&lt;/summary&gt;
+    public string DataFile { get; set; } = "expenses.json";
+}
+
+public sealed class ExpenseStoreException(string message, Exception? inner = null) : Exception(message, inner);</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.Core/Storage/ExpenseDocument.cs</div><pre><code class="language-csharp">using ExpenseTracker.Core.Models;
+
+namespace ExpenseTracker.Core.Storage;
+
+// The file's top-level shape: { "version": 1, "expenses": [ ... ] }
+public sealed record ExpenseDocument(int Version, List&lt;Expense&gt; Expenses);</code></pre></div>
+
+<h3>Step 3 — JsonFileExpenseStore with atomic save</h3>
+<div class="code"><div class="fname">ExpenseTracker.Core/Storage/JsonFileExpenseStore.cs</div><pre><code class="language-csharp">using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using ExpenseTracker.Core.Models;
+
+namespace ExpenseTracker.Core.Storage;
+
+public sealed class JsonFileExpenseStore : IExpenseStore
+{
+    public const int CurrentVersion = 1;
+
+    // Created once and shared (Tuesday)
+    internal static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,             // tolerate hand edits like "Amount"
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter() },
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+    };
+
+    private readonly ILogger&lt;JsonFileExpenseStore&gt; _logger;
+
+    public string Location { get; }
+
+    public JsonFileExpenseStore(IOptions&lt;StorageOptions&gt; options, ILogger&lt;JsonFileExpenseStore&gt; logger)
+    {
+        _logger = logger;
+        string configured = options.Value.DataFile;
+        if (string.IsNullOrWhiteSpace(configured))
+            throw new ExpenseStoreException("Storage:DataFile is empty in configuration");
+
+        // Relative paths go under the user's app-data folder, not wherever the app was launched from (Monday)
+        string baseDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ExpenseTracker");
+        Location = Path.GetFullPath(Path.IsPathRooted(configured) ? configured : Path.Combine(baseDir, configured));
+        _logger.LogDebug("Expense data file resolved to {Path}", Location);
+    }
+
+    public async Task&lt;IReadOnlyList&lt;Expense&gt;&gt; LoadAsync(CancellationToken ct = default)
+    {
+        if (!File.Exists(Location))
+        {
+            _logger.LogInformation("No data file at {Path}; starting with an empty list", Location);
+            return [];
+        }
+
+        try
+        {
+            await using var stream = new FileStream(Location, FileMode.Open, FileAccess.Read, FileShare.Read,
+                                                    bufferSize: 4096, useAsync: true);
+            ExpenseDocument doc = await JsonSerializer.DeserializeAsync&lt;ExpenseDocument&gt;(stream, JsonOptions, ct)
+                ?? throw new ExpenseStoreException($"{Location} contains 'null' instead of expense data");
+
+            if (doc.Version &gt; CurrentVersion)
+                throw new ExpenseStoreException(
+                    $"{Location} was written by a newer version (v{doc.Version}); this app understands v{CurrentVersion}");
+
+            List&lt;Expense&gt; expenses = doc.Expenses ?? [];
+            _logger.LogInformation("Loaded {Count} expenses from {Path}", expenses.Count, Location);
+            return expenses;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Data file {Path} is not valid JSON (line {Line}, byte {Position})",
+                             Location, ex.LineNumber + 1, ex.BytePositionInLine);
+            throw new ExpenseStoreException(
+                $"{Location} is corrupt near line {ex.LineNumber + 1}. Fix it, or restore {Location}.bak", ex);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Could not read {Path}", Location);
+            throw new ExpenseStoreException($"Could not read {Location}: {ex.Message}", ex);
+        }
+    }
+
+    public async Task SaveAsync(IReadOnlyList&lt;Expense&gt; expenses, CancellationToken ct = default)
+    {
+        string tempPath = Location + ".tmp";
+        string backupPath = Location + ".bak";
+        var doc = new ExpenseDocument(CurrentVersion, expenses.OrderBy(e =&gt; e.Date).ThenBy(e =&gt; e.Id).ToList());
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Location)!);
+
+            // 1. Write the complete new content to a temp file in the SAME folder
+            await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None,
+                                                     bufferSize: 4096, useAsync: true))
+            {
+                await JsonSerializer.SerializeAsync(stream, doc, JsonOptions, ct);
+                stream.Flush(flushToDisk: true);      // make sure the bytes are on disk before we swap
+            }
+
+            // 2. Swap it in. Replace keeps the old file as .bak; Move is used for the very first save
+            if (File.Exists(Location))
+                File.Replace(tempPath, Location, backupPath);
+            else
+                File.Move(tempPath, Location);
+
+            _logger.LogInformation("Saved {Count} expenses to {Path}", doc.Expenses.Count, Location);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Saving to {Path} failed", Location);
+            TryDelete(tempPath);
+            throw new ExpenseStoreException($"Could not save to {Location}: {ex.Message}", ex);
+        }
+    }
+
+    private void TryDelete(string path)
+    {
+        try { File.Delete(path); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Could not delete temp file {Path}", path);
+        }
+    }
+}</code></pre></div>
+<h4>Why temp file + replace?</h4>
+<div class="tbl"><table><tr><th>Approach</th><th>If the app crashes or the disk fills mid-write</th></tr><tr><td><code>File.WriteAllText(path, json)</code></td><td>The file is truncated first, so a crash leaves it half-written or empty and all data is lost</td></tr><tr><td>Write <code>.tmp</code>, then <code>File.Replace</code></td><td>The real file is untouched until the swap. The swap is a rename on the same volume (Linux/macOS) or ReplaceFile (Windows), so readers see either the old file or the new one</td></tr></table></div>
+<p>On Linux and macOS the swap is a true atomic rename. On Windows, <code>ReplaceFile</code> is about as close as the OS offers. Either way the temp file must be in the same folder, because a rename across volumes becomes a copy.</p>
+
+<h3>Step 4 — ExpenseService</h3>
+<div class="code"><div class="fname">ExpenseTracker.Core/Services/ExpenseService.cs</div><pre><code class="language-csharp">using ExpenseTracker.Core.Models;
+using ExpenseTracker.Core.Storage;
+using Microsoft.Extensions.Logging;
+
+namespace ExpenseTracker.Core.Services;
+
+public sealed class ExpenseService(IExpenseStore store, ILogger&lt;ExpenseService&gt; logger)
+{
+    private List&lt;Expense&gt; _expenses = [];
+    private bool _loaded;
+
+    public IReadOnlyList&lt;Expense&gt; All =&gt; _expenses;
+
+    public async Task LoadAsync(CancellationToken ct = default)
+    {
+        _expenses = (await store.LoadAsync(ct)).ToList();
+        _loaded = true;
+
+        var invalidIds = _expenses.Where(e =&gt; e.Validate().Any()).Select(e =&gt; e.Id).ToList();
+        if (invalidIds.Count &gt; 0)
+            logger.LogWarning("{Count} stored expenses failed validation (ids: {Ids})",
+                              invalidIds.Count, string.Join(", ", invalidIds));
+
+        int duplicateIds = _expenses.Count - _expenses.Select(e =&gt; e.Id).Distinct().Count();
+        if (duplicateIds &gt; 0)
+            logger.LogWarning("{Count} duplicate expense ids found in {Path}", duplicateIds, store.Location);
+    }
+
+    public Expense? Find(int id) =&gt; _expenses.Find(e =&gt; e.Id == id);
+
+    public async Task&lt;Expense&gt; AddAsync(DateOnly date, Category category, decimal amount,
+                                        PaymentMode mode, string? note, CancellationToken ct = default)
+    {
+        EnsureLoaded();
+        int nextId = _expenses.Count == 0 ? 1 : _expenses.Max(e =&gt; e.Id) + 1;
+        var expense = new Expense(nextId, date, category, amount, mode, Clean(note));
+        ThrowIfInvalid(expense);
+
+        await CommitAsync([.. _expenses, expense], ct);
+        logger.LogInformation("Added expense {ExpenseId}: {Category} {Amount} via {PaymentMode}",
+                              expense.Id, category, amount, mode);
+        return expense;
+    }
+
+    public async Task&lt;Expense&gt; UpdateAsync(int id, Func&lt;Expense, Expense&gt; change, CancellationToken ct = default)
+    {
+        EnsureLoaded();
+        Expense existing = Find(id) ?? throw new KeyNotFoundException($"No expense with id {id}");
+        Expense changed = change(existing);
+        Expense updated = changed with { Id = id, Note = Clean(changed.Note) };   // the id can't be changed
+        ThrowIfInvalid(updated);
+        if (updated == existing) return existing;                                  // record equality: nothing to save
+
+        await CommitAsync(_expenses.Select(e =&gt; e.Id == id ? updated : e).ToList(), ct);
+        logger.LogInformation("Updated expense {ExpenseId}: {Before} -&gt; {After}", id, existing, updated);
+        return updated;
+    }
+
+    public async Task&lt;bool&gt; DeleteAsync(int id, CancellationToken ct = default)
+    {
+        EnsureLoaded();
+        if (Find(id) is null) return false;
+
+        await CommitAsync(_expenses.Where(e =&gt; e.Id != id).ToList(), ct);
+        logger.LogInformation("Deleted expense {ExpenseId}", id);
+        return true;
+    }
+
+    // Save FIRST, then swap the in-memory list: if the save throws, memory and disk still agree
+    private async Task CommitAsync(List&lt;Expense&gt; next, CancellationToken ct)
+    {
+        await store.SaveAsync(next, ct);
+        _expenses = next;
+    }
+
+    private void EnsureLoaded()
+    {
+        if (!_loaded) throw new InvalidOperationException("Call LoadAsync before changing expenses");
+    }
+
+    private static string? Clean(string? note) =&gt; string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+
+    private static void ThrowIfInvalid(Expense expense)
+    {
+        var errors = expense.Validate().ToList();
+        if (errors.Count &gt; 0) throw new ArgumentException(string.Join("; ", errors));
+    }
+}</code></pre></div>
+
+<h3>Step 5 — Configuration</h3>
+<div class="code"><div class="fname">ExpenseTracker.App/appsettings.json</div><pre><code class="language-json">{
+  "Storage": {
+    "DataFile": "expenses.json"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning",
+      "ExpenseTracker": "Information"
+    },
+    "Console": {
+      "FormatterName": "simple",
+      "FormatterOptions": {
+        "SingleLine": true,
+        "TimestampFormat": "HH:mm:ss "
+      }
+    }
+  }
+}</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.App/ExpenseTracker.App.csproj (add)</div><pre><code class="language-xml">&lt;ItemGroup&gt;
+  &lt;None Update="appsettings*.json" CopyToOutputDirectory="PreserveNewest" /&gt;
+&lt;/ItemGroup&gt;</code></pre></div>
+
+<h3>Step 6 — ConsoleInput and display helpers</h3>
+<div class="code"><div class="fname">ExpenseTracker.App/ConsoleInput.cs</div><pre><code class="language-csharp">using System.Globalization;
+using ExpenseTracker.Core.Models;
+
+namespace ExpenseTracker.App;
+
+public static class ConsoleInput
+{
+    private static readonly string[] DateFormats = ["yyyy-MM-dd", "dd-MM-yyyy", "dd/MM/yyyy"];
+
+    private static string ReadLine() =&gt;
+        Console.ReadLine() ?? throw new OperationCanceledException("Input was closed");
+
+    public static string? ReadOptional(string prompt)
+    {
+        Console.Write(prompt);
+        string line = ReadLine().Trim();
+        return line.Length == 0 ? null : line;
+    }
+
+    public static int ReadInt(string prompt, int min, int max)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            if (int.TryParse(ReadLine(), out int value) &amp;&amp; value &gt;= min &amp;&amp; value &lt;= max) return value;
+            Console.WriteLine($"  Enter a whole number from {min} to {max}.");
+        }
+    }
+
+    public static decimal ReadAmount(string prompt)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            if (TryParseAmount(ReadLine(), out decimal amount)) return amount;
+            Console.WriteLine("  Enter a positive amount, e.g. 249.50 or 1,200");
+        }
+    }
+
+    public static bool TryParseAmount(string? text, out decimal amount)
+    {
+        string cleaned = (text ?? "").Replace("₹", "").Replace(",", "").Trim();
+        return decimal.TryParse(cleaned, NumberStyles.Number, CultureInfo.InvariantCulture, out amount) &amp;&amp; amount &gt; 0;
+    }
+
+    public static DateOnly ReadDate(string prompt, DateOnly defaultValue)
+    {
+        while (true)
+        {
+            Console.Write(prompt);
+            string text = ReadLine().Trim();
+            if (text.Length == 0) return defaultValue;
+            if (DateOnly.TryParseExact(text, DateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+                return date;
+            Console.WriteLine("  Use yyyy-MM-dd or dd-MM-yyyy.");
+        }
+    }
+
+    public static T ReadEnum&lt;T&gt;(string label) where T : struct, Enum
+    {
+        T[] values = Enum.GetValues&lt;T&gt;();
+        Console.WriteLine($"  {label}: " + string.Join("  ", values.Select((v, i) =&gt; $"{i + 1}) {v}")));
+        int pick = ReadInt("  Choose: ", 1, values.Length);
+        return values[pick - 1];
+    }
+
+    public static bool Confirm(string prompt) =&gt; ReadOptional(prompt + " (y/N): ") is "y" or "Y";
+}
+
+public static class Display
+{
+    private static readonly CultureInfo India = CultureInfo.GetCultureInfo("en-IN");
+
+    public static string Rupees(decimal amount) =&gt; "₹" + amount.ToString("N2", India);   // ₹1,00,000.00
+    public static string Mode(PaymentMode mode) =&gt; mode == PaymentMode.Upi ? "UPI" : mode.ToString();
+}</code></pre></div>
+
+<h3>Step 7 — Program.cs with the Generic Host</h3>
+<div class="code"><div class="fname">ExpenseTracker.App/Program.cs</div><pre><code class="language-csharp">using System.Text;
+using ExpenseTracker.App;
+using ExpenseTracker.Core.Models;
+using ExpenseTracker.Core.Services;
+using ExpenseTracker.Core.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+Console.OutputEncoding = Encoding.UTF8;               // ₹ in the Windows console
+
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory        // find appsettings.json next to the .dll
+});
+builder.Services.Configure&lt;StorageOptions&gt;(builder.Configuration.GetSection(StorageOptions.SectionName));
+builder.Services.AddSingleton&lt;IExpenseStore, JsonFileExpenseStore&gt;();
+builder.Services.AddSingleton&lt;ExpenseService&gt;();
+
+using IHost host = builder.Build();                   // disposing the host flushes the console logger
+var log = host.Services.GetRequiredService&lt;ILogger&lt;Program&gt;&gt;();
+var store = host.Services.GetRequiredService&lt;IExpenseStore&gt;();
+var expenses = host.Services.GetRequiredService&lt;ExpenseService&gt;();
+
+try
+{
+    await expenses.LoadAsync();
+}
+catch (ExpenseStoreException ex)
+{
+    log.LogCritical(ex, "Startup aborted: data file unusable");
+    Console.WriteLine($"✗ {ex.Message}");
+    Console.WriteLine("  Nothing was changed. Fix the file or restore the .bak copy, then run again.");
+    return 1;
+}
+
+Console.WriteLine($"Expense Tracker · data file: {store.Location}");
+
+int choice;
+do
+{
+    Console.WriteLine("""
+
+        ===== Expense Tracker =====
+        1) List expenses     3) Edit expense
+        2) Add expense       4) Delete expense
+        0) Exit
+        """);
+    choice = ConsoleInput.ReadInt("Choose: ", 0, 4);
+
+    try
+    {
+        switch (choice)
+        {
+            case 1: ListExpenses(expenses.All); break;
+            case 2: await AddAsync(); break;
+            case 3: await EditAsync(); break;
+            case 4: await DeleteAsync(); break;
+        }
+    }
+    catch (Exception ex) when (ex is ArgumentException or KeyNotFoundException)
+    {
+        Console.WriteLine($"  ✗ {ex.Message}");
+    }
+    catch (ExpenseStoreException ex)
+    {
+        Console.WriteLine($"  ✗ Not saved: {ex.Message}");
+        Console.WriteLine("    Your data is unchanged.");
+    }
+} while (choice != 0);
+
+return 0;
+
+void ListExpenses(IEnumerable&lt;Expense&gt; list)
+{
+    var rows = list.OrderBy(e =&gt; e.Date).ThenBy(e =&gt; e.Id).ToList();
+    if (rows.Count == 0)
+    {
+        Console.WriteLine("  (no expenses yet)");
+        return;
+    }
+
+    Console.WriteLine($"  {"Id",4}  {"Date",-11} {"Category",-13} {"Mode",-5} {"Amount",14}  Note");
+    foreach (var e in rows)
+        Console.WriteLine($"  {e.Id,4}  {e.Date,-11:dd MMM yyyy} {e.Category,-13} {Display.Mode(e.PaymentMode),-5} {Display.Rupees(e.Amount),14}  {e.Note}");
+    Console.WriteLine($"  {rows.Count} expenses, total {Display.Rupees(rows.Sum(e =&gt; e.Amount))}");
+}
+
+async Task AddAsync()
+{
+    DateOnly date = ConsoleInput.ReadDate("Date (yyyy-MM-dd, Enter = today): ", DateOnly.FromDateTime(DateTime.Today));
+    Category category = ConsoleInput.ReadEnum&lt;Category&gt;("Category");
+    decimal amount = ConsoleInput.ReadAmount("Amount ₹: ");
+    PaymentMode mode = ConsoleInput.ReadEnum&lt;PaymentMode&gt;("Paid by");
+    string? note = ConsoleInput.ReadOptional("Note (optional): ");
+
+    Expense added = await expenses.AddAsync(date, category, amount, mode, note);
+    Console.WriteLine($"  ✓ Saved #{added.Id}: {added.Category} {Display.Rupees(added.Amount)}");
+}
+
+async Task EditAsync()
+{
+    int id = ConsoleInput.ReadInt("Expense id: ", 1, int.MaxValue);
+    Expense current = expenses.Find(id) ?? throw new KeyNotFoundException($"No expense with id {id}");
+    Console.WriteLine($"  Editing #{id}. Press Enter to keep the current value.");
+
+    string? amountText = ConsoleInput.ReadOptional($"  Amount [{current.Amount}]: ");
+    decimal? newAmount = null;
+    if (amountText is not null)
+        newAmount = ConsoleInput.TryParseAmount(amountText, out decimal a) ? a : throw new ArgumentException($"'{amountText}' is not a valid amount");
+
+    Category? newCategory = ConsoleInput.Confirm($"  Change category from {current.Category}?")
+        ? ConsoleInput.ReadEnum&lt;Category&gt;("New category")
+        : null;
+    string? newNote = ConsoleInput.ReadOptional($"  Note [{current.Note}]: ");
+
+    Expense updated = await expenses.UpdateAsync(id, e =&gt; e with
+    {
+        Amount = newAmount ?? e.Amount,
+        Category = newCategory ?? e.Category,
+        Note = newNote ?? e.Note
+    });
+    Console.WriteLine($"  ✓ #{updated.Id} is now {updated.Category} {Display.Rupees(updated.Amount)}");
+}
+
+async Task DeleteAsync()
+{
+    int id = ConsoleInput.ReadInt("Expense id: ", 1, int.MaxValue);
+    if (expenses.Find(id) is not { } e) throw new KeyNotFoundException($"No expense with id {id}");
+    if (!ConsoleInput.Confirm($"  Delete #{id} {e.Category} {Display.Rupees(e.Amount)}?")) return;
+
+    bool removed = await expenses.DeleteAsync(id);
+    Console.WriteLine(removed ? $"  ✓ Deleted #{id}" : $"  ✗ #{id} was already gone");
+}</code></pre></div>
+<p>Two notes on the host. First, <code>ILogger&lt;Program&gt;</code> works because top-level statements compile into a class called <code>Program</code>. Second, this app never calls <code>host.Run()</code>, because it's an interactive loop rather than a background service. We only use the host to build configuration, logging and DI.</p>
+
+<h3>Run it</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet run --project ExpenseTracker.App</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">11:02:14 info: ExpenseTracker.Core.Storage.JsonFileExpenseStore[0] No data file at /home/priya/.local/share/ExpenseTracker/expenses.json; starting with an empty list
+Expense Tracker · data file: /home/priya/.local/share/ExpenseTracker/expenses.json
+
+===== Expense Tracker =====
+1) List expenses     3) Edit expense
+2) Add expense       4) Delete expense
+0) Exit
+Choose: 2
+Date (yyyy-MM-dd, Enter = today): 2026-11-03
+  Category: 1) Food  2) Groceries  3) Rent  4) Transport  5) Utilities  6) Shopping  7) Health  8) Entertainment  9) Education  10) Other
+  Choose: 2
+Amount ₹: 1,249.75
+  Paid by: 1) Upi  2) Card  3) Cash
+  Choose: 1
+Note (optional): BigBasket weekly order
+11:02:41 info: ExpenseTracker.Core.Storage.JsonFileExpenseStore[0] Saved 1 expenses to /home/priya/.local/share/ExpenseTracker/expenses.json
+11:02:41 info: ExpenseTracker.Core.Services.ExpenseService[0] Added expense 1: Groceries 1249.75 via Upi
+  ✓ Saved #1: Groceries ₹1,249.75
+...
+Choose: 1
+    Id  Date        Category      Mode          Amount  Note
+     1  03 Nov 2026 Groceries     UPI        ₹1,249.75  BigBasket weekly order
+     2  05 Nov 2026 Rent          UPI       ₹18,500.00  November rent
+     3  07 Nov 2026 Food          Cash         ₹240.00  Chai and samosa, office
+  3 expenses, total ₹19,989.75</code></pre></div>
+<p class="muted">The console logger writes on a background thread, so a log line can sometimes appear just after the next prompt. That's expected. Tomorrow you'll lower the console level for a quieter UI.</p>
+<div class="code"><div class="fname">~/.local/share/ExpenseTracker/expenses.json</div><pre><code class="language-json">{
+  "version": 1,
+  "expenses": [
+    {
+      "id": 1,
+      "date": "2026-11-03",
+      "category": "Groceries",
+      "amount": 1249.75,
+      "paymentMode": "Upi",
+      "note": "BigBasket weekly order"
+    },
+    {
+      "id": 2,
+      "date": "2026-11-05",
+      "category": "Rent",
+      "amount": 18500,
+      "paymentMode": "Upi",
+      "note": "November rent"
+    }
+  ]
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash"># Point it at a different file without touching code
+Storage__DataFile=/tmp/test-expenses.json dotnet run --project ExpenseTracker.App
+dotnet run --project ExpenseTracker.App -- --Storage:DataFile=./demo.json</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Write an <code>InMemoryExpenseStore</code> (a List behind the interface) and use it to exercise <code>ExpenseService</code> without touching the disk. This is the start of Week 10's unit tests.</li>
+<li>Store <code>nextId</code> in <code>ExpenseDocument</code> so ids aren't reused after you delete the newest expense.</li>
+<li>Add a search option: by note text (case-insensitive), by category, or by date range.</li>
+<li>.NET 9: put <code>[JsonStringEnumMemberName("UPI")]</code> on <code>PaymentMode.Upi</code> so the file says <code>"UPI"</code>.</li>
+</ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why does the store save to a temp file and then replace the real file?</summary><div>Writing directly truncates the file first, so a crash, power cut or full disk mid-write leaves a corrupt or empty file and all data is lost. Writing a complete temp file and then swapping it in with a rename/replace on the same volume means the real file is always either the old version or the new one. File.Replace also keeps a .bak.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why is IExpenseStore an interface?</summary><div>The service depends on the abstraction, not on JSON files. You can swap in an in-memory store for tests, or SQLite/EF Core later (Phase 2), without changing ExpenseService or the UI. It's the same idea as Week 4's IRepository&lt;T&gt;.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why does ExpenseService save before updating its in-memory list?</summary><div>If SaveAsync throws (locked file, disk full, no permission), the in-memory list is left untouched, so what the user sees still matches what's on disk. Updating memory first would show changes that were never persisted.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why store a version number in the JSON file?</summary><div>The file outlives the code. When the schema changes (e.g. splitting Note into Payee and Note, or adding currency), the loader can detect old files and migrate them, and an old app can refuse a file written by a newer one instead of misreading it.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Monthly reports, budget alerts, CSV export and hardening</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Finish the expense tracker: monthly LINQ summaries by category and payment mode, month-over-month trend, top 5 expenses, budget alerts from configuration, CSV export, logging polish, then try to break it, document it, push it and revise the week.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Aggregation</dt><dd>Combining many rows into summary values: Sum, Count, Average, grouped by a key.</dd></div><div class="def"><dt>Month-over-month (MoM)</dt><dd>Percentage change from one month's total to the next.</dd></div><div class="def"><dt>Budget threshold</dt><dd>A limit from configuration; an alert fires when spending reaches a set percentage of it.</dd></div><div class="def"><dt>CSV escaping</dt><dd>Wrapping a field in quotes (and doubling inner quotes) when it contains a comma, quote or newline.</dd></div><div class="def"><dt>CSV injection</dt><dd>A cell starting with <code>=</code>, <code>+</code>, <code>-</code> or <code>@</code> that spreadsheet apps may run as a formula.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Reports are pure functions over <code>IEnumerable&lt;Expense&gt;</code>, so they're easy to test.</li><li>Budgets live in configuration; unknown category names are logged as warnings rather than ignored silently.</li><li>CSV is written with a UTF-8 BOM so Excel shows ₹ correctly.</li><li>LoggerMessage methods give the store's events fixed EventIds.</li><li>Re-run the try-to-break table after every change.</li></ul></div>
+
+<h3>1. Budget options and report models</h3>
+<div class="code"><div class="fname">ExpenseTracker.App/appsettings.json (updated)</div><pre><code class="language-json">{
+  "Storage": { "DataFile": "expenses.json" },
+  "Budget": {
+    "MonthlyTotal": 40000,
+    "WarnAtPercent": 80,
+    "Categories": {
+      "Food": 8000,
+      "Shopping": 5000,
+      "Entertainment": 2000
+    }
+  },
+  "Export": { "Folder": "exports" },
+  "Logging": {
+    "LogLevel": { "Default": "Warning", "ExpenseTracker": "Warning" },
+    "Console": { "FormatterName": "simple", "FormatterOptions": { "SingleLine": true, "TimestampFormat": "HH:mm:ss " } }
+  }
+}</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.App/appsettings.Development.json</div><pre><code class="language-json">{
+  "Logging": { "LogLevel": { "ExpenseTracker": "Debug" } }
+}</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.Core/Reports/ReportModels.cs</div><pre><code class="language-csharp">using ExpenseTracker.Core.Models;
+
+namespace ExpenseTracker.Core.Reports;
+
+public sealed class BudgetOptions
+{
+    public const string SectionName = "Budget";
+
+    public decimal MonthlyTotal { get; set; }                 // 0 = no overall budget
+    public decimal WarnAtPercent { get; set; } = 80;
+    public Dictionary&lt;string, decimal&gt; Categories { get; set; } = new();
+}
+
+public sealed record CategoryTotal(Category Category, decimal Total, int Count, decimal SharePercent);
+public sealed record ModeTotal(PaymentMode Mode, decimal Total, int Count);
+public sealed record MonthTotal(int Year, int Month, decimal Total, decimal? ChangePercent);
+
+public sealed record BudgetAlert(string Scope, decimal Spent, decimal Limit)
+{
+    public decimal PercentUsed =&gt; Limit == 0 ? 0 : Math.Round(Spent / Limit * 100, 1);
+    public bool IsOver =&gt; Spent &gt; Limit;
+}</code></pre></div>
+
+<h3>2. ReportService: last week's LINQ, put to work</h3>
+<div class="code"><div class="fname">ExpenseTracker.Core/Reports/ReportService.cs</div><pre><code class="language-csharp">using ExpenseTracker.Core.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace ExpenseTracker.Core.Reports;
+
+public sealed class ReportService
+{
+    private readonly BudgetOptions _budget;
+    private readonly ILogger&lt;ReportService&gt; _logger;
+    private readonly Dictionary&lt;Category, decimal&gt; _categoryLimits = new();
+
+    public ReportService(IOptions&lt;BudgetOptions&gt; options, ILogger&lt;ReportService&gt; logger)
+    {
+        _budget = options.Value;
+        _logger = logger;
+
+        // Turn config strings into enum keys once; complain about typos instead of ignoring them
+        foreach (var (name, limit) in _budget.Categories)
+        {
+            if (Enum.TryParse(name, ignoreCase: true, out Category category) &amp;&amp; Enum.IsDefined(category))
+                _categoryLimits[category] = limit;
+            else
+                _logger.LogWarning("Budget:Categories has unknown category {Name}; ignoring it", name);
+        }
+    }
+
+    public static IEnumerable&lt;Expense&gt; InMonth(IEnumerable&lt;Expense&gt; expenses, int year, int month) =&gt;
+        expenses.Where(e =&gt; e.Date.Year == year &amp;&amp; e.Date.Month == month);
+
+    public IReadOnlyList&lt;CategoryTotal&gt; ByCategory(IEnumerable&lt;Expense&gt; expenses, int year, int month)
+    {
+        var inMonth = InMonth(expenses, year, month).ToList();     // materialise once (Week 4)
+        decimal grandTotal = inMonth.Sum(e =&gt; e.Amount);
+
+        return inMonth
+            .GroupBy(e =&gt; e.Category)
+            .Select(g =&gt;
+            {
+                decimal total = g.Sum(e =&gt; e.Amount);
+                decimal share = grandTotal == 0 ? 0 : Math.Round(total / grandTotal * 100, 1);
+                return new CategoryTotal(g.Key, total, g.Count(), share);
+            })
+            .OrderByDescending(c =&gt; c.Total)
+            .ToList();
+    }
+
+    public IReadOnlyList&lt;ModeTotal&gt; ByPaymentMode(IEnumerable&lt;Expense&gt; expenses, int year, int month) =&gt;
+        InMonth(expenses, year, month)
+            .GroupBy(e =&gt; e.PaymentMode)
+            .Select(g =&gt; new ModeTotal(g.Key, g.Sum(e =&gt; e.Amount), g.Count()))
+            .OrderByDescending(m =&gt; m.Total)
+            .ToList();
+
+    public IReadOnlyList&lt;MonthTotal&gt; MonthOverMonth(IEnumerable&lt;Expense&gt; expenses, int lastMonths = 6)
+    {
+        var totals = expenses
+            .GroupBy(e =&gt; (e.Date.Year, e.Date.Month))
+            .Select(g =&gt; (g.Key.Year, g.Key.Month, Total: g.Sum(e =&gt; e.Amount)))
+            .OrderBy(t =&gt; t.Year).ThenBy(t =&gt; t.Month)
+            .TakeLast(lastMonths)
+            .ToList();
+
+        var result = new List&lt;MonthTotal&gt;();
+        decimal? previous = null;
+        foreach (var (year, month, total) in totals)
+        {
+            decimal? change = previous is &gt; 0m
+                ? Math.Round((total - previous.Value) / previous.Value * 100, 1)
+                : null;
+            result.Add(new MonthTotal(year, month, total, change));
+            previous = total;
+        }
+        return result;   // months with no spending simply don't appear
+    }
+
+    public static IReadOnlyList&lt;Expense&gt; TopExpenses(IEnumerable&lt;Expense&gt; expenses, int year, int month, int count = 5) =&gt;
+        InMonth(expenses, year, month)
+            .OrderByDescending(e =&gt; e.Amount)
+            .ThenBy(e =&gt; e.Date)
+            .Take(count)
+            .ToList();
+
+    public IReadOnlyList&lt;BudgetAlert&gt; BudgetAlerts(IEnumerable&lt;Expense&gt; expenses, int year, int month)
+    {
+        var inMonth = InMonth(expenses, year, month).ToList();
+        var alerts = new List&lt;BudgetAlert&gt;();
+
+        if (_budget.MonthlyTotal &gt; 0)
+            Check("Total", inMonth.Sum(e =&gt; e.Amount), _budget.MonthlyTotal);
+
+        foreach (var (category, limit) in _categoryLimits)
+            Check(category.ToString(), inMonth.Where(e =&gt; e.Category == category).Sum(e =&gt; e.Amount), limit);
+
+        foreach (var alert in alerts.Where(a =&gt; a.IsOver))
+            _logger.LogWarning("Budget exceeded for {Scope} in {Year}-{Month:D2}: {Spent} of {Limit}",
+                               alert.Scope, year, month, alert.Spent, alert.Limit);
+
+        return alerts.OrderByDescending(a =&gt; a.PercentUsed).ToList();
+
+        void Check(string scope, decimal spent, decimal limit)
+        {
+            if (limit &gt; 0 &amp;&amp; spent &gt;= limit * _budget.WarnAtPercent / 100)
+                alerts.Add(new BudgetAlert(scope, spent, limit));
+        }
+    }
+}</code></pre></div>
+
+<h3>3. CSV export</h3>
+<div class="code"><div class="fname">ExpenseTracker.Core/Reports/CsvExporter.cs</div><pre><code class="language-csharp">using System.Globalization;
+using System.Text;
+using ExpenseTracker.Core.Models;
+
+namespace ExpenseTracker.Core.Reports;
+
+public static class CsvExporter
+{
+    public static async Task&lt;int&gt; ExportAsync(IEnumerable&lt;Expense&gt; expenses, string path, CancellationToken ct = default)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+
+        // BOM on purpose: Excel needs it to read ₹ and Indian-language notes correctly (Monday)
+        await using var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        await writer.WriteLineAsync("Id,Date,Category,Amount,PaymentMode,Note");
+
+        int rows = 0;
+        foreach (var e in expenses.OrderBy(e =&gt; e.Date).ThenBy(e =&gt; e.Id))
+        {
+            ct.ThrowIfCancellationRequested();
+            string line = string.Join(',',
+                e.Id.ToString(CultureInfo.InvariantCulture),
+                e.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                e.Category.ToString(),
+                e.Amount.ToString(CultureInfo.InvariantCulture),   // 1249.75, never "1,249.75"
+                e.PaymentMode == PaymentMode.Upi ? "UPI" : e.PaymentMode.ToString(),
+                Escape(e.Note));
+            await writer.WriteLineAsync(line);
+            rows++;
+        }
+        return rows;
+    }
+
+    internal static string Escape(string? value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+
+        // Neutralise spreadsheet formulas: =HYPERLINK(...) in a note must stay text
+        if (value[0] is '=' or '+' or '-' or '@') value = "'" + value;
+
+        bool needsQuotes = value.IndexOfAny([',', '"', '\n', '\r']) &gt;= 0;
+        return needsQuotes ? '"' + value.Replace("\"", "\"\"") + '"' : value;
+    }
+}</code></pre></div>
+
+<h3>4. Logging polish</h3>
+<p>Replace the store's ad-hoc log calls with generated methods that have fixed EventIds, and time each save. Ops tooling can then alert on event 3003 (save failed) without parsing message text.</p>
+<div class="code"><div class="fname">ExpenseTracker.Core/Storage/StoreLog.cs</div><pre><code class="language-csharp">using Microsoft.Extensions.Logging;
+
+namespace ExpenseTracker.Core.Storage;
+
+internal static partial class StoreLog
+{
+    [LoggerMessage(EventId = 3001, Level = LogLevel.Information, Message = "Loaded {Count} expenses from {Path}")]
+    public static partial void Loaded(ILogger logger, int count, string path);
+
+    [LoggerMessage(EventId = 3002, Level = LogLevel.Information, Message = "Saved {Count} expenses to {Path} in {ElapsedMs} ms")]
+    public static partial void Saved(ILogger logger, int count, string path, long elapsedMs);
+
+    [LoggerMessage(EventId = 3003, Level = LogLevel.Error, Message = "Saving to {Path} failed")]
+    public static partial void SaveFailed(ILogger logger, Exception exception, string path);
+
+    [LoggerMessage(EventId = 3004, Level = LogLevel.Error, Message = "Data file {Path} is corrupt near line {Line}")]
+    public static partial void Corrupt(ILogger logger, Exception exception, string path, long? line);
+}</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.Core/Storage/JsonFileExpenseStore.cs (changes)</div><pre><code class="language-csharp">// JsonFileExpenseStore.SaveAsync — changes
+var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+// ... write temp file, replace ...
+StoreLog.Saved(_logger, doc.Expenses.Count, Location, stopwatch.ElapsedMilliseconds);
+
+// in the catch block
+StoreLog.SaveFailed(_logger, ex, Location);
+
+// LoadAsync — JsonException catch
+StoreLog.Corrupt(_logger, ex, Location, ex.LineNumber + 1);</code></pre></div>
+<div class="code"><div class="fname">ExpenseTracker.Core/Services/ExpenseService.cs (changes)</div><pre><code class="language-csharp">// ExpenseService.UpdateAsync / DeleteAsync — add a scope so every line (including the store's) carries the id
+using var scope = logger.BeginScope("Expense {ExpenseId}", id);</code></pre></div>
+
+<h3>5. Wire the new features into the app</h3>
+<div class="code"><div class="fname">ExpenseTracker.App/Program.cs (additions)</div><pre><code class="language-csharp">// Program.cs — registration (before builder.Build())
+builder.Services.Configure&lt;BudgetOptions&gt;(builder.Configuration.GetSection(BudgetOptions.SectionName));
+builder.Services.AddSingleton&lt;ReportService&gt;();
+
+// after Build()
+var reports = host.Services.GetRequiredService&lt;ReportService&gt;();
+string exportFolder = builder.Configuration["Export:Folder"] ?? "exports";
+
+// Menu: add "5) Monthly summary   6) Export CSV", ReadInt("Choose: ", 0, 6), and:
+//   case 5: PrintMonthlySummary(); break;
+//   case 6: await ExportCsvAsync(); break;
+// Add `using ExpenseTracker.Core.Reports;` at the top.
+
+void PrintMonthlySummary()
+{
+    DateOnly any = ConsoleInput.ReadDate("Any date in the month (Enter = this month): ", DateOnly.FromDateTime(DateTime.Today));
+    var all = expenses.All;
+    Console.WriteLine($"\n  ── {any:MMMM yyyy} ──");
+
+    Console.WriteLine("  By category");
+    foreach (var c in reports.ByCategory(all, any.Year, any.Month))
+        Console.WriteLine($"    {c.Category,-13} {Display.Rupees(c.Total),14} {c.SharePercent,6:0.0}%  ({c.Count})");
+
+    Console.WriteLine("  By payment mode");
+    foreach (var m in reports.ByPaymentMode(all, any.Year, any.Month))
+        Console.WriteLine($"    {Display.Mode(m.Mode),-13} {Display.Rupees(m.Total),14}  ({m.Count})");
+
+    Console.WriteLine("  Top 5");
+    foreach (var e in ReportService.TopExpenses(all, any.Year, any.Month))
+        Console.WriteLine($"    {e.Date:dd MMM}  {Display.Rupees(e.Amount),14}  {e.Category}  {e.Note}");
+
+    Console.WriteLine("  Month over month");
+    foreach (var t in reports.MonthOverMonth(all))
+    {
+        string change = t.ChangePercent is { } p ? $"{p,6:+0.0;-0.0;0.0}%" : "      –";
+        Console.WriteLine($"    {new DateOnly(t.Year, t.Month, 1):MMM yyyy}  {Display.Rupees(t.Total),14}  {change}");
+    }
+
+    var alerts = reports.BudgetAlerts(all, any.Year, any.Month);
+    if (alerts.Count &gt; 0) Console.WriteLine("  Budget");
+    foreach (var a in alerts)
+    {
+        Console.ForegroundColor = a.IsOver ? ConsoleColor.Red : ConsoleColor.Yellow;
+        Console.WriteLine($"    {(a.IsOver ? "✗ Over" : "⚠ Near"),-7} {a.Scope,-13} {Display.Rupees(a.Spent)} of {Display.Rupees(a.Limit)} ({a.PercentUsed}%)");
+        Console.ResetColor();
+    }
+}
+
+async Task ExportCsvAsync()
+{
+    string fileName = $"expenses-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+    string folder = Path.IsPathRooted(exportFolder)
+        ? exportFolder
+        : Path.Combine(Path.GetDirectoryName(store.Location)!, exportFolder);
+    string path = Path.Combine(folder, fileName);
+
+    int rows = await CsvExporter.ExportAsync(expenses.All, path);
+    Console.WriteLine($"  ✓ Exported {rows} rows to {path}");
+}</code></pre></div>
+<div class="code"><div class="fname">Sample output</div><pre><code class="language-text">Choose: 5
+Any date in the month (Enter = this month):
+  ── November 2026 ──
+  By category
+    Rent              ₹18,500.00   55.8%  (1)
+    Food               ₹7,120.00   21.5%  (14)
+    Groceries          ₹4,310.25   13.0%  (3)
+    Shopping           ₹3,210.00    9.7%  (2)
+  By payment mode
+    UPI               ₹29,880.25  (16)
+    Card               ₹2,999.00  (1)
+    Cash                 ₹261.00  (3)
+  Top 5
+    05 Nov      ₹18,500.00  Rent  November rent
+    14 Nov       ₹2,999.00  Shopping  Diwali kurta
+    21 Nov       ₹1,560.50  Groceries  DMart monthly stock
+    ...
+  Month over month
+    Sep 2026      ₹31,450.00        –
+    Oct 2026      ₹42,180.00   +34.1%
+    Nov 2026      ₹33,140.25   -21.4%
+  Budget
+    ⚠ Near  Food          ₹7,120.00 of ₹8,000.00 (89.0%)
+    ⚠ Near  Total         ₹33,140.25 of ₹40,000.00 (82.9%)</code></pre></div>
+
+<h3>6. Try to break it</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected</th></tr><tr><td>Delete <code>expenses.json</code>, run, add one expense</td><td>"No data file… starting empty"; folder and file created on first save</td></tr><tr><td>Remove a closing <code>]</code> from the JSON by hand, then start</td><td>Refuses to start: "corrupt near line N… restore .bak", exit code 1, file untouched</td></tr><tr><td>Replace the whole file content with <code>null</code></td><td>Refuses to start: "contains 'null' instead of expense data"</td></tr><tr><td>Change a category to <code>"Travel"</code> (not in the enum)</td><td>JsonException → corrupt-file message pointing at that line</td></tr><tr><td>Delete the <code>amount</code> property from one expense</td><td>Loads (amount = 0), logs Warning "1 stored expenses failed validation (ids: 4)"</td></tr><tr><td>Set <code>"version": 2</code></td><td>Refuses: "written by a newer version (v2)"</td></tr><tr><td>Windows: lock the file from PowerShell <code>$f=[IO.File]::Open($p,'Open','ReadWrite','None')</code>, then add an expense</td><td>"Not saved: …being used by another process"; list unchanged; no .tmp left behind</td></tr><tr><td>Linux/macOS: same test from another tool</td><td>Usually succeeds: Unix locks are advisory, so a non-.NET process holding the file doesn't block the rename</td></tr><tr><td>Make the data folder read-only (<code>chmod -w</code>) and add</td><td>UnauthorizedAccessException → "Not saved"; in-memory list unchanged</td></tr><tr><td>Amount <code>abc</code>, <code>-50</code>, <code>0</code>, <code>₹1,200</code></td><td>First three re-prompt; ₹1,200 is accepted as 1200</td></tr><tr><td>Amount 25,00,000</td><td>"Amount must be between ₹0.01 and ₹10,00,000" (the limit is formatted with the OS culture, so en-US shows ₹1,000,000)</td></tr><tr><td>Edit or delete id 999</td><td>"No expense with id 999"</td></tr><tr><td>Note <code>Dinner, "Barbeque Nation"</code> then export</td><td>CSV cell is <code>"Dinner, ""Barbeque Nation"""</code>; Excel shows it intact</td></tr><tr><td>Note <code>=HYPERLINK("http://evil")</code> then export</td><td>Written as <code>'=HYPERLINK…</code>, so Excel shows text and doesn't run a formula</td></tr><tr><td><code>Budget:Categories</code> contains <code>"Fuel"</code></td><td>Warning "unknown category Fuel; ignoring it"</td></tr><tr><td><code>Storage__DataFile=/tmp/x.json</code> environment variable</td><td>Uses /tmp/x.json (printed at startup)</td></tr><tr><td>Kill the app (Ctrl+C) during a save</td><td>Original file intact; at worst a stale <code>.tmp</code>, which the next save overwrites (FileMode.Create)</td></tr></table></div>
+
+<h3>7. README and push</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-markdown"># Expense Tracker
+
+Micro-project 4 of my .NET full-stack roadmap (Week 6: files, JSON, logging, configuration).
+
+## Features
+- Add, list, edit and delete expenses (₹, UPI / Card / Cash, 10 categories)
+- JSON storage with atomic save (temp file + replace) and automatic `.bak`
+- Refuses to start on a corrupt data file instead of overwriting it
+- Monthly summary: by category, by payment mode, top 5, month-over-month
+- Budget alerts from `appsettings.json`
+- CSV export (Excel-friendly UTF-8, formula-safe)
+- Structured logging with `ILogger` and `[LoggerMessage]`
+
+## Tech
+.NET 8 · System.Text.Json · Microsoft.Extensions.Hosting / Configuration / Logging / Options
+
+## Run
+```bash
+dotnet run --project ExpenseTracker.App
+# use another data file
+dotnet run --project ExpenseTracker.App -- --Storage:DataFile=/path/to/expenses.json
+```
+
+## Configuration
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `Storage:DataFile` | `expenses.json` | Relative paths go under LocalApplicationData/ExpenseTracker |
+| `Budget:MonthlyTotal` | `40000` | Overall monthly budget in ₹ (0 = none) |
+| `Budget:WarnAtPercent` | `80` | Alert threshold |
+| `Budget:Categories:&lt;Name&gt;` | – | Per-category limits |</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">git init
+git add .
+git commit -m "Expense tracker: JSON store with atomic save, reports, budgets, CSV export"
+git branch -M main
+git remote add origin https://github.com/&lt;you&gt;/expense-tracker.git
+git push -u origin main</code></pre></div>
+<p>Your real expense data lives in your user profile, not the repo, so there's no risk of committing it. If you ever point <code>Storage:DataFile</code> inside the project, add that path to <code>.gitignore</code>.</p>
+
+<h3>8. Week 6 revision checklist</h3>
+<ul>
+<li>Path.Combine vs Path.Join; current directory vs AppContext.BaseDirectory vs LocalApplicationData</li>
+<li>File one-liners vs FileInfo vs FileStream; FileMode / FileAccess / FileShare</li>
+<li>File.ReadLines (lazy) vs ReadAllLines; buffering and Flush; async file APIs and ReadLinesAsync</li>
+<li>UTF-8 with and without BOM; why ₹ is 3 bytes; when Excel needs the BOM</li>
+<li>JsonSerializer defaults; options (camelCase, indented, enums, ignore nulls, encoder); reuse options</li>
+<li>[JsonPropertyName], [JsonIgnore], [JsonRequired], required members; records via constructors</li>
+<li>[JsonPolymorphic]/[JsonDerivedType]; JsonDocument vs JsonNode; source generation, what and why</li>
+<li>IDisposable, using statement vs declaration, disposal order, full Dispose pattern, SafeHandle, IAsyncDisposable</li>
+<li>ILogger levels, categories, message templates, exceptions, scopes, filters, LoggerMessage</li>
+<li>Configuration providers and precedence, <code>__</code> in env vars, binding, validation, user secrets, Generic Host, IOptions variants</li>
+<li>Atomic save with temp file + replace; save-then-commit in memory; refuse to start on corrupt data</li>
+</ul>
+
+<h3>9. Quick quiz: predict the output</h3>
+<details><summary>Q1. On Linux, what prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">Console.WriteLine(Path.Combine("data", "/etc/hosts"));
+Console.WriteLine(Path.Join("data", "/etc/hosts"));</code></pre></div><b>/etc/hosts</b> then <b>data/etc/hosts</b>. Combine restarts at the rooted second argument. Join simply joins the parts and doesn't add a separator because the second part already starts with one.</details>
+<details><summary>Q2. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var o = new { Name = "Asha", City = (string?)null, Amount = 499m };
+Console.WriteLine(JsonSerializer.Serialize(o));</code></pre></div><b>{"Name":"Asha","City":null,"Amount":499}</b>. Default options keep PascalCase names, write nulls and produce compact output.</details>
+<details><summary>Q3. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var p = JsonSerializer.Deserialize&lt;Person&gt;("{\"name\":\"Ravi\"}")!;
+Console.WriteLine(p.Name ?? "(null)");
+
+public class Person { public string? Name { get; set; } }</code></pre></div><b>(null)</b>. Matching is case-sensitive by default, so <code>name</code> doesn't bind to <code>Name</code>, and unknown properties are silently ignored. Use camelCase/case-insensitive options or <code>JsonSerializerDefaults.Web</code>.</details>
+<details><summary>Q4. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">using var a = new Noisy("A");
+using var b = new Noisy("B");
+Console.Write("body ");
+
+sealed class Noisy(string n) : IDisposable
+{
+    public void Dispose() =&gt; Console.Write($"{n} ");
+}</code></pre></div><b>body B A</b>. Using declarations are disposed at the end of the scope, in reverse order of declaration.</details>
+<details><summary>Q5. Does this compile?</summary>
+<div class="code nofile"><pre><code class="language-csharp">using var sb = new System.Text.StringBuilder();
+sb.Append("₹499");
+Console.WriteLine(sb);</code></pre></div><b>No.</b> CS1674: StringBuilder doesn't implement IDisposable, so it can't be used in a using statement or declaration. It holds no OS resources, and the GC handles it.</details>
+
+<div class="note tip"><b>Next week:</b> Week 7, async and concurrency: how async/await really works (state machines, SynchronizationContext, ConfigureAwait), Task vs ValueTask, cancellation with CancellationToken, Task.WhenAll/WhenAny, the thread pool, race conditions, <code>lock</code> and <code>SemaphoreSlim</code>, concurrent collections and Channels. You'll make the expense store safe when several operations save at once.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How does your app behave if the JSON data file is corrupt, and why?</summary><div>It refuses to start: the JsonException is caught, logged with the line number, wrapped in ExpenseStoreException, and the app exits with code 1 without touching the file. Starting empty would let the next save overwrite the user's real data. The .bak from the last good save gives a recovery path.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why are budget limits in configuration rather than code?</summary><div>They're user or environment decisions, not logic. Config lets them change without recompiling, lets each environment differ, and lets them be overridden by environment variables or the command line. Validating them at startup (unknown categories logged) keeps typos from being silently ignored.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are the pitfalls of writing CSV by hand, and how did you handle them?</summary><div>Fields containing commas, quotes or newlines must be quoted with inner quotes doubled. Numbers and dates must use an invariant format, not the current culture (1,249.75 vs 1249,75). Excel needs a UTF-8 BOM for non-ASCII. Cells starting with = + - @ can execute as formulas (CSV injection), so they're prefixed with an apostrophe. For anything bigger, use a library like CsvHelper.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you move this app from a JSON file to SQLite or SQL Server?</summary><div>Write a new IExpenseStore (or a repository) backed by EF Core and register it in DI instead of JsonFileExpenseStore. ExpenseService, reports and the UI don't change. With a database you'd also switch from save-the-whole-list to per-row insert/update/delete inside transactions, and let unique keys and constraints enforce what Validate() checks today.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week6-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

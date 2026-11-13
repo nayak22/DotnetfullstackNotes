@@ -1,0 +1,1736 @@
+<title>.NET Notes · Week 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 2</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">Classes &amp; properties</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Encapsulation &amp; static</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Inheritance</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Polymorphism</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Interfaces</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: library</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Loans &amp; revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 1 · Week 2 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">C# 12</span><span class="chip">~18 hrs</span><span class="chip">Micro-project 2</span></div>
+  <h1>Week 2 — OOP part 1</h1>
+  <p>Object-oriented programming is how almost every .NET codebase is organised. This week you'll learn to model real things as classes, protect their data, share behaviour through inheritance and interfaces, and finish with a working library management system.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>Classes, objects, constructors, properties</h3><p>Fields vs properties, init/required, constructor chaining, primary constructors.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>Encapsulation, access modifiers, static members</h3><p>Protecting invariants, all access modifiers, static members, const vs readonly.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Inheritance, base, virtual/override, sealed</h3><p>Constructor order, overriding vs hiding, System.Object, composition.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Polymorphism and abstract classes</h3><p>Abstract members, Template Method, type patterns, operator overloading.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Interfaces and interface vs abstract class</h3><p>Contracts, DI by hand, explicit implementation, default interface methods.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Micro-project 2: Library system</h3><p>Abstract items, members, ISearchable, ICatalog, console menu.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Borrow, return, search and revision</h3><p>Late fees, IClock, Result&lt;T&gt;, README, quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Classes, objects, constructors, properties and fields</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Model a real business entity as a class with validated properties, sensible constructors and a useful ToString().</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Class</dt><dd>A blueprint that defines the data (state) and behaviour (methods) of a type. A reference type.</dd></div><div class="def"><dt>Object / instance</dt><dd>A concrete value created from a class with <code>new</code>; each object has its own copy of instance data.</dd></div><div class="def"><dt>Field</dt><dd>A variable declared directly in a class that stores the object's data. Private by convention, named <code>_camelCase</code>.</dd></div><div class="def"><dt>Property</dt><dd>A member that looks like a field to callers but runs <code>get</code>/<code>set</code> accessors, so you can validate or compute.</dd></div><div class="def"><dt>Backing field</dt><dd>The private field a full property reads and writes.</dd></div><div class="def"><dt>Auto-property</dt><dd><code>{ get; set; }</code> — the compiler generates a hidden backing field.</dd></div><div class="def"><dt>Init-only setter</dt><dd><code>{ get; init; }</code> — the property can be set only in a constructor or object initializer (C# 9).</dd></div><div class="def"><dt>required member</dt><dd>C# 11 modifier forcing callers to set a property in the object initializer.</dd></div><div class="def"><dt>Computed property</dt><dd>A property with no storage that calculates its value: <code>public decimal Annual =&gt; Monthly * 12;</code></dd></div><div class="def"><dt>Constructor</dt><dd>A special method with the class's name and no return type that initialises a new object.</dd></div><div class="def"><dt>Constructor chaining</dt><dd>Calling another constructor of the same class with <code>: this(...)</code> to avoid duplicate code.</dd></div><div class="def"><dt>Primary constructor</dt><dd>C# 12 syntax that declares constructor parameters on the class line: <code>class Invoice(string number)</code>.</dd></div><div class="def"><dt>Object initializer</dt><dd><code>new Employee { Name = "Asha" }</code> — sets accessible properties right after construction.</dd></div><div class="def"><dt>this</dt><dd>A reference to the current object inside its own members.</dd></div><div class="def"><dt>Member</dt><dd>Anything declared inside a class: fields, properties, methods, constructors, events, nested types.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>A class is the design; an object is one thing built from it. You can create many objects from one class.</li><li>Keep fields private; expose data through properties.</li><li>Validate in the constructor and in property setters so an object can never be in an invalid state.</li><li>Use <code>init</code> / <code>private set</code> for values that shouldn't change after creation.</li><li>Chain constructors with <code>: this(...)</code> instead of copying code.</li><li>Override <code>ToString()</code> so objects print something useful in logs and the debugger.</li></ul></div>
+
+<h3>1. Classes and objects</h3>
+<p>A <b>class</b> describes what a thing <i>has</i> (data) and what it <i>does</i> (behaviour). An <b>object</b> is one instance of that class living on the heap. The variable holds a reference to it, which is why classes behave as reference types (Week 1, Day 2).</p>
+<div class="code"><div class="fname">Product.cs</div><pre><code class="language-csharp">public class Product
+{
+    // Fields: the object's data (private by convention)
+    private string _name;
+    private decimal _price;
+
+    // Constructor: runs when you call `new`
+    public Product(string name, decimal price)
+    {
+        _name = name;
+        _price = price;
+    }
+
+    // Method: behaviour that uses the object's data
+    public string Describe() =&gt; $"{_name} costs {_price:C}";
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">var laptop = new Product("Laptop", 65000m);   // object #1
+var mouse  = new Product("Mouse", 799m);      // object #2 — its own separate data
+
+Console.WriteLine(laptop.Describe());   // Laptop costs ₹65,000.00
+Console.WriteLine(mouse.Describe());    // Mouse costs ₹799.00
+
+var sameLaptop = laptop;                // copies the REFERENCE, not the object
+Console.WriteLine(ReferenceEquals(laptop, sameLaptop)); // True</code></pre></div>
+
+<h3>2. Fields</h3>
+<p>Fields hold state. Unassigned fields get default values (0, false, null). Mark a field <code>readonly</code> when it is assigned once in the constructor and never again.</p>
+<div class="code nofile"><pre><code class="language-csharp">public class Counter
+{
+    private int _count;                          // defaults to 0
+    private readonly DateTime _createdAt = DateTime.UtcNow;   // field initializer
+    private readonly List&lt;string&gt; _log = new();  // the reference is readonly, the list contents are not
+
+    public void Increment()
+    {
+        _count++;
+        _log.Add($"Incremented to {_count}");
+    }
+}</code></pre></div>
+<div class="note warn"><b>Avoid.</b> Public fields like <code>public decimal Price;</code>. Anyone can set a negative price and you can never add validation later without breaking callers. Use a property.</div>
+
+<h3>3. Properties</h3>
+<p>Properties are the public face of an object's data. They look like fields to the caller, but they are really methods, so you can validate, compute or restrict access.</p>
+<div class="code"><div class="fname">Employee.cs</div><pre><code class="language-csharp">public class Employee
+{
+    private decimal _monthlySalary;                 // backing field
+
+    // 1. Full property with validation
+    public decimal MonthlySalary
+    {
+        get =&gt; _monthlySalary;
+        set
+        {
+            if (value &lt; 0)
+                throw new ArgumentOutOfRangeException(nameof(value), "Salary can't be negative");
+            _monthlySalary = value;
+        }
+    }
+
+    // 2. Auto-property with a default value
+    public string Name { get; set; } = "";
+
+    // 3. Read-only from outside the class
+    public int Id { get; private set; }
+
+    // 4. Init-only: settable only while the object is being created
+    public string Department { get; init; } = "General";
+
+    // 5. Required (C# 11): the caller MUST set it in the initializer
+    public required string Email { get; init; }
+
+    // 6. Computed: no storage, calculated on every read
+    public decimal AnnualSalary =&gt; MonthlySalary * 12;
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">var e = new Employee
+{
+    Name = "Asha",
+    Email = "asha@example.com",      // leave this out → compile error CS9035
+    MonthlySalary = 85_000m,
+    Department = "IT"
+};
+
+Console.WriteLine(e.AnnualSalary);   // 1020000
+// e.Department = "HR";              // ❌ init-only after creation
+// e.Id = 5;                         // ❌ setter is private
+// e.MonthlySalary = -1;             // throws ArgumentOutOfRangeException</code></pre></div>
+<div class="tbl"><table><tr><th>Syntax</th><th>Who can set it</th><th>When</th></tr><tr><td><code>{ get; set; }</code></td><td>Anyone</td><td>Any time</td></tr><tr><td><code>{ get; private set; }</code></td><td>Only the class</td><td>Any time</td></tr><tr><td><code>{ get; init; }</code></td><td>Anyone</td><td>Only during construction / initializer</td></tr><tr><td><code>{ get; }</code></td><td>Only the constructor</td><td>Once</td></tr><tr><td><code>=&gt; expression</code></td><td>Nobody (computed)</td><td>—</td></tr></table></div>
+
+<h3>4. Constructors</h3>
+<p>A constructor guarantees an object starts life valid. If you declare no constructor, C# gives you a public parameterless one. As soon as you write any constructor, that free one disappears.</p>
+<div class="code"><div class="fname">Order.cs</div><pre><code class="language-csharp">public class Order
+{
+    public int Id { get; }
+    public string Customer { get; }
+    public DateTime CreatedAt { get; }
+    public decimal Total { get; private set; }
+
+    // Chains to the main constructor — no duplicated logic
+    public Order() : this(0, "Walk-in") { }
+
+    // Main constructor: validate everything here
+    public Order(int id, string customer)
+    {
+        if (string.IsNullOrWhiteSpace(customer))
+            throw new ArgumentException("Customer is required", nameof(customer));
+
+        Id = id;
+        Customer = customer.Trim();
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public void AddLine(decimal unitPrice, int quantity)
+    {
+        if (quantity &lt;= 0) throw new ArgumentOutOfRangeException(nameof(quantity));
+        Total += unitPrice * quantity;
+    }
+
+    public override string ToString() =&gt; $"Order #{Id} for {Customer}: {Total:N2}";
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">var order = new Order(101, "Ravi Traders");
+order.AddLine(250m, 4);
+order.AddLine(99.5m, 2);
+Console.WriteLine(order);          // Order #101 for Ravi Traders: 1,199.00
+
+var walkIn = new Order();
+Console.WriteLine(walkIn.Customer); // Walk-in</code></pre></div>
+
+<h4>Primary constructors (C# 12)</h4>
+<p>For simple classes, declare parameters on the class itself. The parameters are in scope across the whole class body.</p>
+<div class="code"><div class="fname">Invoice.cs</div><pre><code class="language-csharp">public class Invoice(string number, decimal amount)
+{
+    public string Number { get; } = number;
+    public decimal Amount { get; } = amount;
+    public decimal Gst =&gt; Amount * 0.18m;        // use the property, not the parameter
+
+    public override string ToString() =&gt; $"{Number}: {Amount:N2} + GST {Gst:N2}";
+}
+
+var inv = new Invoice("INV-2026-001", 10_000m);
+Console.WriteLine(inv);   // INV-2026-001: 10,000.00 + GST 1,800.00</code></pre></div>
+<div class="note tip"><b>Tip.</b> Primary-constructor parameters are not properties and are mutable. If callers need the value, copy it into a property like <code>Number</code> above. Using the parameter in both a property initializer and a method triggers warning CS9124.</div>
+
+<h3>5. this, methods and ToString()</h3>
+<div class="code nofile"><pre><code class="language-csharp">public class Rectangle
+{
+    public double Width { get; }
+    public double Height { get; }
+
+    public Rectangle(double width, double height)
+    {
+        this.Width = width;        // `this.` is optional here, required only when names clash
+        this.Height = height;
+    }
+
+    public double Area() =&gt; Width * Height;
+
+    // Returns a NEW object instead of changing this one
+    public Rectangle Scale(double factor) =&gt; new(Width * factor, Height * factor);
+
+    public bool IsLargerThan(Rectangle other) =&gt; this.Area() &gt; other.Area();
+
+    public override string ToString() =&gt; $"{Width} × {Height}";
+}</code></pre></div>
+
+<h3>6. Object lifetime</h3>
+<ul>
+<li><code>new</code> allocates the object on the managed heap and runs the constructor.</li>
+<li>Variables hold references. When no reference reaches an object, the garbage collector can reclaim it. You never free memory yourself.</li>
+<li>A reference that points to nothing is <code>null</code>; using it throws <code>NullReferenceException</code>.</li>
+</ul>
+<div class="code nofile"><pre><code class="language-csharp">Order? current = new Order(1, "Meena");
+current = null;               // the Order object is now unreachable → eligible for GC
+// current.AddLine(10, 1);    // NullReferenceException at runtime (and a compiler warning)</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Exposing public fields instead of properties.</li><li>Forgetting that adding any constructor removes the default parameterless one.</li><li>Doing validation in the UI instead of in the class, so invalid objects can still be created elsewhere.</li><li>Setters on values that should never change after creation (IDs, created dates).</li><li>Huge constructors with 8+ parameters. Group related values into their own class.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create a <code>Student</code> class: Id (read-only), Name (required, non-empty), Email (init-only, must contain @), Marks (0–100 validated), and a computed <code>Grade</code>.</li><li>Add two constructors and chain one to the other.</li><li>Override <code>ToString()</code> and create three students in <code>Program.cs</code>, then print them.</li></ol>
+<h3>Self-check questions</h3><details><summary>What happens to the default constructor when you add your own?</summary>It's no longer generated. If callers still need <code>new T()</code>, declare a parameterless constructor explicitly.</details><details><summary>Why use a property instead of a public field?</summary>Properties let you add validation, make setters private or init-only, compute values and change the implementation later without breaking callers. Data binding and serializers also work with properties.</details><details><summary>init vs private set?</summary><code>init</code> can be set by anyone, but only during object creation. <code>private set</code> can be changed at any time, but only by code inside the class.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between a class and an object?</summary><div>A class is a type definition: a blueprint describing data and behaviour. An object is a runtime instance of that class with its own state, allocated on the heap. One class can produce many objects.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between a field and a property?</summary><div>A field is a variable that stores data directly. A property is a pair of accessor methods (get/set/init) that controls access to data, usually wrapping a private backing field. Properties support validation, computed values, access restrictions and are what frameworks like EF Core and JSON serializers bind to.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is constructor chaining?</summary><div>Calling one constructor from another of the same class using <code>: this(args)</code>, or the base class using <code>: base(args)</code>. It keeps initialisation logic in one place.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are init-only setters and required members?</summary><div><code>init</code> (C# 9) allows a property to be set during construction or in an object initializer, then makes it immutable. <code>required</code> (C# 11) makes the compiler enforce that callers set the member in the initializer, unless a constructor marked <code>[SetsRequiredMembers]</code> does it.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are primary constructors in C# 12 and what is a pitfall?</summary><div>They declare constructor parameters on the type declaration, available throughout the class body. The pitfall: the parameters are captured as hidden mutable fields, not properties. Using a parameter both to initialise a property and elsewhere creates two copies of the state, which is why the compiler warns (CS9124).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Can a constructor be private? Why would you do that?</summary><div>Yes. Private constructors prevent outside instantiation. They're used for static-only classes, the Singleton pattern, and factory methods like <code>Order.Create(...)</code> that validate or choose a subtype before constructing.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Encapsulation, access modifiers and static members</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Hide an object's internals behind a small, safe public surface, choose the right access modifier, and know when something belongs to the type instead of an instance.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Encapsulation</dt><dd>Bundling data with the methods that operate on it and hiding internal state so it can only change through valid operations.</dd></div><div class="def"><dt>Invariant</dt><dd>A rule that must always hold for an object, e.g. a bank balance is never negative.</dd></div><div class="def"><dt>Access modifier</dt><dd>A keyword that controls where a type or member can be used: public, private, protected, internal, protected internal, private protected, file.</dd></div><div class="def"><dt>public</dt><dd>Accessible from any code.</dd></div><div class="def"><dt>private</dt><dd>Accessible only inside the same class (the default for members).</dd></div><div class="def"><dt>protected</dt><dd>Accessible inside the class and classes that derive from it.</dd></div><div class="def"><dt>internal</dt><dd>Accessible anywhere in the same assembly (project). The default for top-level types.</dd></div><div class="def"><dt>protected internal</dt><dd>Same assembly OR derived classes in any assembly.</dd></div><div class="def"><dt>private protected</dt><dd>Derived classes in the same assembly only (C# 7.2).</dd></div><div class="def"><dt>file</dt><dd>Type visible only within its source file (C# 11), used mostly by source generators.</dd></div><div class="def"><dt>Static member</dt><dd>Belongs to the type itself, shared by all instances; accessed as <code>TypeName.Member</code>.</dd></div><div class="def"><dt>Static constructor</dt><dd>Parameterless constructor that runs once, automatically, before the type is first used.</dd></div><div class="def"><dt>Static class</dt><dd>A class that can't be instantiated or inherited and contains only static members.</dd></div><div class="def"><dt>static readonly</dt><dd>A field set once at runtime and shared by all instances; unlike const it can hold any type.</dd></div><div class="def"><dt>Namespace</dt><dd>A logical grouping of types that prevents name clashes, e.g. <code>Library.Core.Models</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Make everything private first, then open up only what callers truly need.</li><li>Expose behaviour (<code>Deposit</code>, <code>Withdraw</code>) instead of raw setters (<code>Balance = ...</code>).</li><li>Return <code>IReadOnlyList&lt;T&gt;</code>, never your internal <code>List&lt;T&gt;</code>.</li><li>Static = one copy per type; instance = one copy per object.</li><li>Use static classes for stateless helpers; avoid static mutable state (hard to test, not thread-safe).</li><li>const for compile-time literals, static readonly for values computed at startup.</li></ul></div>
+
+<h3>1. Encapsulation by example</h3>
+<p>Start with what goes wrong without it. With public fields, any caller can break the account's rules:</p>
+<div class="code nofile"><pre><code class="language-csharp">public class BadAccount
+{
+    public decimal Balance;            // anyone can write anything
+}
+
+var acc = new BadAccount();
+acc.Balance = -50_000;                 // invariant broken, nobody stopped it</code></pre></div>
+<p>An encapsulated version exposes <i>operations</i> and keeps state private. Every change goes through code that enforces the rules.</p>
+<div class="code"><div class="fname">BankAccount.cs</div><pre><code class="language-csharp">public class BankAccount
+{
+    private readonly List&lt;string&gt; _transactions = new();
+
+    public string AccountNumber { get; }
+    public string Owner { get; }
+    public decimal Balance { get; private set; }               // read publicly, write privately
+    public IReadOnlyList&lt;string&gt; Transactions =&gt; _transactions; // read-only view
+
+    public BankAccount(string accountNumber, string owner, decimal openingBalance = 0)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(accountNumber);
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+        if (openingBalance &lt; 0)
+            throw new ArgumentOutOfRangeException(nameof(openingBalance));
+
+        AccountNumber = accountNumber;
+        Owner = owner;
+        Balance = openingBalance;
+        Log($"Opened with {openingBalance:N2}");
+    }
+
+    public void Deposit(decimal amount)
+    {
+        if (amount &lt;= 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), "Deposit must be positive");
+        Balance += amount;
+        Log($"Deposit {amount:N2}");
+    }
+
+    public bool TryWithdraw(decimal amount)
+    {
+        if (amount &lt;= 0 || amount &gt; Balance) return false;   // invariant: never negative
+        Balance -= amount;
+        Log($"Withdraw {amount:N2}");
+        return true;
+    }
+
+    private void Log(string message) =&gt; _transactions.Add($"{DateTime.Now:g}  {message}");
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">var account = new BankAccount("SB-00123", "Samrath", 5_000m);
+account.Deposit(2_500m);
+bool ok = account.TryWithdraw(10_000m);    // false — insufficient funds
+
+Console.WriteLine($"{account.Balance:N2}"); // 7,500.00
+foreach (var t in account.Transactions) Console.WriteLine(t);
+
+// account.Balance = 1_000_000;            // ❌ setter is private
+// account.Transactions.Add("hack");       // ❌ IReadOnlyList has no Add</code></pre></div>
+<div class="note tip"><b>Tip.</b> Returning <code>IReadOnlyList&lt;T&gt;</code> stops casual mutation, but a determined caller could cast it back to <code>List&lt;T&gt;</code>. For a hard guarantee return <code>_transactions.AsReadOnly()</code> or a copy.</div>
+
+<h3>2. Access modifiers</h3>
+<div class="tbl"><table><tr><th>Modifier</th><th>Same class</th><th>Derived (same project)</th><th>Same project</th><th>Derived (other project)</th><th>Anywhere</th></tr><tr><td><code>private</code></td><td>✓</td><td></td><td></td><td></td><td></td></tr><tr><td><code>private protected</code></td><td>✓</td><td>✓</td><td></td><td></td><td></td></tr><tr><td><code>protected</code></td><td>✓</td><td>✓</td><td></td><td>✓</td><td></td></tr><tr><td><code>internal</code></td><td>✓</td><td>✓</td><td>✓</td><td></td><td></td></tr><tr><td><code>protected internal</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td></tr><tr><td><code>public</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr></table></div>
+<ul>
+<li>Members of a class default to <code>private</code>; top-level classes default to <code>internal</code>.</li>
+<li><code>internal</code> is perfect for helpers inside a class library that the app project shouldn't touch. You'll use it in Saturday's project for <code>IsAvailable</code>'s setter.</li>
+<li>Use <code>[assembly: InternalsVisibleTo("MyApp.Tests")]</code> to let a test project see internals.</li>
+</ul>
+
+<h3>3. Static members</h3>
+<p>Instance members belong to each object. Static members belong to the type and exist once, no matter how many objects you create.</p>
+<div class="code"><div class="fname">Customer.cs</div><pre><code class="language-csharp">public class Customer
+{
+    private static int _nextId = 1;           // shared counter
+    public static int Count { get; private set; }
+
+    public int Id { get; }                    // per-object
+    public string Name { get; }
+
+    public Customer(string name)
+    {
+        Id = _nextId++;
+        Name = name;
+        Count++;
+    }
+
+    // Static factory method: a named way to create objects
+    public static Customer CreateGuest() =&gt; new("Guest");
+}
+
+var a = new Customer("Priya");
+var b = new Customer("Karan");
+var g = Customer.CreateGuest();
+
+Console.WriteLine($"{a.Id} {b.Id} {g.Id}");   // 1 2 3
+Console.WriteLine(Customer.Count);            // 3 — accessed through the TYPE
+// a.Count                                    // ❌ can't access static via instance</code></pre></div>
+<div class="note warn"><b>Watch out.</b> The <code>_nextId++</code> counter above isn't thread-safe. Two threads could get the same id. You'll fix this with <code>Interlocked.Increment</code> in Week 7; in real apps the database generates ids.</div>
+
+<h4>Static constructors and static classes</h4>
+<div class="code nofile"><pre><code class="language-csharp">public class AppInfo
+{
+    public static readonly string Environment;
+    public static readonly DateTime StartedAt;
+
+    // Runs exactly once, before the first access to AppInfo
+    static AppInfo()
+    {
+        Environment = System.Environment.GetEnvironmentVariable("APP_ENV") ?? "Development";
+        StartedAt = DateTime.UtcNow;
+    }
+}
+
+public static class Gst                      // cannot be instantiated or inherited
+{
+    public const decimal StandardRate = 0.18m;
+    public static decimal Add(decimal amount, decimal rate = StandardRate) =&gt; amount + amount * rate;
+    public static decimal Extract(decimal grossAmount, decimal rate = StandardRate) =&gt; grossAmount - grossAmount / (1 + rate);
+}
+
+Console.WriteLine(Gst.Add(1000m));           // 1180.00
+Console.WriteLine(AppInfo.Environment);      // Development</code></pre></div>
+
+<h3>4. const vs readonly vs static readonly</h3>
+<div class="tbl"><table><tr><th></th><th>const</th><th>readonly</th><th>static readonly</th></tr><tr><td>Set when</td><td>Compile time</td><td>Declaration or constructor</td><td>Declaration or static constructor</td></tr><tr><td>Per</td><td>Type (implicitly static)</td><td>Instance</td><td>Type</td></tr><tr><td>Allowed types</td><td>Primitives, string, enum</td><td>Any</td><td>Any</td></tr><tr><td>Example</td><td><code>const int MaxLoans = 3;</code></td><td><code>readonly Guid _id;</code></td><td><code>static readonly HttpClient Client = new();</code></td></tr></table></div>
+<div class="note warn"><b>Gotcha.</b> A <code>public const</code> in a library is copied into every caller's compiled code. If you change it, callers keep the old value until they recompile. Use <code>public static readonly</code> for values that might change.</div>
+
+<h3>5. Namespaces</h3>
+<div class="code"><div class="fname">Book.cs</div><pre><code class="language-csharp">// File-scoped namespace (C# 10): applies to the whole file, saves one indent level
+namespace Library.Core.Models;
+
+public class Book { /* ... */ }</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">using Library.Core.Models;                 // import a namespace
+using Models = Library.Core.Models;        // alias, useful when two namespaces clash
+
+var b = new Book();
+var b2 = new Models.Book();</code></pre></div>
+<p>Convention: the namespace mirrors the folder path (<code>Library.Core/Models/Book.cs</code> → <code>Library.Core.Models</code>).</p>
+
+<h3>Common mistakes</h3><ul><li>Making everything public because it's easier right now.</li><li>Returning a mutable internal collection from a getter.</li><li>Storing per-user or per-request data in static fields — every user shares it.</li><li>Using <code>public const</code> in a shared library for values that may change.</li><li>Static classes that hold state; they can't be mocked in tests.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Build <code>BankAccount</code> as above, then add <code>Transfer(BankAccount to, decimal amount)</code> that only succeeds if the withdrawal succeeds.</li><li>Add a static <code>TotalAccountsOpened</code> counter and a static <code>InterestRate</code> property, with an instance method <code>ApplyMonthlyInterest()</code>.</li><li>Try to break the account from <code>Program.cs</code> (negative deposit, editing Transactions). Note every compiler or runtime error you get.</li></ol>
+<h3>Self-check questions</h3><details><summary>What's the default access modifier for a class member? For a top-level class?</summary>Members default to <code>private</code>. Top-level classes default to <code>internal</code>.</details><details><summary>Can a static method use instance fields?</summary>Not directly — there is no <code>this</code>. It needs an instance passed in, e.g. <code>static void Print(Customer c)</code>.</details><details><summary>When does a static constructor run?</summary>Once per type per app domain, automatically, just before the first instance is created or any static member is accessed. You can't call it or pass parameters to it.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is encapsulation and why does it matter?</summary><div>Encapsulation hides an object's internal state and exposes only controlled operations, so invariants can't be broken from outside. It reduces coupling: you can change the internals without changing callers, and bugs are localised to the class that owns the data.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain all the access modifiers in C#.</summary><div>public (everywhere), private (same class), protected (class + derived), internal (same assembly), protected internal (same assembly OR derived anywhere), private protected (derived classes in the same assembly), and file (C# 11, same source file, types only).</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between static and instance members?</summary><div>Instance members belong to each object and need an instance to be used. Static members belong to the type, exist once, are accessed via the type name, and can't access instance members without a reference.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a static class and when would you use one?</summary><div>A sealed, abstract-at-IL-level class with only static members and no instances. Use it for stateless utilities and extension methods (e.g. Math, Path). Avoid it for anything that needs state, polymorphism, or mocking in tests; use a regular class registered in DI instead.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>const vs static readonly — which would you use for a URL in a shared library?</summary><div>static readonly. const values are baked into consuming assemblies at compile time, so changing them requires recompiling every consumer. static readonly is read at runtime and can be any type.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why are mutable static fields dangerous in web apps?</summary><div>They're shared by every request and thread in the process. Concurrent writes cause race conditions, data can leak between users, and tests interfere with each other. Use scoped services or a proper store instead.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Inheritance, base, virtual/override and sealed</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a small class hierarchy, reuse and extend base behaviour correctly, and know when inheritance is the wrong tool.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Inheritance</dt><dd>A mechanism where a derived class acquires the members of a base class, modelling an "is-a" relationship.</dd></div><div class="def"><dt>Base class (parent)</dt><dd>The class being inherited from, e.g. <code>Employee</code>.</dd></div><div class="def"><dt>Derived class (child)</dt><dd>The class that inherits, e.g. <code>Manager : Employee</code>.</dd></div><div class="def"><dt>Single inheritance</dt><dd>C# classes can inherit from only one base class (but implement many interfaces).</dd></div><div class="def"><dt>base</dt><dd>Keyword to call the base class's constructor (<code>: base(...)</code>) or members (<code>base.CalculatePay()</code>).</dd></div><div class="def"><dt>virtual</dt><dd>Marks a base member that derived classes are allowed to override.</dd></div><div class="def"><dt>override</dt><dd>Replaces a virtual/abstract member's implementation in a derived class; resolved at runtime.</dd></div><div class="def"><dt>new (modifier)</dt><dd>Hides a base member with a new one; the call is resolved by the variable's compile-time type.</dd></div><div class="def"><dt>sealed class</dt><dd>A class that can't be inherited.</dd></div><div class="def"><dt>sealed override</dt><dd>An override that further-derived classes can't override again.</dd></div><div class="def"><dt>System.Object</dt><dd>The ultimate base of every type; provides ToString, Equals, GetHashCode, GetType.</dd></div><div class="def"><dt>Composition</dt><dd>Building a class from other objects it holds ("has-a") instead of inheriting from them.</dd></div><div class="def"><dt>Method resolution</dt><dd>Choosing which implementation runs: virtual calls use the object's runtime type.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Inherit only for genuine "is-a" relationships: a Manager <i>is an</i> Employee.</li><li>Base constructor runs before the derived constructor's body; pass arguments with <code>: base(...)</code>.</li><li>A method must be <code>virtual</code> (or abstract) in the base before it can be overridden.</li><li><code>override</code> = polymorphic; <code>new</code> = hiding, usually a smell.</li><li>Seal classes you didn't design for inheritance.</li><li>Prefer composition when you just want to reuse code.</li></ul></div>
+
+<h3>1. A simple hierarchy</h3>
+<div class="code"><div class="fname">Employees.cs</div><pre><code class="language-csharp">public class Employee
+{
+    public string Name { get; }
+    public decimal BaseSalary { get; }
+
+    public Employee(string name, decimal baseSalary)
+    {
+        Name = name;
+        BaseSalary = baseSalary;
+        Console.WriteLine("  Employee constructor");
+    }
+
+    // virtual: derived classes MAY replace this
+    public virtual decimal CalculatePay() =&gt; BaseSalary;
+
+    public override string ToString() =&gt; $"{GetType().Name,-8} {Name,-8} pays {CalculatePay(),10:N0}";
+}
+
+public class Manager : Employee
+{
+    public decimal Bonus { get; }
+
+    public Manager(string name, decimal baseSalary, decimal bonus)
+        : base(name, baseSalary)                    // base constructor first
+    {
+        Bonus = bonus;
+        Console.WriteLine("  Manager constructor");
+    }
+
+    // Extend the base behaviour instead of rewriting it
+    public override decimal CalculatePay() =&gt; base.CalculatePay() + Bonus;
+}
+
+public sealed class Intern : Employee               // nobody can derive from Intern
+{
+    public Intern(string name) : base(name, 20_000m) { }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">Console.WriteLine("Creating manager:");
+var m = new Manager("Divya", 120_000m, 30_000m);
+// Creating manager:
+//   Employee constructor     ← base runs first
+//   Manager constructor
+
+Employee[] staff = [ new Employee("Arjun", 60_000m), m, new Intern("Zoya") ];
+foreach (var e in staff) Console.WriteLine(e);
+// Employee Arjun    pays     60,000
+// Manager  Divya    pays    150,000   ← Manager's override ran via an Employee reference
+// Intern   Zoya     pays     20,000</code></pre></div>
+
+<h3>2. What a derived class gets</h3>
+<ul>
+<li>All public, protected and internal members of the base (private members exist in the object but aren't accessible).</li>
+<li>Constructors are <b>not</b> inherited; each class declares its own and chains with <code>: base(...)</code>.</li>
+<li>If the base has no parameterless constructor, every derived constructor must call <code>base(...)</code> explicitly.</li>
+</ul>
+<div class="code nofile"><pre><code class="language-csharp">public class Vehicle
+{
+    protected int Wheels { get; }                 // visible to derived classes only
+    private string _secret = "VIN-123";           // not accessible in Car
+
+    protected Vehicle(int wheels) =&gt; Wheels = wheels;
+}
+
+public class Car : Vehicle
+{
+    public Car() : base(4) { }
+    public string Describe() =&gt; $"Car with {Wheels} wheels";   // ✓ protected
+    // public string Vin =&gt; _secret;                             // ❌ private in Vehicle
+}</code></pre></div>
+
+<h3>3. override vs new (hiding)</h3>
+<p>This difference is a classic interview question. Run it and look at the output carefully.</p>
+<div class="code nofile"><pre><code class="language-csharp">class Notification
+{
+    public virtual string Channel() =&gt; "generic";
+    public string Priority() =&gt; "normal";
+}
+
+class SmsNotification : Notification
+{
+    public override string Channel() =&gt; "sms";       // overrides
+    public new string Priority() =&gt; "high";          // hides
+}
+
+Notification n = new SmsNotification();               // base-type variable, derived object
+
+Console.WriteLine(n.Channel());    // sms     ← override: the RUNTIME type decides
+Console.WriteLine(n.Priority());   // normal  ← new: the COMPILE-TIME type decides
+
+var s = (SmsNotification)n;
+Console.WriteLine(s.Priority());   // high</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>override</th><th>new</th></tr><tr><td>Base member must be</td><td>virtual / abstract / override</td><td>anything</td></tr><tr><td>Which runs via a base reference</td><td>Derived version</td><td>Base version</td></tr><tr><td>Polymorphic?</td><td>Yes</td><td>No</td></tr><tr><td>Typical use</td><td>Normal extension</td><td>Rare: a base you don't control added a clashing member</td></tr></table></div>
+<div class="note warn"><b>Rule.</b> Without either keyword, a same-named member hides the base and you get warning CS0108. Decide deliberately.</div>
+
+<h3>4. sealed and System.Object</h3>
+<div class="code nofile"><pre><code class="language-csharp">public class Report
+{
+    public virtual string Render() =&gt; "base report";
+}
+
+public class SalesReport : Report
+{
+    public sealed override string Render() =&gt; "sales report";   // stops further overriding
+}
+
+public class RegionalSalesReport : SalesReport
+{
+    // public override string Render() =&gt; "...";   // ❌ CS0239: Render is sealed
+}</code></pre></div>
+<p>Every class inherits from <code>object</code>. The members you'll override most:</p>
+<div class="tbl"><table><tr><th>Member</th><th>Default behaviour</th><th>Override when</th></tr><tr><td><code>ToString()</code></td><td>Type name</td><td>Always useful for logging and debugging</td></tr><tr><td><code>Equals(object)</code></td><td>Reference equality for classes</td><td>Two objects with the same data should be equal</td></tr><tr><td><code>GetHashCode()</code></td><td>Based on reference</td><td>Always together with Equals</td></tr><tr><td><code>GetType()</code></td><td>Runtime type (not overridable)</td><td>—</td></tr></table></div>
+<div class="code nofile"><pre><code class="language-csharp">public class Isbn
+{
+    public string Value { get; }
+    public Isbn(string value) =&gt; Value = value.Replace("-", "");
+
+    public override bool Equals(object? obj) =&gt; obj is Isbn other &amp;&amp; other.Value == Value;
+    public override int GetHashCode() =&gt; Value.GetHashCode();
+    public override string ToString() =&gt; Value;
+}
+
+Console.WriteLine(new Isbn("978-0132350884").Equals(new Isbn("9780132350884")));  // True</code></pre></div>
+<div class="note tip"><b>Tip.</b> Records (Week 3) generate value-based Equals, GetHashCode and ToString for you.</div>
+
+<h3>5. Composition over inheritance</h3>
+<p>Inheritance couples the child tightly to the parent. If you only want to <i>reuse</i> code, hold an object instead.</p>
+<div class="code nofile"><pre><code class="language-csharp">// ❌ Inheritance for reuse: an OrderService is NOT a Logger
+public class OrderService : FileLogger { }
+
+// ✓ Composition: an OrderService HAS a logger
+public class OrderService
+{
+    private readonly FileLogger _logger;
+    public OrderService(FileLogger logger) =&gt; _logger = logger;
+
+    public void Place(int orderId) =&gt; _logger.Write($"Order {orderId} placed");
+}
+
+public class FileLogger
+{
+    public void Write(string message) =&gt; File.AppendAllText("app.log", message + Environment.NewLine);
+}</code></pre></div>
+<p>Ask "is-a or has-a?" before writing the colon. Deep hierarchies (more than 2–3 levels) are hard to change; on Friday you'll see how interfaces make composition even more flexible.</p>
+
+<h3>Common mistakes</h3><ul><li>Inheriting just to reuse a method (use composition).</li><li>Forgetting <code>virtual</code> in the base and then wondering why the override won't compile.</li><li>Using <code>new</code> to "fix" warning CS0108 without understanding the behaviour.</li><li>Calling virtual methods from a base constructor — the derived override runs before the derived constructor has initialised its fields.</li><li>Overriding Equals without GetHashCode, which breaks dictionaries and HashSets.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create <code>Vehicle</code> (Brand, Year, virtual <code>RentalPerDay()</code>) and derive <code>Car</code>, <code>Bike</code> and <code>Truck</code> with different pricing. Truck adds a per-ton surcharge via <code>base.RentalPerDay()</code>.</li><li>Put them in a <code>Vehicle[]</code> and print each one's rental for 3 days.</li><li>Write the override-vs-new demo yourself and explain each output line in a comment.</li></ol>
+<h3>Self-check questions</h3><details><summary>Does C# support multiple inheritance?</summary>Not for classes; a class has exactly one base class. A class can implement any number of interfaces.</details><details><summary>Are constructors inherited?</summary>No. A derived class must declare its own constructors and chain to a base constructor.</details><details><summary>What does sealed do on a method?</summary>Applied to an override, it prevents classes further down the hierarchy from overriding it again.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is inheritance and what are its benefits and drawbacks?</summary><div>Inheritance lets a derived class reuse and specialise a base class (an is-a relationship). Benefits: code reuse and polymorphism. Drawbacks: tight coupling, fragile base class problem (base changes break children), and rigid hierarchies that are hard to refactor.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between virtual and abstract?</summary><div>A virtual member has an implementation that derived classes may override. An abstract member has no implementation, can only exist in an abstract class, and derived non-abstract classes must override it.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the order of constructor execution in an inheritance chain?</summary><div>Field initialisers run from derived to base, then constructor bodies run from base to derived. So the base constructor body always completes before the derived constructor body runs.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain method hiding (new) vs overriding (override).</summary><div>Override replaces a virtual method; calls through any reference use the runtime type's implementation (dynamic dispatch). new hides the base member; which version runs depends on the compile-time type of the variable. Hiding breaks polymorphism and is rarely what you want.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why is calling a virtual method in a constructor dangerous?</summary><div>The base constructor runs first, but a virtual call dispatches to the most-derived override, which may use fields the derived constructor hasn't set yet, causing nulls or wrong values.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you prefer composition over inheritance?</summary><div>When the relationship is has-a or uses-a, when you need to swap behaviour at runtime, when you'd otherwise need multiple inheritance, or when the base class isn't designed for extension. Composition with interfaces gives looser coupling and easier testing.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Polymorphism and abstract classes</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Write code that works with a base type and lets each subtype supply its own behaviour, using abstract classes to enforce what every subtype must implement.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Polymorphism</dt><dd>"Many forms": the same call behaves differently depending on the object's actual type.</dd></div><div class="def"><dt>Compile-time polymorphism</dt><dd>Static binding decided by the compiler: method and operator overloading.</dd></div><div class="def"><dt>Runtime polymorphism</dt><dd>Dynamic binding decided at runtime through virtual/abstract members and overriding.</dd></div><div class="def"><dt>Dynamic dispatch</dt><dd>The runtime looking up the most-derived override via the object's method table (vtable).</dd></div><div class="def"><dt>Abstract class</dt><dd>A class marked <code>abstract</code> that can't be instantiated and may contain abstract members.</dd></div><div class="def"><dt>Abstract member</dt><dd>A method or property with no body that every non-abstract derived class must override.</dd></div><div class="def"><dt>Concrete class</dt><dd>A non-abstract class you can instantiate.</dd></div><div class="def"><dt>Template Method pattern</dt><dd>A base class defines the fixed steps of an algorithm; subclasses fill in specific steps.</dd></div><div class="def"><dt>Upcasting</dt><dd>Treating a derived object as its base type; implicit and always safe.</dd></div><div class="def"><dt>Downcasting</dt><dd>Converting a base reference to a derived type; explicit and may fail.</dd></div><div class="def"><dt>is / as</dt><dd><code>is</code> tests a type (and can declare a variable); <code>as</code> casts or returns null.</dd></div><div class="def"><dt>Operator overloading</dt><dd>Defining what operators like + or == mean for your own type.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Write code against the base type; let each subtype supply the details.</li><li>An abstract class is a partial template: shared code plus required gaps.</li><li>Use <code>abstract</code> when every subtype must provide it, <code>virtual</code> when a default makes sense.</li><li>Adding a new subtype shouldn't require editing the code that loops over the base type (Open/Closed).</li><li>Prefer polymorphism over <code>if (x is A) … else if (x is B) …</code> chains.</li><li>Downcast with pattern matching: <code>if (shape is Circle c)</code>.</li></ul></div>
+
+<h3>1. Two kinds of polymorphism</h3>
+<div class="tbl"><table><tr><th></th><th>Compile-time (static)</th><th>Runtime (dynamic)</th></tr><tr><td>Mechanism</td><td>Overloading methods/operators</td><td>Overriding virtual/abstract members</td></tr><tr><td>Decided by</td><td>Compiler, from argument types</td><td>CLR, from the object's runtime type</td></tr><tr><td>Example</td><td><code>Area(r)</code> vs <code>Area(w, h)</code></td><td><code>shape.Area()</code> on a Circle or a Rectangle</td></tr></table></div>
+
+<h3>2. Abstract classes</h3>
+<p>Every shape has an area, but there's no sensible area for a generic "shape". Make the base abstract and force each concrete shape to provide it.</p>
+<div class="code"><div class="fname">Shapes.cs</div><pre><code class="language-csharp">public abstract class Shape
+{
+    public string Name { get; }
+
+    protected Shape(string name) =&gt; Name = name;    // protected: only subclasses call it
+
+    public abstract double Area();                  // no body — must be overridden
+    public abstract double Perimeter();
+
+    public virtual string Describe() =&gt; $"{Name,-9} area {Area(),8:F2}  perimeter {Perimeter(),7:F2}";
+}
+
+public class Circle(double radius) : Shape("Circle")
+{
+    public double Radius =&gt; radius;
+    public override double Area() =&gt; Math.PI * radius * radius;
+    public override double Perimeter() =&gt; 2 * Math.PI * radius;
+}
+
+public class Rectangle(double width, double height) : Shape("Rectangle")
+{
+    public double Width =&gt; width;
+    public double Height =&gt; height;
+    public override double Area() =&gt; width * height;
+    public override double Perimeter() =&gt; 2 * (width + height);
+}
+
+public class Triangle(double a, double b, double c) : Shape("Triangle")
+{
+    public override double Perimeter() =&gt; a + b + c;
+    public override double Area()
+    {
+        double s = Perimeter() / 2;                               // Heron's formula
+        return Math.Sqrt(s * (s - a) * (s - b) * (s - c));
+    }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">List&lt;Shape&gt; shapes = [ new Circle(2), new Rectangle(3, 4), new Triangle(3, 4, 5) ];
+
+foreach (Shape s in shapes)
+    Console.WriteLine(s.Describe());        // each object runs ITS OWN Area()
+
+// Circle    area    12.57  perimeter   12.57
+// Rectangle area    12.00  perimeter   14.00
+// Triangle  area     6.00  perimeter   12.00
+
+double total = 0;
+foreach (Shape s in shapes) total += s.Area();
+Console.WriteLine($"Total area: {total:F2}");   // 30.57
+
+// var x = new Shape("blob");               // ❌ CS0144: cannot create an instance of an abstract class</code></pre></div>
+<div class="note tip"><b>Tip.</b> Adding a <code>Hexagon</code> means writing one new class. The loop above doesn't change. That's the Open/Closed Principle you'll formalise in Week 9.</div>
+
+<h3>3. Template Method: a real-world abstract class</h3>
+<p>Payment flows share the same steps (validate amount, run checks, charge, add fees) but each method does the specifics differently. The base class owns the algorithm; subclasses fill in the blanks.</p>
+<div class="code"><div class="fname">Payments.cs</div><pre><code class="language-csharp">public record PaymentResult(bool Success, string? Reference, decimal Charged, string? Error)
+{
+    public static PaymentResult Ok(string reference, decimal charged) =&gt; new(true, reference, charged, null);
+    public static PaymentResult Fail(string error) =&gt; new(false, null, 0, error);
+}
+
+public abstract class PaymentProcessor
+{
+    // Template method: NOT virtual — the order of steps is fixed
+    public PaymentResult Process(decimal amount)
+    {
+        if (amount &lt;= 0) return PaymentResult.Fail("Amount must be positive");
+        if (!Validate(amount)) return PaymentResult.Fail($"{Method} rejected {amount:N2}");
+
+        string reference = Charge(amount);
+        return PaymentResult.Ok(reference, amount + Fee(amount));
+    }
+
+    protected abstract string Method { get; }               // required
+    protected abstract bool Validate(decimal amount);       // required
+    protected abstract string Charge(decimal amount);       // required
+    protected virtual decimal Fee(decimal amount) =&gt; 0m;    // optional hook
+}
+
+public class UpiProcessor : PaymentProcessor
+{
+    protected override string Method =&gt; "UPI";
+    protected override bool Validate(decimal amount) =&gt; amount &lt;= 100_000m;     // typical per-transaction cap
+    protected override string Charge(decimal amount) =&gt; "UPI-" + Guid.NewGuid().ToString("N")[..10];
+}
+
+public class CardProcessor : PaymentProcessor
+{
+    protected override string Method =&gt; "Card";
+    protected override bool Validate(decimal amount) =&gt; true;
+    protected override string Charge(decimal amount) =&gt; "CARD-" + Random.Shared.Next(100_000, 999_999);
+    protected override decimal Fee(decimal amount) =&gt; Math.Round(amount * 0.02m, 2);   // 2% fee
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">PaymentProcessor[] processors = [ new UpiProcessor(), new CardProcessor() ];
+
+foreach (var p in processors)
+{
+    var r = p.Process(150_000m);
+    Console.WriteLine(r.Success ? $"✓ {r.Reference} charged {r.Charged:N2}" : $"✗ {r.Error}");
+}
+// ✗ UPI rejected 150,000.00
+// ✓ CARD-482913 charged 153,000.00</code></pre></div>
+
+<h3>4. Type checks and casting</h3>
+<p>Sometimes you genuinely need subtype-specific data. Use pattern matching, not blind casts.</p>
+<div class="code nofile"><pre><code class="language-csharp">Shape shape = new Circle(12);
+
+// Upcast: implicit, always safe
+Shape s1 = new Rectangle(2, 2);
+
+// Downcast with a cast: throws InvalidCastException if wrong
+var r = (Rectangle)s1;
+
+// `as`: returns null instead of throwing (reference types only)
+Circle? maybe = s1 as Circle;               // null
+
+// `is` with a declaration pattern: test + cast in one step  ✓ preferred
+if (shape is Circle c)
+    Console.WriteLine($"Radius {c.Radius}");
+
+// switch expression on type + property patterns
+string Label(Shape s) =&gt; s switch
+{
+    Circle { Radius: &gt; 10 }                     =&gt; "Large circle",
+    Circle                                      =&gt; "Circle",
+    Rectangle rect when rect.Width == rect.Height =&gt; "Square",
+    Rectangle                                   =&gt; "Rectangle",
+    _                                           =&gt; "Other shape"
+};
+
+Console.WriteLine(Label(shape));                   // Large circle
+Console.WriteLine(Label(new Rectangle(5, 5)));     // Square</code></pre></div>
+<div class="note warn"><b>Smell.</b> If you find yourself writing <code>if (x is A) … else if (x is B) …</code> to choose <i>behaviour</i>, that behaviour probably belongs in a virtual method on the base type.</div>
+
+<h3>5. Operator overloading (compile-time polymorphism)</h3>
+<div class="code"><div class="fname">Money.cs</div><pre><code class="language-csharp">public readonly struct Money(decimal amount, string currency)
+{
+    public decimal Amount { get; } = amount;
+    public string Currency { get; } = currency;
+
+    public static Money operator +(Money a, Money b)
+    {
+        if (a.Currency != b.Currency)
+            throw new InvalidOperationException($"Can't add {a.Currency} and {b.Currency}");
+        return new Money(a.Amount + b.Amount, a.Currency);
+    }
+
+    public static Money operator *(Money m, int qty) =&gt; new(m.Amount * qty, m.Currency);
+
+    public override string ToString() =&gt; $"{Amount:N2} {Currency}";
+}
+
+var price = new Money(499m, "INR");
+var shipping = new Money(60m, "INR");
+Console.WriteLine(price * 3 + shipping);   // 1,557.00 INR</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Making a base class concrete when no instance of it should exist — make it abstract.</li><li>Type-checking chains instead of virtual methods.</li><li>Using a direct cast where the type might be different — use <code>is</code>.</li><li>Making the template method itself virtual, so subclasses can break the algorithm.</li><li>Overloading operators with surprising meanings (+ that subtracts, == that ignores key fields).</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add <code>Hexagon(side)</code> to the shapes and print all four sorted by area.</li><li>Write abstract <code>Notification</code> with a template method <code>Send(to, message)</code>: validate recipient → format → deliver. Implement <code>EmailNotification</code> and <code>SmsNotification</code> (SMS truncates to 160 chars).</li><li>Use a switch expression with type patterns to print an icon per notification type.</li></ol>
+<h3>Self-check questions</h3><details><summary>Can an abstract class have a constructor?</summary>Yes, usually <code>protected</code>. It runs when a derived class is constructed and initialises shared state.</details><details><summary>Can an abstract class have no abstract members?</summary>Yes. It then just can't be instantiated directly, which is useful for a base that only makes sense through subclasses.</details><details><summary>What's the safest way to downcast?</summary>Pattern matching: <code>if (obj is Circle c) { ... }</code>. It tests and casts in one step and never throws.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is polymorphism? Give an example.</summary><div>The ability of one interface to work with objects of different types, with each type supplying its own behaviour. Example: a <code>List&lt;Shape&gt;</code> where calling <code>Area()</code> runs the Circle, Rectangle or Triangle implementation depending on each object's actual type.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Differentiate compile-time and runtime polymorphism.</summary><div>Compile-time (static) polymorphism is overloading: the compiler picks the method from the argument types. Runtime (dynamic) polymorphism is overriding: the CLR picks the implementation from the object's runtime type via virtual dispatch.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is an abstract class? Can you instantiate one?</summary><div>A class declared abstract that may contain both implemented and abstract members. It can't be instantiated; it serves as a base that derived classes complete.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the Template Method pattern?</summary><div>A base class defines an algorithm's skeleton in a non-virtual method and calls abstract or virtual steps that subclasses implement. The structure stays fixed while details vary. Examples: payment processors, report generators, ASP.NET Core's ControllerBase lifecycle.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does virtual dispatch work under the hood?</summary><div>Each type has a method table (vtable) with slots for virtual methods. An override replaces the slot in the derived type's table. A virtual call loads the object's method table pointer and jumps to the slot, so the most-derived implementation runs.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What's the difference between is, as and a direct cast?</summary><div>A cast <code>(T)x</code> throws InvalidCastException on failure. <code>as</code> returns null on failure and works only with reference/nullable types. <code>is</code> returns a bool and, with a declaration pattern (<code>x is T t</code>), also gives you the typed variable. Prefer the pattern form.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Interfaces, default interface methods, interface vs abstract class</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Define contracts with interfaces, program against them instead of concrete classes, and choose correctly between an interface and an abstract class.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Interface</dt><dd>A named contract listing members a type promises to implement, with no instance state.</dd></div><div class="def"><dt>Implement</dt><dd>A class or struct provides bodies for all of an interface's members: <code>class EmailSender : INotificationSender</code>.</dd></div><div class="def"><dt>Programming to an interface</dt><dd>Depending on the contract (<code>INotificationSender</code>) rather than a concrete class (<code>EmailSender</code>).</dd></div><div class="def"><dt>Dependency injection (DI)</dt><dd>Passing a class its dependencies (usually as interfaces) from outside, typically through the constructor.</dd></div><div class="def"><dt>Loose coupling</dt><dd>Classes know as little as possible about each other's concrete types, so either side can change independently.</dd></div><div class="def"><dt>Explicit implementation</dt><dd>Implementing a member as <code>void IFoo.Run()</code>; it's only callable through the interface.</dd></div><div class="def"><dt>Default interface method</dt><dd>C# 8 feature letting an interface member have a body that implementers inherit.</dd></div><div class="def"><dt>Static abstract member</dt><dd>C# 11 feature letting interfaces require static members, used for generic math.</dd></div><div class="def"><dt>Marker interface</dt><dd>An interface with no members used to tag types (prefer attributes in modern .NET).</dd></div><div class="def"><dt>IComparable&lt;T&gt;</dt><dd>Built-in interface defining a type's natural sort order via CompareTo.</dd></div><div class="def"><dt>IDisposable</dt><dd>Built-in interface with Dispose() for releasing unmanaged or expensive resources; used by <code>using</code>.</dd></div><div class="def"><dt>Fake / test double</dt><dd>A simple implementation of an interface used in tests instead of the real thing.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>An interface says <i>what</i>, a class says <i>how</i>.</li><li>A class can inherit one class but implement many interfaces.</li><li>Depend on interfaces in constructors; this is the foundation of ASP.NET Core's DI container.</li><li>Name interfaces with an I prefix and an ability or role: <code>IRepository</code>, <code>IComparable</code>.</li><li>Keep interfaces small and focused (Interface Segregation).</li><li>Abstract class = shared code + is-a; interface = capability/contract, no state.</li></ul></div>
+
+<h3>1. Defining and implementing an interface</h3>
+<div class="code"><div class="fname">Notifications.cs</div><pre><code class="language-csharp">public interface INotificationSender
+{
+    string Channel { get; }
+    bool Send(string to, string message);
+}
+
+public class EmailSender : INotificationSender
+{
+    public string Channel =&gt; "Email";
+    public bool Send(string to, string message)
+    {
+        if (!to.Contains('@')) return false;
+        Console.WriteLine($"[Email → {to}] {message}");
+        return true;
+    }
+}
+
+public class SmsSender : INotificationSender
+{
+    public string Channel =&gt; "SMS";
+    public bool Send(string to, string message)
+    {
+        if (to.Length != 10 || !to.All(char.IsDigit)) return false;
+        string body = message.Length &gt; 160 ? message[..157] + "..." : message;
+        Console.WriteLine($"[SMS → {to}] {body}");
+        return true;
+    }
+}</code></pre></div>
+
+<h3>2. Programming to an interface (DI by hand)</h3>
+<p><code>OrderService</code> doesn't know or care whether it's emailing or texting. It depends on the contract only, and receives the implementation through its constructor.</p>
+<div class="code"><div class="fname">OrderService.cs</div><pre><code class="language-csharp">public class OrderService
+{
+    private readonly INotificationSender _notifier;
+
+    public OrderService(INotificationSender notifier) =&gt; _notifier = notifier;   // injected
+
+    public void PlaceOrder(int orderId, string customerContact)
+    {
+        // ... save the order ...
+        bool sent = _notifier.Send(customerContact, $"Order #{orderId} confirmed. Thank you!");
+        Console.WriteLine(sent ? $"Notified via {_notifier.Channel}" : "Notification failed");
+    }
+}
+
+// Composition root: the ONE place that picks concrete classes
+var byEmail = new OrderService(new EmailSender());
+byEmail.PlaceOrder(501, "asha@example.com");
+
+var bySms = new OrderService(new SmsSender());
+bySms.PlaceOrder(502, "9876543210");</code></pre></div>
+<p>In tests, swap in a fake that records what was sent, with no real email involved:</p>
+<div class="code nofile"><pre><code class="language-csharp">public class FakeSender : INotificationSender
+{
+    public List&lt;string&gt; Sent { get; } = new();
+    public string Channel =&gt; "Fake";
+    public bool Send(string to, string message) { Sent.Add($"{to}: {message}"); return true; }
+}
+
+var fake = new FakeSender();
+new OrderService(fake).PlaceOrder(1, "test");
+Console.WriteLine(fake.Sent.Count);   // 1  ← assert this in a unit test (Week 39)</code></pre></div>
+<div class="note tip"><b>Tip.</b> In ASP.NET Core (Week 17) you'll register <code>builder.Services.AddScoped&lt;INotificationSender, EmailSender&gt;();</code> and the framework does this wiring for you.</div>
+
+<h3>3. Multiple interfaces and explicit implementation</h3>
+<div class="code nofile"><pre><code class="language-csharp">public interface IPrintable  { void Print(); }
+public interface IExportable { byte[] Export(string format); }
+
+public class Invoice : IPrintable, IExportable          // one class, many contracts
+{
+    public void Print() =&gt; Console.WriteLine("Printing invoice...");
+    public byte[] Export(string format) =&gt; System.Text.Encoding.UTF8.GetBytes($"invoice as {format}");
+}
+
+// When two interfaces have the same member, implement them explicitly
+public interface IFileLogger    { void Write(string message); }
+public interface IConsoleLogger { void Write(string message); }
+
+public class DualLogger : IFileLogger, IConsoleLogger
+{
+    void IFileLogger.Write(string message)    =&gt; File.AppendAllText("app.log", message + Environment.NewLine);
+    void IConsoleLogger.Write(string message) =&gt; Console.WriteLine(message);
+}
+
+var logger = new DualLogger();
+// logger.Write("x");                         // ❌ not visible on the class itself
+((IConsoleLogger)logger).Write("to console");
+IFileLogger fileLog = logger;
+fileLog.Write("to file");</code></pre></div>
+
+<h3>4. Built-in interfaces you'll use constantly</h3>
+<div class="code"><div class="fname">Student.cs</div><pre><code class="language-csharp">public class Student : IComparable&lt;Student&gt;
+{
+    public required string Name { get; init; }
+    public double Cgpa { get; init; }
+
+    // Natural order: highest CGPA first
+    public int CompareTo(Student? other) =&gt; other is null ? -1 : other.Cgpa.CompareTo(Cgpa);
+    public override string ToString() =&gt; $"{Name} ({Cgpa})";
+}
+
+var batch = new List&lt;Student&gt;
+{
+    new() { Name = "Neha",  Cgpa = 8.4 },
+    new() { Name = "Rohit", Cgpa = 9.1 },
+    new() { Name = "Imran", Cgpa = 7.9 }
+};
+batch.Sort();                                   // uses CompareTo
+Console.WriteLine(string.Join(", ", batch));    // Rohit (9.1), Neha (8.4), Imran (7.9)</code></pre></div>
+<div class="code"><div class="fname">ReportWriter.cs</div><pre><code class="language-csharp">public sealed class ReportWriter : IDisposable
+{
+    private readonly StreamWriter _writer;
+    public ReportWriter(string path) =&gt; _writer = new StreamWriter(path);
+    public void Line(string text) =&gt; _writer.WriteLine(text);
+    public void Dispose()
+    {
+        _writer.Dispose();
+        Console.WriteLine("Report file closed");
+    }
+}
+
+using (var report = new ReportWriter("q3.txt"))   // Dispose() runs at the closing brace,
+{                                                 // even if an exception is thrown
+    report.Line("Q3 revenue: 42,00,000");
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Interface</th><th>Purpose</th><th>You'll meet it in</th></tr><tr><td><code>IEnumerable&lt;T&gt;</code></td><td>Can be iterated with foreach / LINQ</td><td>Weeks 4–5</td></tr><tr><td><code>IComparable&lt;T&gt;</code>, <code>IComparer&lt;T&gt;</code></td><td>Sorting</td><td>Week 4</td></tr><tr><td><code>IEquatable&lt;T&gt;</code></td><td>Type-safe equality</td><td>Week 4</td></tr><tr><td><code>IDisposable</code> / <code>IAsyncDisposable</code></td><td>Resource cleanup</td><td>Week 6</td></tr><tr><td><code>ILogger&lt;T&gt;</code></td><td>Logging abstraction</td><td>Weeks 6, 19</td></tr></table></div>
+
+<h3>5. Default interface methods (C# 8)</h3>
+<p>An interface member can have a body. Implementers get it for free and may override it. The main use is evolving a published interface without breaking existing implementations.</p>
+<div class="code nofile"><pre><code class="language-csharp">public interface IDiscountPolicy
+{
+    decimal Rate { get; }
+    decimal Apply(decimal amount) =&gt; Math.Round(amount - amount * Rate, 2);   // default body
+}
+
+public class FestiveDiscount : IDiscountPolicy { public decimal Rate =&gt; 0.20m; }
+
+public class LoyaltyDiscount : IDiscountPolicy
+{
+    public decimal Rate =&gt; 0.10m;
+    public decimal Apply(decimal amount) =&gt; amount &gt;= 5_000m ? amount * 0.85m : amount * 0.90m; // own version
+}
+
+IDiscountPolicy festive = new FestiveDiscount();
+Console.WriteLine(festive.Apply(1_000m));        // 800.00
+
+// var f = new FestiveDiscount(); f.Apply(1000);  // ❌ default members are only reachable via the interface</code></pre></div>
+<div class="note warn"><b>Limit.</b> Default methods can't access instance fields (interfaces have none). Don't use them to turn interfaces into abstract classes.</div>
+<p>C# 11 also added <b>static abstract</b> interface members (<code>static abstract T Zero { get; }</code>), which power generic math like <code>INumber&lt;T&gt;</code>. Awareness is enough for now.</p>
+
+<h3>6. Interface vs abstract class</h3>
+<div class="tbl"><table><tr><th></th><th>Interface</th><th>Abstract class</th></tr><tr><td>Inheritance</td><td>A class can implement many</td><td>A class can inherit only one</td></tr><tr><td>State (fields)</td><td>No instance fields</td><td>Yes</td></tr><tr><td>Constructors</td><td>No</td><td>Yes</td></tr><tr><td>Member access</td><td>Public by default</td><td>Any access modifier</td></tr><tr><td>Implementation</td><td>Optional defaults (C# 8+)</td><td>Full shared implementation</td></tr><tr><td>Relationship</td><td>"can do" / capability</td><td>"is a" / shared identity</td></tr><tr><td>Versioning</td><td>Adding members can break implementers (unless default)</td><td>Adding non-abstract members is safe</td></tr><tr><td>Works with structs</td><td>Yes</td><td>No</td></tr></table></div>
+<h4>Decision guide</h4>
+<ul>
+<li>Need a contract that unrelated types can fulfil, or need to mock it in tests → <b>interface</b>.</li>
+<li>Several closely related types share real code and state → <b>abstract class</b>.</li>
+<li>Both at once is common: <code>abstract class PaymentProcessor : IPaymentProcessor</code>. Consumers depend on the interface; implementers reuse the base class.</li>
+</ul>
+
+<h3>Common mistakes</h3><ul><li>Creating an interface for every class "just because". Add one when you have two implementations or need to test against it.</li><li>Fat interfaces with 15 members that most implementers only half-support.</li><li>Newing up concrete dependencies inside a class (<code>new EmailSender()</code>) instead of injecting them.</li><li>Expecting default interface members to be callable on the class type.</li><li>Forgetting <code>using</code> on IDisposable objects, which leaks file handles and connections.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create <code>IShippingCalculator</code> with <code>decimal Calculate(decimal weightKg, string pinCode)</code> and two implementations: <code>FlatRateShipping</code> and <code>WeightBasedShipping</code>.</li><li>Write <code>CheckoutService</code> that takes the interface in its constructor and prints the total for a cart. Swap implementations in Program.cs.</li><li>Make <code>Product</code> implement <code>IComparable&lt;Product&gt;</code> by price and sort a list.</li></ol>
+<h3>Self-check questions</h3><details><summary>Can an interface contain fields?</summary>No instance fields. Since C# 8 it can contain static fields, static methods, default method bodies and constants.</details><details><summary>Why prefer constructor injection?</summary>Dependencies are explicit, required at creation, easy to replace with fakes in tests, and the object is fully usable as soon as it's constructed.</details><details><summary>When is explicit interface implementation useful?</summary>When two interfaces declare the same member, or when you want to hide a member from the class's public surface (e.g. a rarely used <code>IDisposable.Dispose</code> exposed as <code>Close()</code>).</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is an interface and why do we use it?</summary><div>An interface is a contract of members that implementing types must provide. It enables polymorphism across unrelated types, loose coupling, multiple 'inheritance' of contracts, dependency injection and mocking in unit tests.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Interface vs abstract class — when would you use each?</summary><div>Use an interface to define a capability that many unrelated types can implement, or for DI and testing. Use an abstract class when related types share state and implementation and form a clear is-a hierarchy. A class can implement many interfaces but inherit only one class.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Can a class implement multiple interfaces? What if two have the same method?</summary><div>Yes. If signatures clash and behaviour should differ, use explicit implementation (<code>void IA.Run()</code>); otherwise one public method satisfies both.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are default interface methods and why were they added?</summary><div>C# 8 lets interface members have implementations. They were added so library authors can add members to published interfaces without breaking existing implementations, and for interop with Java/Swift-style traits. They're only callable through the interface type.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do interfaces enable unit testing?</summary><div>When a class depends on an interface, a test can pass a fake or mock implementation (hand-written or via Moq/NSubstitute), isolating the class from databases, email servers, clocks and other slow or non-deterministic dependencies.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the Interface Segregation Principle?</summary><div>Clients shouldn't be forced to depend on methods they don't use. Prefer several small, focused interfaces (IReader, IWriter) over one large one, so implementers aren't forced to throw NotImplementedException.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Micro-project 2: Library management system (models and interfaces)</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Design the domain model of a library with an abstract base class, three item types, members, and interfaces for searching and storage. Budget: about 4 hours.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Domain model</dt><dd>Classes that represent the real-world business concepts (items, members, loans) and their rules.</dd></div><div class="def"><dt>Catalog</dt><dd>The collection of all items and members, hidden behind the <code>ICatalog</code> interface.</dd></div><div class="def"><dt>In-memory repository</dt><dd>An implementation that stores data in lists; later replaced by a database (Week 15) without changing callers.</dd></div><div class="def"><dt>Seed data</dt><dd>Sample records loaded at startup so the app is usable immediately.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>LibraryItem is abstract: there's no such thing as a plain "item" on the shelf.</li><li>Each subtype answers its own LoanDays, Kind and late fee — polymorphism, not if/else.</li><li>Everything searchable implements ISearchable, so search can cover books and members alike.</li><li>Program.cs depends on ICatalog, not InMemoryCatalog.</li><li><code>IsAvailable</code> has an internal setter: only Core can change it.</li></ul></div>
+
+<h3>Requirements</h3>
+<ul>
+<li>Item types: <b>Book</b> (author, ISBN, 14-day loan, ₹5/day late fee), <b>Magazine</b> (issue no., 7 days, ₹2/day), <b>DVD</b> (runtime, 3 days, ₹10/day).</li>
+<li>Members with auto-generated ids, unique email, max 3 loans at a time.</li>
+<li>Menu: list items, add book, add member, list members, exit.</li>
+<li>Logic and models in <code>Library.Core</code>; console I/O in <code>Library.App</code>.</li>
+<li>Tomorrow: borrow, return, late fees and search.</li>
+</ul>
+
+<h3>Class design</h3>
+<pre class="mermaid">
+classDiagram
+  class ISearchable { <<interface>> +Matches(term) bool }
+  class LibraryItem { <<abstract>> +Id +Title +Year +IsAvailable +LoanDays* +Kind* +LateFeePerDay }
+  class Book { +Author +Isbn }
+  class Magazine { +IssueNumber }
+  class Dvd { +RuntimeMinutes }
+  class Member { +Id +Name +Email +MaxLoans }
+  class ICatalog { <<interface>> +AddItem() +AddMember() +FindItem() +FindMember() }
+  class InMemoryCatalog
+  ISearchable <|.. LibraryItem
+  ISearchable <|.. Member
+  LibraryItem <|-- Book
+  LibraryItem <|-- Magazine
+  LibraryItem <|-- Dvd
+  ICatalog <|.. InMemoryCatalog
+  InMemoryCatalog o-- LibraryItem
+  InMemoryCatalog o-- Member
+</pre>
+
+<h3>Scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new sln -n Library
+dotnet new classlib -n Library.Core
+dotnet new console  -n Library.App
+dotnet sln add Library.Core Library.App
+dotnet add Library.App reference Library.Core
+dotnet new gitignore
+rm Library.Core/Class1.cs</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">Library/
+├─ Library.sln
+├─ Library.Core/
+│  ├─ Interfaces/
+│  │  ├─ ISearchable.cs
+│  │  └─ ICatalog.cs
+│  ├─ Models/
+│  │  ├─ LibraryItem.cs
+│  │  ├─ Book.cs
+│  │  ├─ Magazine.cs
+│  │  ├─ Dvd.cs
+│  │  └─ Member.cs
+│  └─ Services/
+│     ├─ InMemoryCatalog.cs
+│     └─ SeedData.cs
+└─ Library.App/
+   ├─ ConsoleInput.cs
+   └─ Program.cs</code></pre></div>
+
+<h3>Step 1 — Interfaces</h3>
+<div class="code"><div class="fname">Library.Core/Interfaces/ISearchable.cs</div><pre><code class="language-csharp">namespace Library.Core.Interfaces;
+
+public interface ISearchable
+{
+    bool Matches(string term);
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Interfaces/ICatalog.cs</div><pre><code class="language-csharp">using Library.Core.Models;
+
+namespace Library.Core.Interfaces;
+
+public interface ICatalog
+{
+    IReadOnlyList&lt;LibraryItem&gt; Items { get; }
+    IReadOnlyList&lt;Member&gt; Members { get; }
+
+    void AddItem(LibraryItem item);
+    void AddMember(Member member);
+    LibraryItem? FindItem(int id);
+    Member? FindMember(int id);
+}</code></pre></div>
+
+<h3>Step 2 — The abstract base item</h3>
+<div class="code"><div class="fname">Library.Core/Models/LibraryItem.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+
+namespace Library.Core.Models;
+
+public abstract class LibraryItem : ISearchable
+{
+    private static int _nextId = 1;
+
+    public int Id { get; }
+    public string Title { get; }
+    public int Year { get; }
+    public bool IsAvailable { get; internal set; } = true;   // only Library.Core can change it
+
+    protected LibraryItem(string title, int year)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(title);
+        if (year &lt; 1450 || year &gt; DateTime.Today.Year)
+            throw new ArgumentOutOfRangeException(nameof(year), $"Year must be between 1450 and {DateTime.Today.Year}");
+
+        Id = _nextId++;
+        Title = title.Trim();
+        Year = year;
+    }
+
+    public abstract int LoanDays { get; }        // every type MUST decide
+    public abstract string Kind { get; }
+    public virtual decimal LateFeePerDay =&gt; 5m;  // sensible default, may override
+
+    public virtual bool Matches(string term) =&gt;
+        Title.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    public override string ToString() =&gt;
+        $"#{Id,-3} {Kind,-8} {Title} ({Year})  [{(IsAvailable ? "available" : "on loan")}]";
+}</code></pre></div>
+
+<h3>Step 3 — Concrete item types</h3>
+<div class="code"><div class="fname">Library.Core/Models/Book.cs</div><pre><code class="language-csharp">namespace Library.Core.Models;
+
+public class Book : LibraryItem
+{
+    public string Author { get; }
+    public string Isbn { get; }
+
+    public Book(string title, string author, int year, string isbn) : base(title, year)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(author);
+        string digits = isbn.Replace("-", "").Trim();
+        if (digits.Length is not (10 or 13))
+            throw new ArgumentException("ISBN must have 10 or 13 digits", nameof(isbn));
+
+        Author = author.Trim();
+        Isbn = digits;
+    }
+
+    public override int LoanDays =&gt; 14;
+    public override string Kind =&gt; "Book";
+
+    // Extend the base search: title OR author OR exact ISBN
+    public override bool Matches(string term) =&gt;
+        base.Matches(term)
+        || Author.Contains(term, StringComparison.OrdinalIgnoreCase)
+        || Isbn == term.Replace("-", "");
+
+    public override string ToString() =&gt; $"{base.ToString()}  by {Author}";
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Models/Magazine.cs</div><pre><code class="language-csharp">namespace Library.Core.Models;
+
+public class Magazine(string title, int year, int issueNumber) : LibraryItem(title, year)
+{
+    public int IssueNumber { get; } = issueNumber &gt; 0
+        ? issueNumber
+        : throw new ArgumentOutOfRangeException(nameof(issueNumber));
+
+    public override int LoanDays =&gt; 7;
+    public override string Kind =&gt; "Magazine";
+    public override decimal LateFeePerDay =&gt; 2m;
+
+    public override string ToString() =&gt; $"{base.ToString()}  issue {IssueNumber}";
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Models/Dvd.cs</div><pre><code class="language-csharp">namespace Library.Core.Models;
+
+public class Dvd(string title, int year, int runtimeMinutes) : LibraryItem(title, year)
+{
+    public int RuntimeMinutes { get; } = runtimeMinutes &gt; 0
+        ? runtimeMinutes
+        : throw new ArgumentOutOfRangeException(nameof(runtimeMinutes));
+
+    public override int LoanDays =&gt; 3;
+    public override string Kind =&gt; "DVD";
+    public override decimal LateFeePerDay =&gt; 10m;
+
+    public override string ToString() =&gt; $"{base.ToString()}  {RuntimeMinutes} min";
+}</code></pre></div>
+
+<h3>Step 4 — Member</h3>
+<div class="code"><div class="fname">Library.Core/Models/Member.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+
+namespace Library.Core.Models;
+
+public class Member : ISearchable
+{
+    private static int _nextId = 1001;
+    public const int MaxLoans = 3;
+
+    public int Id { get; }
+    public string Name { get; }
+    public string Email { get; }
+    public DateOnly JoinedOn { get; } = DateOnly.FromDateTime(DateTime.Today);
+
+    public Member(string name, string email)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@') || email.StartsWith('@'))
+            throw new ArgumentException("A valid email is required", nameof(email));
+
+        Id = _nextId++;
+        Name = name.Trim();
+        Email = email.Trim().ToLowerInvariant();
+    }
+
+    public bool Matches(string term) =&gt;
+        Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+        || Email.Contains(term, StringComparison.OrdinalIgnoreCase);
+
+    public override string ToString() =&gt; $"M{Id}  {Name}  &lt;{Email}&gt;  since {JoinedOn:dd MMM yyyy}";
+}</code></pre></div>
+
+<h3>Step 5 — In-memory catalog and seed data</h3>
+<p>The <code>Any</code> and <code>FirstOrDefault</code> calls below are LINQ (Week 5). For now read them as "is there any item where…" and "the first item where…, or null".</p>
+<div class="code"><div class="fname">Library.Core/Services/InMemoryCatalog.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+using Library.Core.Models;
+
+namespace Library.Core.Services;
+
+public class InMemoryCatalog : ICatalog
+{
+    private readonly List&lt;LibraryItem&gt; _items = [];
+    private readonly List&lt;Member&gt; _members = [];
+
+    public IReadOnlyList&lt;LibraryItem&gt; Items =&gt; _items.AsReadOnly();
+    public IReadOnlyList&lt;Member&gt; Members =&gt; _members.AsReadOnly();
+
+    public void AddItem(LibraryItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (item is Book book &amp;&amp; _items.OfType&lt;Book&gt;().Any(b =&gt; b.Isbn == book.Isbn))
+            throw new InvalidOperationException($"A book with ISBN {book.Isbn} already exists");
+        _items.Add(item);
+    }
+
+    public void AddMember(Member member)
+    {
+        ArgumentNullException.ThrowIfNull(member);
+        if (_members.Any(m =&gt; m.Email == member.Email))
+            throw new InvalidOperationException($"{member.Email} is already registered");
+        _members.Add(member);
+    }
+
+    public LibraryItem? FindItem(int id) =&gt; _items.FirstOrDefault(i =&gt; i.Id == id);
+    public Member? FindMember(int id) =&gt; _members.FirstOrDefault(m =&gt; m.Id == id);
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Services/SeedData.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+using Library.Core.Models;
+
+namespace Library.Core.Services;
+
+public static class SeedData
+{
+    public static void Load(ICatalog catalog)
+    {
+        catalog.AddItem(new Book("Clean Code", "Robert C. Martin", 2008, "978-0132350884"));
+        catalog.AddItem(new Book("The Pragmatic Programmer", "David Thomas, Andrew Hunt", 2019, "978-0135957059"));
+        catalog.AddItem(new Book("Designing Data-Intensive Applications", "Martin Kleppmann", 2017, "978-1449373320"));
+        catalog.AddItem(new Magazine("Digit", 2026, 11));
+        catalog.AddItem(new Dvd("3 Idiots", 2009, 170));
+
+        catalog.AddMember(new Member("Samrath", "samrath@example.com"));
+        catalog.AddMember(new Member("Ananya Rao", "ananya@example.com"));
+    }
+}</code></pre></div>
+
+<h3>Step 6 — Console app</h3>
+<p>Copy <code>ConsoleInput.cs</code> from Week 1 (namespace <code>Library.App</code>) and add a text reader:</p>
+<div class="code"><div class="fname">Library.App/ConsoleInput.cs (add these)</div><pre><code class="language-csharp">public static string ReadText(string prompt)
+{
+    while (true)
+    {
+        Console.Write(prompt);
+        string? text = Console.ReadLine();
+        if (text is null) Environment.Exit(0);
+        if (!string.IsNullOrWhiteSpace(text)) return text.Trim();
+        Console.WriteLine("  ✗ This field is required.");
+    }
+}
+
+public static int ReadInt(string prompt, int min, int max) =&gt; ReadChoice(prompt, min, max);</code></pre></div>
+<div class="code"><div class="fname">Library.App/Program.cs</div><pre><code class="language-csharp">using Library.App;
+using Library.Core.Interfaces;
+using Library.Core.Models;
+using Library.Core.Services;
+
+ICatalog catalog = new InMemoryCatalog();     // depend on the interface
+SeedData.Load(catalog);
+
+int choice;
+do
+{
+    Console.WriteLine("""
+
+        ===== City Library =====
+        1) List items
+        2) Add book
+        3) Add member
+        4) List members
+        0) Exit
+        """);
+    choice = ConsoleInput.ReadChoice("Choose: ", 0, 4);
+
+    try
+    {
+        switch (choice)
+        {
+            case 1: ListItems(); break;
+            case 2: AddBook(); break;
+            case 3: AddMember(); break;
+            case 4: ListMembers(); break;
+        }
+    }
+    catch (ArgumentException ex)          { Console.WriteLine($"  ✗ {ex.Message}"); }
+    catch (InvalidOperationException ex)  { Console.WriteLine($"  ✗ {ex.Message}"); }
+} while (choice != 0);
+
+void ListItems()
+{
+    foreach (LibraryItem item in catalog.Items)
+        Console.WriteLine($"  {item}");          // each subtype's own ToString()
+}
+
+void AddBook()
+{
+    string title  = ConsoleInput.ReadText("Title: ");
+    string author = ConsoleInput.ReadText("Author: ");
+    int year      = ConsoleInput.ReadInt("Year: ", 1450, DateTime.Today.Year);
+    string isbn   = ConsoleInput.ReadText("ISBN: ");
+
+    var book = new Book(title, author, year, isbn);
+    catalog.AddItem(book);
+    Console.WriteLine($"  ✓ Added {book}");
+}
+
+void AddMember()
+{
+    string name  = ConsoleInput.ReadText("Name: ");
+    string email = ConsoleInput.ReadText("Email: ");
+    var member = new Member(name, email);
+    catalog.AddMember(member);
+    Console.WriteLine($"  ✓ Registered {member}");
+}
+
+void ListMembers()
+{
+    foreach (Member m in catalog.Members)
+        Console.WriteLine($"  {m}");
+}</code></pre></div>
+
+<h3>Run it</h3>
+<div class="code nofile"><pre><code class="language-text">$ dotnet run --project Library.App
+Choose: 1
+  #1   Book     Clean Code (2008)  [available]  by Robert C. Martin
+  #2   Book     The Pragmatic Programmer (2019)  [available]  by David Thomas, Andrew Hunt
+  #3   Book     Designing Data-Intensive Applications (2017)  [available]  by Martin Kleppmann
+  #4   Magazine Digit (2026)  [available]  issue 11
+  #5   DVD      3 Idiots (2009)  [available]  170 min</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Add menu options for adding a magazine and a DVD.</li>
+<li>Add an <code>AudioBook : Book</code> with narrator and a 21-day loan. Did any existing code need to change?</li>
+<li>Validate ISBN-13 checksums properly.</li>
+</ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why is LibraryItem abstract rather than concrete?</summary><div>No real item is just a 'library item'; every one is a book, magazine or DVD. Making it abstract prevents meaningless instances and forces each subtype to define LoanDays and Kind.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why does Program.cs declare ICatalog instead of InMemoryCatalog?</summary><div>So the app depends on the contract only. Replacing storage with a database later (Week 15) means writing a new ICatalog implementation and changing one line, not the whole app.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why is IsAvailable's setter internal?</summary><div>Only the domain/service layer in Library.Core should change availability, through borrow/return rules. internal blocks the console app or any other assembly from flipping it directly and bypassing those rules.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you add a new item type without modifying existing code?</summary><div>Create a new class deriving from LibraryItem and override the abstract members. Listing, searching and (tomorrow) borrowing all work through the base type, so nothing else changes. That's the Open/Closed Principle.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Borrow, return and search, plus README, push and revision</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Add the business rules (loans, due dates, late fees, search), make time testable with an interface, document the project, and revise the week.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Business rule</dt><dd>A constraint from the real domain, e.g. a member may hold at most 3 items.</dd></div><div class="def"><dt>Service class</dt><dd>A class that coordinates domain objects to carry out a use case (LibraryService.Borrow).</dd></div><div class="def"><dt>Result object</dt><dd>A return type that carries success/failure and an error message instead of throwing for expected failures.</dd></div><div class="def"><dt>Clock abstraction</dt><dd>An interface like <code>IClock</code> that supplies the current date, so tests can control time.</dd></div><div class="def"><dt>DateOnly</dt><dd>A .NET 6+ type for a calendar date without a time; ideal for due dates.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Rules live in the service and domain classes, never in Program.cs.</li><li>Expected failures (item on loan, limit reached) return a Result; programming errors throw.</li><li>Inject time through <code>IClock</code> so late fees can be tested without waiting two weeks.</li><li>Search works over <code>ISearchable</code>, so books and members are found by one method.</li><li>Revise by explaining aloud; re-read anything you can't explain.</li></ul></div>
+
+<h3>1. Make time injectable</h3>
+<p>Late fees depend on today's date. If the code calls <code>DateTime.Today</code> directly, you can't test a late return. Put time behind an interface.</p>
+<div class="code"><div class="fname">Library.Core/Interfaces/IClock.cs</div><pre><code class="language-csharp">namespace Library.Core.Interfaces;
+
+public interface IClock
+{
+    DateOnly Today { get; }
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Services/Clocks.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+
+namespace Library.Core.Services;
+
+public class SystemClock : IClock
+{
+    public DateOnly Today =&gt; DateOnly.FromDateTime(DateTime.Today);
+}
+
+// A clock you control — perfect for demos and tests
+public class ManualClock(DateOnly start) : IClock
+{
+    public DateOnly Today { get; private set; } = start;
+    public void Advance(int days) =&gt; Today = Today.AddDays(days);
+}</code></pre></div>
+
+<h3>2. Loan and Result</h3>
+<div class="code"><div class="fname">Library.Core/Models/Loan.cs</div><pre><code class="language-csharp">namespace Library.Core.Models;
+
+public class Loan
+{
+    public LibraryItem Item { get; }
+    public Member Member { get; }
+    public DateOnly BorrowedOn { get; }
+    public DateOnly DueOn { get; }
+    public DateOnly? ReturnedOn { get; private set; }
+    public bool IsOpen =&gt; ReturnedOn is null;
+
+    public Loan(LibraryItem item, Member member, DateOnly borrowedOn)
+    {
+        Item = item;
+        Member = member;
+        BorrowedOn = borrowedOn;
+        DueOn = borrowedOn.AddDays(item.LoanDays);     // polymorphic: 14, 7 or 3 days
+    }
+
+    public int DaysOverdue(DateOnly today) =&gt; Math.Max(0, today.DayNumber - DueOn.DayNumber);
+
+    // Closes the loan and returns the late fee
+    public decimal Close(DateOnly returnedOn)
+    {
+        if (!IsOpen) throw new InvalidOperationException("Loan is already closed");
+        ReturnedOn = returnedOn;
+        return DaysOverdue(returnedOn) * Item.LateFeePerDay;   // polymorphic fee
+    }
+
+    public override string ToString() =&gt;
+        $"{Item.Title} → {Member.Name}, due {DueOn:dd MMM}" + (IsOpen ? "" : $", returned {ReturnedOn:dd MMM}");
+}</code></pre></div>
+<div class="code"><div class="fname">Library.Core/Models/Result.cs</div><pre><code class="language-csharp">namespace Library.Core.Models;
+
+public record Result&lt;T&gt;(bool Success, T? Value, string? Error)
+{
+    public static Result&lt;T&gt; Ok(T value)      =&gt; new(true, value, null);
+    public static Result&lt;T&gt; Fail(string why) =&gt; new(false, default, why);
+}</code></pre></div>
+
+<h3>3. LibraryService — the business rules</h3>
+<div class="code"><div class="fname">Library.Core/Services/LibraryService.cs</div><pre><code class="language-csharp">using Library.Core.Interfaces;
+using Library.Core.Models;
+
+namespace Library.Core.Services;
+
+public class LibraryService(ICatalog catalog, IClock clock)
+{
+    private readonly List&lt;Loan&gt; _loans = [];
+
+    public IReadOnlyList&lt;Loan&gt; OpenLoans =&gt; _loans.Where(l =&gt; l.IsOpen).ToList();
+
+    public IReadOnlyList&lt;Loan&gt; Overdue =&gt; _loans.Where(l =&gt; l.IsOpen &amp;&amp; l.DaysOverdue(clock.Today) &gt; 0).ToList();
+
+    public Result&lt;Loan&gt; Borrow(int memberId, int itemId)
+    {
+        Member? member = catalog.FindMember(memberId);
+        if (member is null) return Result&lt;Loan&gt;.Fail($"No member with id {memberId}");
+
+        LibraryItem? item = catalog.FindItem(itemId);
+        if (item is null) return Result&lt;Loan&gt;.Fail($"No item with id {itemId}");
+        if (!item.IsAvailable) return Result&lt;Loan&gt;.Fail($"'{item.Title}' is already on loan");
+
+        int active = _loans.Count(l =&gt; l.IsOpen &amp;&amp; l.Member.Id == member.Id);
+        if (active &gt;= Member.MaxLoans)
+            return Result&lt;Loan&gt;.Fail($"{member.Name} already has {Member.MaxLoans} items out");
+
+        if (_loans.Any(l =&gt; l.IsOpen &amp;&amp; l.Member.Id == member.Id &amp;&amp; l.DaysOverdue(clock.Today) &gt; 0))
+            return Result&lt;Loan&gt;.Fail($"{member.Name} has an overdue item; return it first");
+
+        var loan = new Loan(item, member, clock.Today);
+        item.IsAvailable = false;                 // allowed: same assembly (internal set)
+        _loans.Add(loan);
+        return Result&lt;Loan&gt;.Ok(loan);
+    }
+
+    public Result&lt;decimal&gt; Return(int itemId)
+    {
+        Loan? loan = _loans.FirstOrDefault(l =&gt; l.IsOpen &amp;&amp; l.Item.Id == itemId);
+        if (loan is null) return Result&lt;decimal&gt;.Fail($"Item {itemId} isn't on loan");
+
+        decimal fee = loan.Close(clock.Today);
+        loan.Item.IsAvailable = true;
+        return Result&lt;decimal&gt;.Ok(fee);
+    }
+
+    // One search over everything that implements ISearchable
+    public IReadOnlyList&lt;ISearchable&gt; Search(string term)
+    {
+        if (string.IsNullOrWhiteSpace(term)) return [];
+        var results = new List&lt;ISearchable&gt;();
+        foreach (LibraryItem item in catalog.Items) if (item.Matches(term)) results.Add(item);
+        foreach (Member member in catalog.Members) if (member.Matches(term)) results.Add(member);
+        return results;
+    }
+}</code></pre></div>
+
+<h3>4. Updated Program.cs</h3>
+<p>Uses a <code>ManualClock</code> so you can "fast-forward" days and see late fees. Swap in <code>new SystemClock()</code> for real use.</p>
+<div class="code"><div class="fname">Library.App/Program.cs</div><pre><code class="language-csharp">using Library.App;
+using Library.Core.Interfaces;
+using Library.Core.Models;
+using Library.Core.Services;
+
+ICatalog catalog = new InMemoryCatalog();
+SeedData.Load(catalog);
+var clock = new ManualClock(DateOnly.FromDateTime(DateTime.Today));
+var library = new LibraryService(catalog, clock);
+
+int choice;
+do
+{
+    Console.WriteLine($"""
+
+        ===== City Library =====  today: {clock.Today:ddd dd MMM yyyy}
+        1) List items        5) Borrow
+        2) Add book          6) Return
+        3) Add member        7) Search
+        4) List members      8) Open / overdue loans
+        9) Advance days (demo)
+        0) Exit
+        """);
+    choice = ConsoleInput.ReadChoice("Choose: ", 0, 9);
+
+    try
+    {
+        switch (choice)
+        {
+            case 1: foreach (var i in catalog.Items) Console.WriteLine($"  {i}"); break;
+            case 2: AddBook(); break;
+            case 3: AddMember(); break;
+            case 4: foreach (var m in catalog.Members) Console.WriteLine($"  {m}"); break;
+            case 5: Borrow(); break;
+            case 6: Return(); break;
+            case 7: Search(); break;
+            case 8: ShowLoans(); break;
+            case 9: clock.Advance(ConsoleInput.ReadInt("Days to advance: ", 1, 60)); break;
+        }
+    }
+    catch (ArgumentException ex)         { Console.WriteLine($"  ✗ {ex.Message}"); }
+    catch (InvalidOperationException ex) { Console.WriteLine($"  ✗ {ex.Message}"); }
+} while (choice != 0);
+
+void Borrow()
+{
+    int memberId = ConsoleInput.ReadInt("Member id (e.g. 1001): ", 1, int.MaxValue);
+    int itemId   = ConsoleInput.ReadInt("Item id: ", 1, int.MaxValue);
+    var result = library.Borrow(memberId, itemId);
+    Console.WriteLine(result.Success ? $"  ✓ {result.Value}" : $"  ✗ {result.Error}");
+}
+
+void Return()
+{
+    int itemId = ConsoleInput.ReadInt("Item id: ", 1, int.MaxValue);
+    var result = library.Return(itemId);
+    if (!result.Success) { Console.WriteLine($"  ✗ {result.Error}"); return; }
+    Console.WriteLine(result.Value &gt; 0 ? $"  ✓ Returned late. Fee: ₹{result.Value:N2}" : "  ✓ Returned on time");
+}
+
+void Search()
+{
+    string term = ConsoleInput.ReadText("Search for: ");
+    var hits = library.Search(term);
+    if (hits.Count == 0) { Console.WriteLine("  No matches"); return; }
+    foreach (ISearchable hit in hits) Console.WriteLine($"  {hit}");
+}
+
+void ShowLoans()
+{
+    Console.WriteLine("  Open loans:");
+    foreach (var l in library.OpenLoans) Console.WriteLine($"    {l}");
+    Console.WriteLine("  Overdue:");
+    foreach (var l in library.Overdue) Console.WriteLine($"    {l}  ({l.DaysOverdue(clock.Today)} days)");
+}
+
+void AddBook()
+{
+    var book = new Book(ConsoleInput.ReadText("Title: "), ConsoleInput.ReadText("Author: "),
+                        ConsoleInput.ReadInt("Year: ", 1450, DateTime.Today.Year), ConsoleInput.ReadText("ISBN: "));
+    catalog.AddItem(book);
+    Console.WriteLine($"  ✓ Added {book}");
+}
+
+void AddMember()
+{
+    var member = new Member(ConsoleInput.ReadText("Name: "), ConsoleInput.ReadText("Email: "));
+    catalog.AddMember(member);
+    Console.WriteLine($"  ✓ Registered {member}");
+}</code></pre></div>
+
+<h3>5. Try to break it</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected</th></tr><tr><td>Borrow item 5 twice</td><td>"'3 Idiots' is already on loan"</td></tr><tr><td>Member 1001 borrows items 1, 2, 3, then 4</td><td>Fourth fails: limit of 3</td></tr><tr><td>Borrow DVD, advance 5 days, return</td><td>Late by 2 days → ₹20.00</td></tr><tr><td>Borrow book, advance 20 days, try to borrow another</td><td>Blocked: overdue item</td></tr><tr><td>Return an item that isn't on loan</td><td>"Item n isn't on loan"</td></tr><tr><td>Member id 9999</td><td>"No member with id 9999"</td></tr><tr><td>Add member with an existing email</td><td>"... is already registered"</td></tr><tr><td>Add book with ISBN "12"</td><td>"ISBN must have 10 or 13 digits"</td></tr><tr><td>Search "martin"</td><td>Clean Code and Designing Data-Intensive Applications</td></tr></table></div>
+
+<h3>6. README</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-markdown"># City Library — Console Library Management
+
+Micro-project 2 of my .NET full-stack roadmap (Week 2: OOP).
+
+## Features
+- Books, magazines and DVDs with type-specific loan periods and late fees
+- Members with a 3-item loan limit; overdue members can't borrow
+- Borrow, return with late-fee calculation, unified search
+- Time abstraction (`IClock`) to simulate days passing
+
+## Design
+- `LibraryItem` abstract base → `Book`, `Magazine`, `Dvd` (polymorphic `LoanDays`, `LateFeePerDay`)
+- `ISearchable` implemented by items and members
+- `ICatalog` interface with an in-memory implementation (swap for EF Core later)
+- `LibraryService` holds business rules and returns `Result&lt;T&gt;` for expected failures
+
+## Run
+```bash
+dotnet run --project Library.App
+```
+
+## What I practised
+Classes, properties, constructors, encapsulation, access modifiers, static members,
+inheritance, abstract classes, polymorphism, interfaces and dependency injection by hand.</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">git add .
+git commit -m "Library: models, catalog, borrow/return with late fees, search"
+git push</code></pre></div>
+
+<h3>7. Week 2 revision checklist</h3>
+<ul>
+<li>Class vs object; field vs property; the six property styles</li>
+<li>Constructor chaining, primary constructors, required/init</li>
+<li>Encapsulation with an example; all access modifiers</li>
+<li>Static vs instance; static constructor; const vs static readonly</li>
+<li>Constructor order in inheritance; virtual/override/sealed; override vs new</li>
+<li>Compile-time vs runtime polymorphism; abstract classes; Template Method</li>
+<li>Interfaces, DI by hand, explicit implementation, default interface methods</li>
+<li>Interface vs abstract class, and when to choose each</li>
+</ul>
+
+<h3>8. Quick quiz — predict the output</h3>
+<details><summary>Q1. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">class A { public A() =&gt; Console.Write("A"); }
+class B : A { public B() =&gt; Console.Write("B"); }
+class C : B { public C() =&gt; Console.Write("C"); }
+new C();</code></pre></div><b>ABC.</b> Base constructor bodies run first, from the top of the hierarchy down.</details>
+<details><summary>Q2. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">class P { public virtual string Hi() =&gt; "P"; public string Bye() =&gt; "P"; }
+class Q : P { public override string Hi() =&gt; "Q"; public new string Bye() =&gt; "Q"; }
+P x = new Q();
+Console.WriteLine(x.Hi() + x.Bye());</code></pre></div><b>QP.</b> Hi is overridden (runtime type Q); Bye is hidden (compile-time type P).</details>
+<details><summary>Q3. Does this compile?</summary>
+<div class="code nofile"><pre><code class="language-csharp">abstract class Shape { public abstract double Area(); }
+class Square : Shape { }</code></pre></div><b>No.</b> CS0534: Square doesn't implement the inherited abstract member Area(). Either implement it or mark Square abstract.</details>
+<details><summary>Q4. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">class Counter { public static int Count; public Counter() =&gt; Count++; }
+new Counter(); new Counter(); var c = new Counter();
+Console.WriteLine(Counter.Count);</code></pre></div><b>3.</b> The static field is shared by all instances.</details>
+<details><summary>Q5. Does this compile?</summary>
+<div class="code nofile"><pre><code class="language-csharp">interface IGreeter { string Greet() =&gt; "Hello"; }
+class Greeter : IGreeter { }
+var g = new Greeter();
+Console.WriteLine(g.Greet());</code></pre></div><b>No.</b> Default interface members aren't inherited by the class's own surface. Declare <code>IGreeter g = new Greeter();</code> instead.</details>
+
+<div class="note tip"><b>Next week:</b> Modern C# and exceptions — structs, records, tuples, pattern matching in depth, enums, equality and boxing, exceptions, and events, ending with the bank account simulator.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why return a Result object instead of throwing an exception when an item is already on loan?</summary><div>An item being on loan is an expected business outcome, not an error in the program. Exceptions are slower, hide control flow and are meant for exceptional situations. A Result makes the failure explicit in the method signature and forces callers to handle it.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why inject IClock instead of calling DateTime.Today?</summary><div>Direct calls to static time make code non-deterministic and hard to test. With IClock, tests and demos can control the date (ManualClock) to verify due dates and late fees instantly.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Where should business rules like 'max 3 loans' live, and why?</summary><div>In the domain/service layer (LibraryService, Member.MaxLoans), not the UI. Then every client — console today, Web API later — enforces the same rules, and the rules can be unit-tested in isolation.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does polymorphism show up in the late-fee calculation?</summary><div>Loan.Close multiplies days overdue by Item.LateFeePerDay, and DueOn uses Item.LoanDays. Both are virtual/abstract members, so a Book, Magazine or DVD each supply their own values with no if/else on type.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week2-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

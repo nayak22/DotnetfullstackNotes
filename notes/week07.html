@@ -1,0 +1,2157 @@
+<title>.NET Notes · Week 7</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 7</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">Threads &amp; tasks</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">async/await</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">WhenAll &amp; cancellation</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">HttpClient &amp; streams</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Thread safety</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: downloader</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Resilience &amp; revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 1 · Week 7 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">C# 12</span><span class="chip">~18 hrs</span><span class="chip">Micro-project 6</span></div>
+  <h1>Week 7 — Async and concurrency</h1>
+  <p>Every web API, database call and file read you write from now on will be async. This week you'll learn what tasks and threads really are, exactly what <code>await</code> does, how to run work concurrently, cancel it and time it out, call HTTP APIs properly, and keep shared data safe when many threads touch it. You'll finish with a concurrent web-page downloader that handles timeouts, retries and Ctrl+C.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>Threads, tasks and the thread pool</h3><p>Thread vs Task, CPU- vs I/O-bound, concurrency vs parallelism, task exceptions, ValueTask.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>async/await under the hood</h3><p>State machine, continuations, SynchronizationContext, ConfigureAwait, no .Result, async void.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>WhenAll, WhenAny, cancellation and timeouts</h3><p>Run work concurrently, collect every exception, CancellationToken, CancelAfter, WaitAsync.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>HttpClient and async streams</h3><p>Shared HttpClient, status codes, timeouts, IHttpClientFactory, IAsyncEnumerable.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Thread safety and parallelism</h3><p>Races, lock and .NET 9 Lock, Interlocked, concurrent collections, SemaphoreSlim, Parallel, deadlocks.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Micro-project 6: Async web-page downloader</h3><p>Concurrent downloads with SemaphoreSlim and Parallel.ForEachAsync; sequential vs concurrent timing.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Cancellation, retries, progress and revision</h3><p>Ctrl+C, per-request timeouts, retry with backoff, IProgress, README, async-ordering quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Threads, tasks and the thread pool</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Understand what a thread is, why .NET code almost always uses Task instead, and how to tell CPU-bound work (needs a core) from I/O-bound work (needs waiting) — the single most important distinction in async programming.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Process</dt><dd>A running program with its own memory space. One process contains one or more threads.</dd></div><div class="def"><dt>Thread</dt><dd>An independent path of execution with its own stack. The OS scheduler decides which threads run on which CPU cores.</dd></div><div class="def"><dt>Foreground / background thread</dt><dd>The process stays alive until all foreground threads finish; background threads are killed when the process exits. Thread-pool threads are background threads.</dd></div><div class="def"><dt>Context switch</dt><dd>The OS pausing one thread and resuming another on a core. Cheap, but not free; thousands of threads mean lots of switching.</dd></div><div class="def"><dt>Thread pool</dt><dd>A shared set of reusable worker threads managed by .NET. It grows and shrinks based on load so you don't create threads yourself.</dd></div><div class="def"><dt>Task</dt><dd>An object representing an operation that will complete in the future: it has a status, may hold an exception, and can be awaited.</dd></div><div class="def"><dt>Task&lt;TResult&gt;</dt><dd>A Task that also produces a value of type TResult when it completes.</dd></div><div class="def"><dt>Task.Run</dt><dd>Queues a delegate to run on a thread-pool thread and returns a Task for it. Use it for CPU-bound work.</dd></div><div class="def"><dt>CPU-bound</dt><dd>Work limited by processor speed: calculations, compression, image resizing, parsing huge files in memory.</dd></div><div class="def"><dt>I/O-bound</dt><dd>Work that mostly waits for something outside the CPU: network, disk, database. No thread needs to be busy while waiting.</dd></div><div class="def"><dt>Concurrency</dt><dd>Several operations in progress during the same period of time (they may take turns on one core).</dd></div><div class="def"><dt>Parallelism</dt><dd>Several operations literally executing at the same instant on different cores. A subset of concurrency.</dd></div><div class="def"><dt>TaskStatus</dt><dd>The lifecycle state of a task: Created, WaitingForActivation, WaitingToRun, Running, RanToCompletion, Faulted, Canceled.</dd></div><div class="def"><dt>AggregateException</dt><dd>An exception that wraps one or more inner exceptions. Blocking APIs like Wait() and .Result throw it; await unwraps it.</dd></div><div class="def"><dt>ValueTask&lt;T&gt;</dt><dd>A struct alternative to Task&lt;T&gt; that avoids a heap allocation when the result is often available immediately.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>You will rarely write <code>new Thread(...)</code> in modern .NET. Use <code>Task</code> and <code>async</code>/<code>await</code>.</li><li><code>Task.Run</code> is for CPU-bound work. For I/O, call the library's async method (<code>ReadAllTextAsync</code>, <code>GetAsync</code>, <code>ToListAsync</code>).</li><li>While an I/O operation is in flight, no thread is sitting there waiting for it. That's why async scales.</li><li>A task that throws doesn't crash anything immediately: the exception is stored inside the task until someone awaits it.</li><li><code>await</code> rethrows the original exception; <code>.Wait()</code> and <code>.Result</code> wrap it in AggregateException (and block a thread).</li><li>Default to <code>Task</code>/<code>Task&lt;T&gt;</code>. Reach for <code>ValueTask</code> only on hot paths that usually complete synchronously.</li></ul></div>
+
+<h3>1. Threads: the raw building block</h3>
+<p>A thread is the unit the operating system schedules onto a CPU core. Your console app starts with one (the main thread). You <i>can</i> create more yourself, and seeing it once makes everything else this week easier to picture.</p>
+<div class="code"><div class="fname">ThreadDemo.cs</div><pre><code class="language-csharp">Console.WriteLine($"Main thread id: {Environment.CurrentManagedThreadId}");
+
+var printer = new Thread(() =&gt;
+{
+    for (int i = 1; i &lt;= 3; i++)
+    {
+        Console.WriteLine($"  Printing invoice INV-{i:000} on thread {Environment.CurrentManagedThreadId}");
+        Thread.Sleep(200);                     // blocks THIS thread only
+    }
+})
+{
+    Name = "InvoicePrinter",
+    IsBackground = false                       // foreground (the default): the process waits for it
+};
+
+printer.Start();
+Console.WriteLine("Main thread carries on...");
+printer.Join();                                // block the main thread until the printer finishes
+Console.WriteLine("All invoices printed");
+
+// Main thread id: 1
+// Main thread carries on...                   ← these two lines can appear in either order:
+//   Printing invoice INV-001 on thread 10     ← the OS decides who runs first (id varies)
+//   Printing invoice INV-002 on thread 10
+//   Printing invoice INV-003 on thread 10
+// All invoices printed</code></pre></div>
+<p>Why not do this everywhere? Each thread reserves its own stack (around 1 MB or more of address space), takes time to create, and adds context switching. A web server handling 5,000 requests with 5,000 threads would spend more effort juggling threads than doing work. The thread pool and tasks solve this.</p>
+
+<h3>2. The thread pool and Task</h3>
+<p>The <b>thread pool</b> keeps a small set of worker threads alive and hands them short pieces of work. A <b>Task</b> is the object you get back: it tells you when the work is done, carries its result or exception, and can be awaited.</p>
+<div class="code"><div class="fname">TaskBasics.cs</div><pre><code class="language-csharp">// Old style: queue work to the pool. No result, no way to await it, exceptions crash the process.
+ThreadPool.QueueUserWorkItem(_ =&gt;
+    Console.WriteLine($"Pool thread {Environment.CurrentManagedThreadId}"));
+
+// Modern style: Task.Run queues the same kind of work but gives you a Task back
+Task log = Task.Run(() =&gt;
+    Console.WriteLine($"Task on thread {Environment.CurrentManagedThreadId}, " +
+                      $"pool thread? {Thread.CurrentThread.IsThreadPoolThread}"));   // True
+await log;                                     // wait without blocking (Tuesday explains how)
+
+// Task&lt;T&gt;: the work produces a value
+Task&lt;decimal&gt; totalTask = Task.Run(() =&gt;
+{
+    decimal sum = 0;
+    for (int i = 1; i &lt;= 1_000_000; i++) sum += i % 1000 * 1.18m;   // CPU work: price incl. 18% GST
+    return sum;
+});
+
+decimal total = await totalTask;
+Console.WriteLine($"Total: ₹{total:N2}");</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>new Thread</th><th>ThreadPool.QueueUserWorkItem</th><th>Task.Run / async</th></tr><tr><td>Creates a thread</td><td>Yes, every time</td><td>No, reuses pool threads</td><td>No, reuses pool threads (async I/O may use none)</td></tr><tr><td>Returns a result</td><td>No (use shared fields)</td><td>No</td><td>Yes, <code>Task&lt;T&gt;</code></td></tr><tr><td>Exceptions</td><td>Unhandled → process crashes</td><td>Unhandled → process crashes</td><td>Stored in the task, rethrown on await</td></tr><tr><td>Can be awaited / combined</td><td>No (only Join)</td><td>No</td><td>Yes: await, WhenAll, WhenAny, cancellation</td></tr><tr><td>Use today for</td><td>Rare: a dedicated long-running loop with special needs</td><td>Almost never</td><td>Everything else</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> For a truly long-running background loop (a queue consumer that runs for the whole app lifetime) you can use <code>Task.Factory.StartNew(..., TaskCreationOptions.LongRunning)</code>, which gives it a dedicated thread instead of tying up a pool thread. In ASP.NET Core you'll use <code>BackgroundService</code> instead (later in the course).</div>
+
+<h3>3. CPU-bound vs I/O-bound — and concurrency vs parallelism</h3>
+<p>Ask one question about any slow operation: <i>is the CPU busy, or is it waiting?</i></p>
+<div class="code"><div class="fname">CpuVsIo.cs</div><pre><code class="language-csharp">// CPU-bound: the CPU is busy the whole time → move it off the current thread with Task.Run
+static decimal CalculateGst(IReadOnlyList&lt;decimal&gt; amounts)
+{
+    decimal gst = 0;
+    foreach (decimal a in amounts) gst += Math.Round(a * 0.18m, 2);
+    return gst;
+}
+
+List&lt;decimal&gt; amounts = Enumerable.Range(1, 2_000_000).Select(i =&gt; (decimal)(i % 5000)).ToList();
+decimal gst = await Task.Run(() =&gt; CalculateGst(amounts));   // keeps a UI responsive while a core crunches
+Console.WriteLine($"GST: ₹{gst:N2}");
+
+// I/O-bound: the CPU is idle, we're WAITING on disk or network → call the async API directly
+await File.WriteAllTextAsync("invoices.csv", "INV-001,Asha Rao,1180.00\n");
+string csv = await File.ReadAllTextAsync("invoices.csv");   // no thread is blocked while the disk works
+await Task.Delay(500);                                      // a timer, not a sleeping thread
+
+// ❌ Wrapping I/O in Task.Run: a pool thread now sits blocked waiting for the disk
+string wasteful = await Task.Run(() =&gt; File.ReadAllText("invoices.csv"));</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>CPU-bound</th><th>I/O-bound</th></tr><tr><td>Examples</td><td>GST on 2 million lines, PDF generation, image resize, hashing passwords</td><td>HTTP calls, database queries, reading files, sending email</td></tr><tr><td>Bottleneck</td><td>Processor cores</td><td>Network / disk / remote service</td></tr><tr><td>Right tool</td><td><code>Task.Run</code>, <code>Parallel.For</code> (Friday)</td><td>The library's <code>...Async</code> method + <code>await</code></td></tr><tr><td>More concurrency helps until…</td><td>You run out of cores</td><td>The remote side or bandwidth is saturated</td></tr><tr><td>Threads used while waiting</td><td>One per running piece of work</td><td>Zero</td></tr></table></div>
+<div class="tbl"><table><tr><th></th><th>Concurrency</th><th>Parallelism</th></tr><tr><td>Meaning</td><td>Many things <i>in progress</i> over the same period</td><td>Many things <i>executing</i> at the same instant</td></tr><tr><td>Needs multiple cores?</td><td>No — one core can interleave</td><td>Yes</td></tr><tr><td>Kitchen analogy</td><td>One cook with three pans: stirs one while the others simmer</td><td>Three cooks, each at their own stove</td></tr><tr><td>Typical .NET tool</td><td><code>async</code>/<code>await</code>, <code>Task.WhenAll</code></td><td><code>Parallel.For</code>, <code>Task.Run</code> on many items, PLINQ</td></tr></table></div>
+<p>Saturday's downloader is the perfect example of concurrency without needing parallelism: 20 downloads can all be "in progress" while the CPU is almost idle.</p>
+
+<h3>4. Task states and exceptions inside tasks</h3>
+<div class="code nofile"><pre><code class="language-csharp">Task&lt;int&gt; slow = Task.Run(async () =&gt; { await Task.Delay(300); return 42; });
+Console.WriteLine(slow.Status);              // WaitingForActivation — not finished yet
+Console.WriteLine(slow.IsCompleted);         // False
+int answer = await slow;
+Console.WriteLine(slow.Status);              // RanToCompletion
+Console.WriteLine(slow.IsCompletedSuccessfully);   // True</code></pre></div>
+<div class="tbl"><table><tr><th>Status</th><th>Meaning</th><th>IsCompleted</th></tr><tr><td>Created</td><td>Built with <code>new Task(...)</code> but not started (rare; prefer Task.Run)</td><td>False</td></tr><tr><td>WaitingForActivation</td><td>Waiting for something internal (typical for async methods)</td><td>False</td></tr><tr><td>WaitingToRun</td><td>Scheduled on the pool, not yet picked up</td><td>False</td></tr><tr><td>Running</td><td>Executing right now</td><td>False</td></tr><tr><td>RanToCompletion</td><td>Finished successfully; result available</td><td>True</td></tr><tr><td>Faulted</td><td>Finished by throwing; <code>task.Exception</code> holds an AggregateException</td><td>True</td></tr><tr><td>Canceled</td><td>Finished because cancellation was requested (Wednesday)</td><td>True</td></tr></table></div>
+<div class="code"><div class="fname">TaskExceptions.cs</div><pre><code class="language-csharp">static async Task&lt;decimal&gt; GetGstRateAsync(string stateCode)
+{
+    await Task.Delay(50);
+    throw new KeyNotFoundException($"No GST registration for state {stateCode}");
+}
+
+Task&lt;decimal&gt; rateTask = GetGstRateAsync("XX");  // nothing thrown HERE — the exception goes into the task
+await Task.Delay(100);
+Console.WriteLine(rateTask.Status);              // Faulted
+Console.WriteLine(rateTask.Exception!.GetType().Name);              // AggregateException
+Console.WriteLine(rateTask.Exception.InnerException!.Message);      // No GST registration for state XX
+
+try { await rateTask; }                          // await unwraps → the ORIGINAL exception type
+catch (KeyNotFoundException ex) { Console.WriteLine($"await threw {ex.GetType().Name}"); }
+
+try { rateTask.Wait(); }                         // blocking APIs wrap it
+catch (AggregateException ex) { Console.WriteLine($"Wait() threw AggregateException with {ex.InnerExceptions.Count} inner"); }
+
+// await threw KeyNotFoundException
+// Wait() threw AggregateException with 1 inner</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> A faulted task that nobody ever awaits or inspects is an <b>unobserved exception</b>: the error silently disappears (the <code>TaskScheduler.UnobservedTaskException</code> event fires much later, when the GC collects the task). Always await the tasks you start, or deliberately log their failures.</div>
+<p><code>AggregateException</code> exists because one task can represent many operations (e.g. <code>Task.WhenAll</code>, Wednesday), so it can hold many failures. Use <code>ex.Flatten()</code> when aggregates are nested, and <code>ex.InnerExceptions</code> to see them all.</p>
+
+<h3>5. ValueTask&lt;T&gt; — awareness, not a default</h3>
+<p>Every <code>Task&lt;T&gt;</code> is a heap object. If a method is called millions of times and usually has the answer ready (a cache hit), those allocations add up. <code>ValueTask&lt;T&gt;</code> is a struct that can hold the result directly, and only wraps a real Task when work is actually pending.</p>
+<div class="code"><div class="fname">GstRateCache.cs</div><pre><code class="language-csharp">var cache = new GstRateCache();
+Console.WriteLine(await cache.GetRateAsync("0401"));   // 0.05 (slow path, 100 ms)
+Console.WriteLine(await cache.GetRateAsync("0401"));   // 0.05 (fast path, no allocation)
+
+public class GstRateCache
+{
+    // Single-threaded demo; Friday shows ConcurrentDictionary for shared caches
+    private readonly Dictionary&lt;string, decimal&gt; _rates = new(StringComparer.OrdinalIgnoreCase);
+
+    public ValueTask&lt;decimal&gt; GetRateAsync(string hsnCode)
+    {
+        if (_rates.TryGetValue(hsnCode, out decimal rate))
+            return ValueTask.FromResult(rate);                 // cache hit: no allocation, completes synchronously
+
+        return new ValueTask&lt;decimal&gt;(LoadAndCacheAsync(hsnCode));   // cache miss: wrap a real Task
+    }
+
+    private async Task&lt;decimal&gt; LoadAndCacheAsync(string hsnCode)
+    {
+        await Task.Delay(100);                                 // pretend: call the GST rate service
+        decimal rate = hsnCode.StartsWith("04") ? 0.05m : 0.18m;   // dairy 5%, everything else 18%
+        _rates[hsnCode] = rate;
+        return rate;
+    }
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Rule for ValueTask</th><th>Why</th></tr><tr><td>Await it exactly once</td><td>It may be backed by a pooled object that gets reused after the first await</td></tr><tr><td>Never await it concurrently from two places</td><td>Same reason; behaviour is undefined</td></tr><tr><td>Don't call <code>.Result</code> unless <code>IsCompletedSuccessfully</code></td><td>Blocking on a pending ValueTask isn't supported</td></tr><tr><td>Need any of the above? Call <code>.AsTask()</code> once</td><td>Converts it to a normal Task you can await many times or pass to WhenAll</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> You'll mostly <i>consume</i> ValueTask from framework APIs (<code>Stream.ReadAsync(Memory&lt;byte&gt;)</code>, <code>IAsyncEnumerator.MoveNextAsync</code>, <code>DbContext.FindAsync</code>). Just await it directly and you're following every rule.</div>
+
+<h3>Common mistakes</h3><ul><li>Using <code>Task.Run</code> to "make I/O async" — it just blocks a pool thread instead of the caller's thread.</li><li>Creating <code>new Thread</code> for short jobs instead of using tasks and the pool.</li><li>Starting a task and never awaiting it, so its exception is silently lost.</li><li>Catching <code>AggregateException</code> around <code>await</code> (await throws the inner exception) or the specific type around <code>.Wait()</code> (it throws AggregateException).</li><li>Returning ValueTask everywhere "for performance" and then awaiting it twice.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Create 2,000,000 random invoice amounts. Time computing their total GST on the current thread vs <code>await Task.Run(...)</code> with <code>Stopwatch</code>. Explain why the time is about the same (and what Task.Run <i>does</i> buy you).</li><li>Write <code>async Task&lt;string&gt; LoadCustomerAsync(int id)</code> that throws for negative ids. Start it, print <code>Status</code> before and after a delay, then catch the exception with await and separately with <code>.Wait()</code>; print both exception types.</li><li>Classify 10 operations from your bank and library projects (statement PDF, sending an SMS alert, sorting 1 lakh transactions, reading a CSV, calling a PIN-code API…) as CPU- or I/O-bound and write which API you'd use for each.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why does Task.Run not make a database call faster?</summary>The call is I/O-bound: the time is spent waiting for the database. Task.Run only moves the waiting onto a pool thread. Use the async database API so no thread waits at all.</details><details><summary>What does await do with an exception stored in a faulted task?</summary>It rethrows the original exception (first inner exception), with its stack trace preserved, so you catch the real type like KeyNotFoundException.</details><details><summary>When is ValueTask&lt;T&gt; worth using?</summary>On hot paths that very often complete synchronously (cache hits, buffered reads), where avoiding a Task allocation per call measurably helps.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between a Thread and a Task?</summary><div>A Thread is an OS-level execution path you create and manage directly. A Task is a higher-level promise of a future result: it's usually run on pooled threads (or, for async I/O, no thread at all while waiting), carries its result and exceptions, supports cancellation, and composes with await, WhenAll and WhenAny. Modern .NET code uses tasks.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between CPU-bound and I/O-bound work, and when should you use Task.Run?</summary><div>CPU-bound work keeps a core busy (calculations, compression); I/O-bound work waits on network, disk or a database. Use Task.Run to offload CPU-bound work (for example, to keep a UI thread responsive). For I/O-bound work, await the library's async API directly; wrapping it in Task.Run wastes a thread.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain concurrency vs parallelism.</summary><div>Concurrency means multiple operations are in progress during overlapping time periods, possibly interleaved on one core (e.g. 50 awaited HTTP calls). Parallelism means operations execute at literally the same time on multiple cores (e.g. Parallel.For over a big array). Parallelism is one way of achieving concurrency.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What happens when code inside a Task throws?</summary><div>The exception is caught by the task infrastructure and stored; the task moves to Faulted and task.Exception holds an AggregateException. Awaiting the task rethrows the original inner exception; .Wait() and .Result throw the AggregateException. If nobody observes it, the error is lost and only the UnobservedTaskException event reports it later.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is ValueTask and what are its restrictions?</summary><div>A struct that can hold a result directly or wrap a Task/IValueTaskSource, avoiding allocations when an async method usually completes synchronously. Restrictions: await it only once, never concurrently, don't block on it before it's complete; call AsTask() if you need Task semantics. Default to Task unless profiling shows allocation pressure.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why is Task.Run around I/O an anti-pattern in ASP.NET Core?</summary><div>ASP.NET Core requests already run on pool threads. Task.Run just switches to another pool thread, which then blocks on synchronous I/O, so you use two threads instead of zero and add scheduling overhead. Under load this leads to thread-pool starvation. Use true async APIs end to end.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>async/await: how it works and how to use it well</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Know exactly what happens when execution hits an await, what the compiler generates, where the code after an await runs, and the handful of rules (async all the way, no .Result, no async void, ConfigureAwait in libraries) that prevent deadlocks and crashes.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>async</dt><dd>A modifier that lets a method use await. It does not by itself make anything run on another thread.</dd></div><div class="def"><dt>await</dt><dd>Pauses the method until the awaited task completes, <i>without blocking the thread</i>; then resumes with the result or rethrows the exception.</dd></div><div class="def"><dt>Awaitable</dt><dd>Anything with a GetAwaiter() method: Task, Task&lt;T&gt;, ValueTask, Task.Yield(), and more.</dd></div><div class="def"><dt>Continuation</dt><dd>The rest of the method after an await, packaged up to run when the awaited operation completes.</dd></div><div class="def"><dt>State machine</dt><dd>The struct/class the compiler generates for an async method; it stores locals as fields and a state number recording which await to resume after.</dd></div><div class="def"><dt>SynchronizationContext</dt><dd>An object that says where continuations should run, e.g. "back on the UI thread". Console apps and ASP.NET Core don't have one.</dd></div><div class="def"><dt>TaskScheduler</dt><dd>Decides where tasks run when there's no SynchronizationContext; the default schedules onto the thread pool.</dd></div><div class="def"><dt>ConfigureAwait(false)</dt><dd>Tells await not to capture the current SynchronizationContext, so the continuation can run on any pool thread.</dd></div><div class="def"><dt>Sync-over-async</dt><dd>Blocking on async code with .Result, .Wait() or GetAwaiter().GetResult(). Causes deadlocks and thread starvation.</dd></div><div class="def"><dt>Async all the way</dt><dd>If a method awaits, its caller should be async and await it too, up to the entry point (Main, controller action, event handler).</dd></div><div class="def"><dt>async void</dt><dd>An async method returning void. Can't be awaited; its exceptions are raised directly on the SynchronizationContext or thread pool, usually crashing the app.</dd></div><div class="def"><dt>Fire-and-forget</dt><dd>Starting async work without awaiting it. Dangerous unless failures are explicitly handled.</dd></div><div class="def"><dt>Task.CompletedTask / Task.FromResult</dt><dd>Ready-made completed tasks for implementing async signatures synchronously.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>An async method runs <b>synchronously</b> until the first await on an <i>incomplete</i> task. Only then does it return to its caller.</li><li>Awaiting an already-completed task continues immediately on the same thread — no pause, no thread switch.</li><li>After an await the code may resume on a different thread (console, ASP.NET Core) or back on the UI thread (WinForms, WPF, MAUI).</li><li>Name async methods with the <code>Async</code> suffix and return <code>Task</code>, <code>Task&lt;T&gt;</code> or <code>ValueTask&lt;T&gt;</code>.</li><li>Libraries: <code>ConfigureAwait(false)</code> on every await. ASP.NET Core and console app code: not needed.</li><li><code>async void</code> only for event handlers. Everything else returns Task.</li></ul></div>
+
+<h3>1. What await actually does</h3>
+<div class="code"><div class="fname">AwaitDemo.cs</div><pre><code class="language-csharp">Console.WriteLine($"1. Before call     thread {Environment.CurrentManagedThreadId}");
+string report = await BuildSalesReportAsync();
+Console.WriteLine($"4. Got the report  thread {Environment.CurrentManagedThreadId}: {report}");
+
+static async Task&lt;string&gt; BuildSalesReportAsync()
+{
+    Console.WriteLine($"2. Method started  thread {Environment.CurrentManagedThreadId}");
+    await Task.Delay(500);         // incomplete task → method pauses here and RETURNS to the caller
+    Console.WriteLine($"3. Method resumed  thread {Environment.CurrentManagedThreadId}");
+    return "Sales ₹4,52,000";
+}
+
+// 1. Before call     thread 1
+// 2. Method started  thread 1     ← synchronous up to the first real await
+// 3. Method resumed  thread 6     ← console app: no SynchronizationContext → any pool thread
+// 4. Got the report  thread 6: Sales ₹4,52,000</code></pre></div>
+<p>Step by step, when execution reaches <code>await someTask</code>:</p>
+<ol>
+<li>Check <code>someTask.IsCompleted</code>. If it's already done, take the result and keep going on the same thread — no pause at all.</li>
+<li>If not, capture the current <b>SynchronizationContext</b> (if any), register "the rest of this method" as a <b>continuation</b> on the task, and <b>return</b> an incomplete Task to the caller. The thread is now free to do other work (serve another request, repaint the window).</li>
+<li>When the operation finishes (a timer fires, a network packet arrives), the continuation is scheduled: back on the captured context if there was one, otherwise on a thread-pool thread.</li>
+<li>The method resumes after the await with its locals intact, either getting the result or having the original exception rethrown.</li>
+</ol>
+<div class="note tip"><b>Tip.</b> There's no thread sitting inside <code>Task.Delay(500)</code> or a pending HTTP call. The OS notifies .NET when the I/O completes. That's how a server with 30 pool threads can have 10,000 requests waiting on a database at once.</div>
+
+<h3>2. What the compiler generates</h3>
+<p>The compiler rewrites every async method into a <b>state machine</b>. Locals become fields (so they survive the pause), and each await becomes a numbered resume point. You never write this, but knowing its shape explains every behaviour above.</p>
+<div class="code"><div class="fname">StateMachine (pseudo-code)</div><pre><code class="language-csharp">// What you write
+public async Task&lt;decimal&gt; GetInvoiceTotalAsync(int invoiceId)
+{
+    Invoice invoice = await _repository.LoadAsync(invoiceId);
+    decimal rate = await _gst.GetRateAsync(invoice.StateCode);
+    return invoice.Amount * (1 + rate);
+}
+
+// Roughly what the compiler generates (simplified pseudo-code, not compilable)
+struct GetInvoiceTotalAsync_StateMachine : IAsyncStateMachine
+{
+    public int state;                                 // -1 running, 0 = paused at await #1, 1 = at await #2
+    public AsyncTaskMethodBuilder&lt;decimal&gt; builder;   // creates the Task the caller receives, completes it later
+    public int invoiceId;                             // parameters and locals are FIELDS now
+    private Invoice invoice;
+    private TaskAwaiter&lt;Invoice&gt; awaiter1;
+    private TaskAwaiter&lt;decimal&gt; awaiter2;
+
+    public void MoveNext()                            // called once to start, then once per resume
+    {
+        try
+        {
+            if (state == 0) goto Resume1;
+            if (state == 1) goto Resume2;
+
+            awaiter1 = _repository.LoadAsync(invoiceId).GetAwaiter();
+            if (!awaiter1.IsCompleted)
+            {
+                state = 0;
+                builder.AwaitUnsafeOnCompleted(ref awaiter1, ref this);   // "call MoveNext again when done"
+                return;                                                     // ← the thread leaves here
+            }
+        Resume1:
+            invoice = awaiter1.GetResult();           // returns the value or rethrows the original exception
+
+            awaiter2 = _gst.GetRateAsync(invoice.StateCode).GetAwaiter();
+            if (!awaiter2.IsCompleted) { state = 1; builder.AwaitUnsafeOnCompleted(ref awaiter2, ref this); return; }
+        Resume2:
+            decimal rate = awaiter2.GetResult();
+            builder.SetResult(invoice.Amount * (1 + rate));   // completes the caller's Task&lt;decimal&gt;
+        }
+        catch (Exception ex)
+        {
+            builder.SetException(ex);                 // exceptions go INTO the task (Monday) instead of propagating
+        }
+    }
+}</code></pre></div>
+<p>Consequences you can now explain: exceptions end up inside the returned task; an async method with no awaits runs fully synchronously (and the compiler warns CS1998); <code>ref</code>/<code>out</code> parameters aren't allowed in async methods (they can't be stored as fields); and in Release builds the state machine is a struct, so the fast path where everything completes synchronously allocates nothing extra.</p>
+
+<h3>3. SynchronizationContext and ConfigureAwait(false)</h3>
+<p>UI frameworks only let the UI thread touch controls, so they install a SynchronizationContext that sends continuations back to the UI thread. That's what makes this code safe:</p>
+<div class="code"><div class="fname">OrdersForm.cs (WinForms fragment)</div><pre><code class="language-csharp">// WinForms / WPF: the click handler starts on the UI thread
+private async void btnLoadOrders_Click(object sender, EventArgs e)   // async void is fine: it's an event handler
+{
+    lblStatus.Text = "Loading orders...";
+    Order[] orders = await _ordersApi.GetTodayAsync();   // UI thread is free while waiting → window stays responsive
+    gridOrders.DataSource = orders;                       // resumed ON THE UI THREAD via the captured context
+    lblStatus.Text = $"{orders.Length} orders";
+}</code></pre></div>
+<div class="tbl"><table><tr><th>App type</th><th>SynchronizationContext?</th><th>Code after await runs on…</th></tr><tr><td>WinForms, WPF, MAUI</td><td>Yes (UI context)</td><td>The UI thread</td></tr><tr><td>Classic ASP.NET (System.Web, .NET Framework)</td><td>Yes (request context)</td><td>The request's context, one thread at a time</td></tr><tr><td>Blazor Server / interactive server components</td><td>Yes (renderer context)</td><td>The renderer's context (Blazor WebAssembly is single-threaded and has none)</td></tr><tr><td>ASP.NET Core (MVC, minimal APIs)</td><td><b>No</b></td><td>Any thread-pool thread</td></tr><tr><td>Console apps, worker services</td><td><b>No</b></td><td>Any thread-pool thread</td></tr></table></div>
+<p>Library code (a NuGet package, a shared SDK for your company's GST service) doesn't know what kind of app calls it and never needs the UI thread. So it opts out of capturing the context:</p>
+<div class="code"><div class="fname">GstinClient.cs</div><pre><code class="language-csharp">using System.Net.Http.Json;
+
+public class GstinClient(HttpClient http)                 // a reusable library class
+{
+    public async Task&lt;GstinDetails?&gt; LookupAsync(string gstin, CancellationToken ct = default)
+    {
+        using HttpResponseMessage response = await http
+            .GetAsync($"gstin/{gstin}", ct)
+            .ConfigureAwait(false);                       // don't hop back to the caller's context
+
+        if (!response.IsSuccessStatusCode) return null;
+
+        return await response.Content
+            .ReadFromJsonAsync&lt;GstinDetails&gt;(ct)
+            .ConfigureAwait(false);                       // on EVERY await in the library
+    }
+}
+
+public record GstinDetails(string Gstin, string LegalName, string State);</code></pre></div>
+<div class="tbl"><table><tr><th>Where</th><th>Use ConfigureAwait(false)?</th><th>Why</th></tr><tr><td>Reusable library / NuGet package</td><td>Yes, on every await</td><td>Slightly faster, and callers who (wrongly) block on your code won't deadlock</td></tr><tr><td>UI event handlers / view models</td><td>No</td><td>You need to come back to the UI thread to update controls</td></tr><tr><td>ASP.NET Core app code</td><td>Not needed (harmless)</td><td>There is no context to capture</td></tr><tr><td>Console apps</td><td>Not needed</td><td>No context</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> <b>.NET 8</b> added <code>ConfigureAwait(ConfigureAwaitOptions)</code> on Task: e.g. <code>await task.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing)</code> waits for completion without throwing (useful when you only need "it's finished"). <code>ConfigureAwait(false)</code> is equivalent to <code>ConfigureAwaitOptions.None</code>.</div>
+
+<h3>4. Async all the way — never .Result or .Wait()</h3>
+<p>Blocking on async code is called <b>sync-over-async</b>. With a SynchronizationContext it deadlocks; without one it wastes threads.</p>
+<div class="code"><div class="fname">Deadlock (WinForms fragment)</div><pre><code class="language-csharp">// ❌ The classic deadlock (WinForms/WPF or classic ASP.NET)
+private void btnTotal_Click(object sender, EventArgs e)
+{
+    decimal total = GetTotalAsync().Result;   // (1) UI thread BLOCKS, waiting for the task
+    lblTotal.Text = total.ToString("N2");
+}
+
+private async Task&lt;decimal&gt; GetTotalAsync()
+{
+    await Task.Delay(1000);                   // (2) captures the UI context
+    return 1180m;                             // (3) continuation must run on the UI thread...
+}                                             //     ...which is blocked in (1) → both wait forever. App freezes.
+
+// ✓ Make the caller async too
+private async void btnTotal_Click(object sender, EventArgs e)
+{
+    decimal total = await GetTotalAsync();
+    lblTotal.Text = total.ToString("N2");
+}</code></pre></div>
+<p>In ASP.NET Core and console apps the same code won't deadlock (no context), but each blocked request holds a pool thread hostage. Under load the pool runs dry, new requests queue up, and response times explode — <b>thread-pool starvation</b>. The fix is the same everywhere: make the caller async and await.</p>
+<div class="tbl"><table><tr><th>Blocking (avoid)</th><th>Async replacement</th></tr><tr><td><code>task.Result</code>, <code>task.Wait()</code></td><td><code>await task</code></td></tr><tr><td><code>task.GetAwaiter().GetResult()</code></td><td><code>await task</code> (GetResult still blocks; it just doesn't wrap the exception)</td></tr><tr><td><code>Task.WaitAll(a, b)</code></td><td><code>await Task.WhenAll(a, b)</code></td></tr><tr><td><code>Task.WaitAny(a, b)</code></td><td><code>await Task.WhenAny(a, b)</code></td></tr><tr><td><code>Thread.Sleep(1000)</code></td><td><code>await Task.Delay(1000)</code></td></tr><tr><td><code>static void Main</code> calling async code</td><td><code>static async Task Main</code> or top-level statements with await</td></tr></table></div>
+<div class="note warn"><b>Rule.</b> Reading <code>.Result</code> is fine only when the task is <i>already complete</i>, for example after <code>await Task.WhenAll(...)</code> (Wednesday). Anywhere else, treat it as a bug.</div>
+
+<h3>5. async void: only for event handlers</h3>
+<div class="code"><div class="fname">AsyncVoid.cs</div><pre><code class="language-csharp">// ❌ async void: the caller can't await it, and can't catch its exceptions
+static async void SendInvoiceEmail(string to)
+{
+    await Task.Delay(100);
+    throw new InvalidOperationException("SMTP server unavailable");
+}
+
+try
+{
+    SendInvoiceEmail("asha.rao@example.com");   // returns at its first await...
+}
+catch (Exception)
+{
+    Console.WriteLine("Never printed");         // ...so this try block has already finished
+}
+await Task.Delay(500);
+// 💥 Unhandled InvalidOperationException: raised on a pool thread → the process crashes
+
+// ✓ async Task: awaitable, and exceptions reach the caller
+static async Task SendInvoiceEmailAsync(string to)
+{
+    await Task.Delay(100);
+    throw new InvalidOperationException("SMTP server unavailable");
+}
+
+try { await SendInvoiceEmailAsync("asha.rao@example.com"); }
+catch (InvalidOperationException ex) { Console.WriteLine($"Email failed: {ex.Message}"); }   // ✓ caught</code></pre></div>
+<p>Watch for <i>hidden</i> async void: any async lambda passed where an <code>Action</code> is expected becomes async void.</p>
+<div class="code nofile"><pre><code class="language-csharp">List&lt;string&gt; customers = ["Asha", "Ravi", "Meena"];
+
+// ❌ List.ForEach takes Action&lt;T&gt; → each lambda is async void; ForEach returns before any email is sent
+customers.ForEach(async c =&gt; await SendInvoiceEmailAsync(c));
+
+// ✓ Use a real loop (sequential) or Task.WhenAll (concurrent, Wednesday)
+foreach (string c in customers) await SendInvoiceEmailAsync(c);
+await Task.WhenAll(customers.Select(c =&gt; SendInvoiceEmailAsync(c)));</code></pre></div>
+
+<h3>6. Writing async methods well</h3>
+<div class="code"><div class="fname">AsyncGuidelines.cs</div><pre><code class="language-csharp">public interface IGstRateProvider
+{
+    Task&lt;decimal&gt; GetRateAsync(string hsnCode, CancellationToken ct = default);   // accept a token (Wednesday)
+}
+
+// An implementation that happens to be synchronous: no async keyword, return a completed task
+public class FixedRateProvider : IGstRateProvider
+{
+    public Task&lt;decimal&gt; GetRateAsync(string hsnCode, CancellationToken ct = default) =&gt;
+        Task.FromResult(0.18m);
+}
+
+public class InvoiceFileReader
+{
+    // ❌ "Eliding" async inside a using: the method returns the task immediately,
+    //    the using disposes the reader, and the still-running read can fail with ObjectDisposedException
+    public Task&lt;string&gt; ReadBad(string path)
+    {
+        using var reader = new StreamReader(path);
+        return reader.ReadToEndAsync();
+    }
+
+    // ✓ Keep async/await whenever there's a using, a try/catch, or code that must run after
+    public async Task&lt;string&gt; ReadAsync(string path)
+    {
+        using var reader = new StreamReader(path);
+        return await reader.ReadToEndAsync();
+    }
+
+    // ✓ Pure pass-through with nothing around it: returning the task directly is fine
+    public Task&lt;string&gt; ReadAllAsync(string path) =&gt; File.ReadAllTextAsync(path);
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Situation</th><th>Return</th></tr><tr><td>Async work, no value</td><td><code>Task</code></td></tr><tr><td>Async work with a value</td><td><code>Task&lt;T&gt;</code></td></tr><tr><td>Hot path, usually completes synchronously</td><td><code>ValueTask&lt;T&gt;</code></td></tr><tr><td>Event handler</td><td><code>void</code> (the only valid async void)</td></tr><tr><td>Interface requires async, implementation is sync</td><td><code>Task.CompletedTask</code> / <code>Task.FromResult(x)</code></td></tr><tr><td>Sequence produced asynchronously</td><td><code>IAsyncEnumerable&lt;T&gt;</code> (Thursday)</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Calling <code>.Result</code> or <code>.Wait()</code> on a task that isn't finished.</li><li>Writing <code>async void</code> for anything other than an event handler, including async lambdas passed to <code>List.ForEach</code> or <code>Parallel.ForEach</code>.</li><li>Expecting <code>async</code> alone to run code on a background thread. It doesn't; the method runs synchronously until its first incomplete await.</li><li>Leaving out <code>ConfigureAwait(false)</code> in shared library code, or adding it in UI code and then touching controls from the wrong thread.</li><li>Returning a task from inside a <code>using</code> or <code>try</code> block without awaiting it.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Print <code>Environment.CurrentManagedThreadId</code> before and after three awaits in a console app: <code>await Task.Delay(100)</code>, <code>await Task.CompletedTask</code>, and <code>await Task.Yield()</code>. Explain which ones can change the thread and why.</li><li>Write <code>async void Explode()</code> and <code>async Task ExplodeAsync()</code> that both throw after an await. Call each inside try/catch and observe the difference (the first will crash the process — that's the lesson).</li><li>Take the Week 3 bank simulator's <code>Transfer</code> and write an <code>async Task TransferAsync</code> version that awaits a fake <code>FraudCheckAsync</code> (Task.Delay 300 ms) before debiting. Call it with await from Program.cs; then try calling it with <code>.Result</code> and explain why it doesn't deadlock in a console app.</li></ol>
+<h3>Self-check questions</h3><details><summary>Does marking a method async make it run on another thread?</summary>No. It runs on the caller's thread until the first await on an incomplete task. Only the continuation may run elsewhere.</details><details><summary>Why doesn't ASP.NET Core need ConfigureAwait(false) in app code?</summary>ASP.NET Core has no SynchronizationContext, so there's nothing to capture: continuations already run on any pool thread.</details><details><summary>Why can't you catch an exception from an async void method?</summary>It returns to the caller at its first await, so the caller's try block has already completed. The exception is later raised on the SynchronizationContext or thread pool, where nobody is waiting to catch it.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does the await keyword do?</summary><div>It checks whether the awaited task is complete. If so, it continues immediately. If not, it registers the rest of the method as a continuation, returns an incomplete task to the caller and frees the thread. When the task completes, the method resumes (on the captured context if any, otherwise a pool thread), returning the result or rethrowing the original exception.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why should you avoid async void?</summary><div>Callers can't await it, so they don't know when it finishes, and exceptions can't be caught by the caller; they're raised on the SynchronizationContext or thread pool and typically crash the process. It's also hard to test. Use async Task; async void is only for event handlers, whose signature demands void.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does "async all the way" mean?</summary><div>Once a method is async, its callers should also be async and await it, up to the entry point (async Main, controller action, event handler). Mixing in blocking calls like .Result breaks the chain and causes deadlocks or thread starvation.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain the deadlock caused by calling .Result in a UI or classic ASP.NET app.</summary><div>The UI thread calls .Result and blocks. Inside the async method, an await captured the UI SynchronizationContext, so its continuation must run on the UI thread. That thread is blocked waiting for the task, and the task can't finish without that thread, so both wait forever. Fix: await instead of blocking; libraries can also use ConfigureAwait(false).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is ConfigureAwait(false) and when should you use it?</summary><div>It tells the await not to resume on the captured SynchronizationContext, letting the continuation run on any pool thread. Use it in general-purpose library code for performance and to avoid deadlocks when callers block. Don't use it in UI code that must update controls afterwards. In ASP.NET Core app code it has no effect because there is no context.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does the compiler implement async methods?</summary><div>It generates a state machine type implementing IAsyncStateMachine. Locals and parameters become fields, each await becomes a numbered state, and MoveNext runs the code up to the next incomplete await, registers itself as the continuation via an AsyncTaskMethodBuilder and returns. When the awaited task completes, MoveNext is called again and jumps to the saved state. Exceptions are caught and stored in the returned task via SetException.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Task.WhenAll, Task.WhenAny, cancellation and timeouts</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Run independent operations at the same time, handle all of their failures, stop work cleanly with CancellationToken, and put a time limit on anything that might hang.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Task.WhenAll</dt><dd>Returns a task that completes when <i>all</i> the given tasks complete. For Task&lt;T&gt; inputs, its result is a T[] in input order.</dd></div><div class="def"><dt>Task.WhenAny</dt><dd>Returns a task that completes when <i>any one</i> of the given tasks completes; its result is the winning task itself.</dd></div><div class="def"><dt>Task.WhenEach</dt><dd>.NET 9: an IAsyncEnumerable that yields tasks one by one in the order they complete.</dd></div><div class="def"><dt>CancellationTokenSource (CTS)</dt><dd>The object that <i>requests</i> cancellation: Cancel(), CancelAfter(). Owned by whoever decides to stop. Disposable.</dd></div><div class="def"><dt>CancellationToken</dt><dd>A read-only struct handed to the work so it can <i>observe</i> cancellation: IsCancellationRequested, ThrowIfCancellationRequested(), Register().</dd></div><div class="def"><dt>Cooperative cancellation</dt><dd>Nothing is forcibly killed. The work checks the token and stops itself at a safe point.</dd></div><div class="def"><dt>OperationCanceledException</dt><dd>The standard exception meaning "stopped because cancellation was requested". A task that throws it with its token ends in the Canceled state.</dd></div><div class="def"><dt>TaskCanceledException</dt><dd>A subclass of OperationCanceledException thrown by Task.Delay, HttpClient and others. Catch the base type.</dd></div><div class="def"><dt>CancelAfter</dt><dd>Schedules the CTS to cancel itself after a time span — the standard way to implement timeouts.</dd></div><div class="def"><dt>Linked token source</dt><dd>CancellationTokenSource.CreateLinkedTokenSource(a, b): cancelled when any source token is cancelled. Used to combine "caller cancelled" with "our timeout".</dd></div><div class="def"><dt>Task.WaitAsync</dt><dd>.NET 6: returns a task that completes when the original does, or throws TimeoutException / OperationCanceledException if the time or token runs out first.</dd></div><div class="def"><dt>CancellationToken.None</dt><dd>An empty token that is never cancelled; the default value for optional token parameters.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Start every independent task first, <i>then</i> await them together. Awaiting one by one makes them sequential.</li><li><code>await Task.WhenAll(...)</code> throws only <b>one</b> of the exceptions (don't rely on which); all of them are in the WhenAll task's <code>.Exception</code>.</li><li><code>Task.WhenAny</code> never throws. Await the winner to get its result, and cancel the losers yourself.</li><li>Accept a <code>CancellationToken</code> as the last parameter of every async method, and pass it to everything you call.</li><li>Catch <code>OperationCanceledException</code>, not TaskCanceledException, so you handle both.</li><li><code>WaitAsync</code> stops <i>you</i> waiting; it doesn't stop the operation. Prefer passing a token when the API accepts one.</li></ul></div>
+
+<h3>1. Sequential vs concurrent with Task.WhenAll</h3>
+<p>A customer dashboard needs three independent pieces of data. Awaiting them one after another adds up the delays; starting all three and awaiting together costs only the slowest.</p>
+<div class="code"><div class="fname">Dashboard.cs</div><pre><code class="language-csharp">using System.Diagnostics;
+
+var sw = Stopwatch.StartNew();
+string name    = await GetCustomerNameAsync(7);
+decimal limit  = await GetCreditLimitAsync(7);
+int openOrders = await GetOpenOrderCountAsync(7);
+Console.WriteLine($"Sequential: {sw.ElapsedMilliseconds} ms");    // ~1200 ms (300 + 400 + 500)
+
+sw.Restart();
+Task&lt;string&gt;  nameTask  = GetCustomerNameAsync(7);        // all three START here
+Task&lt;decimal&gt; limitTask = GetCreditLimitAsync(7);
+Task&lt;int&gt;     ordersTask = GetOpenOrderCountAsync(7);
+await Task.WhenAll(nameTask, limitTask, ordersTask);      // wait for the slowest
+Console.WriteLine($"Concurrent: {sw.ElapsedMilliseconds} ms");    // ~500 ms
+
+// .Result is safe here: every task is already complete
+Console.WriteLine($"{nameTask.Result}: limit ₹{limitTask.Result:N0}, {ordersTask.Result} open orders");
+// Priya Sharma: limit ₹50,000, 3 open orders
+
+static async Task&lt;string&gt;  GetCustomerNameAsync(int id)   { await Task.Delay(300); return "Priya Sharma"; }
+static async Task&lt;decimal&gt; GetCreditLimitAsync(int id)    { await Task.Delay(400); return 50_000m; }
+static async Task&lt;int&gt;     GetOpenOrderCountAsync(int id) { await Task.Delay(500); return 3; }</code></pre></div>
+<p>When all tasks return the same type, WhenAll hands you an array <b>in the same order as the input</b>, regardless of which finished first:</p>
+<div class="code nofile"><pre><code class="language-csharp">int[] invoiceIds = [101, 102, 103, 104];
+decimal[] totals = await Task.WhenAll(invoiceIds.Select(id =&gt; GetInvoiceTotalAsync(id)));
+for (int i = 0; i &lt; invoiceIds.Length; i++)
+    Console.WriteLine($"INV-{invoiceIds[i]}: ₹{totals[i]:N2}");      // totals[i] belongs to invoiceIds[i]
+
+static async Task&lt;decimal&gt; GetInvoiceTotalAsync(int id)
+{
+    await Task.Delay(Random.Shared.Next(100, 400));       // finish in random order...
+    return id * 11.8m;                                     // ...results still line up with the input
+}</code></pre></div>
+<div class="note warn"><b>Careful.</b> Only run things concurrently when they're truly independent. If step 2 needs step 1's result (load the order, <i>then</i> load its customer), sequential awaits are correct. Also beware sharing one non-thread-safe object across concurrent tasks — EF Core's DbContext, for example, throws if two queries run on it at once.</div>
+
+<h3>2. Exceptions with WhenAll</h3>
+<div class="code"><div class="fname">WhenAllExceptions.cs</div><pre><code class="language-csharp">string[] phones = ["9876543210", "12345", "9123456780", "999"];
+
+Task all = Task.WhenAll(phones.Select(SendSmsAsync));
+try
+{
+    await all;
+}
+catch (Exception first)
+{
+    Console.WriteLine($"await threw only: {first.Message}");
+    foreach (Exception ex in all.Exception!.InnerExceptions)     // every failure is kept here
+        Console.WriteLine($"  failed → {ex.Message}");
+}
+
+static async Task SendSmsAsync(string phone)
+{
+    await Task.Delay(100);
+    if (phone.Length != 10) throw new ArgumentException($"Invalid mobile number {phone}");
+    Console.WriteLine($"SMS sent to {phone}");
+}
+
+// SMS sent to 9876543210          (successful ones still complete; order of these two may vary)
+// SMS sent to 9123456780
+// await threw only: Invalid mobile number 12345     (or 999 — which one isn't guaranteed)
+//   failed → Invalid mobile number 12345
+//   failed → Invalid mobile number 999</code></pre></div>
+<p>Key facts: WhenAll waits for <i>every</i> task, even after one fails (it doesn't cancel the rest). Don't rely on <i>which</i> exception <code>await</code> rethrows or on the order of <code>InnerExceptions</code>: on .NET 8 the non-generic <code>WhenAll(Task[])</code> records failures in completion order, while <code>WhenAll&lt;T&gt;</code> records them in input order. If you'd rather never throw and report per item, make each task return a result object instead — that's exactly what Saturday's downloader does.</p>
+<div class="code nofile"><pre><code class="language-csharp">// Per-item results instead of exceptions
+SmsResult[] results = await Task.WhenAll(phones.Select(TrySendSmsAsync));   // never throws
+Console.WriteLine($"{results.Count(r =&gt; r.Sent)} sent, {results.Count(r =&gt; !r.Sent)} failed");   // 2 sent, 2 failed
+
+static async Task&lt;SmsResult&gt; TrySendSmsAsync(string phone)
+{
+    try { await SendSmsAsync(phone); return new SmsResult(phone, true, null); }
+    catch (Exception ex) { return new SmsResult(phone, false, ex.Message); }
+}
+
+record SmsResult(string Phone, bool Sent, string? Error);   // type declarations go after top-level statements</code></pre></div>
+
+<h3>3. Task.WhenAny: first one wins</h3>
+<div class="code"><div class="fname">FastestGateway.cs</div><pre><code class="language-csharp">using var cts = new CancellationTokenSource();
+Task&lt;string&gt; gatewayA = GetQuoteAsync("GatewayA", 400, cts.Token);
+Task&lt;string&gt; gatewayB = GetQuoteAsync("GatewayB", 250, cts.Token);
+
+Task&lt;string&gt; winner = await Task.WhenAny(gatewayA, gatewayB);   // completes when the FIRST one finishes
+cts.Cancel();                                                    // WhenAny doesn't stop the loser; we do
+Console.WriteLine($"Using {await winner}");                      // await the winner for its result (or exception)
+// Using GatewayB (250 ms)
+
+static async Task&lt;string&gt; GetQuoteAsync(string gateway, int ms, CancellationToken ct)
+{
+    await Task.Delay(ms, ct);
+    return $"{gateway} ({ms} ms)";
+}</code></pre></div>
+<h4>Handling results as they arrive</h4>
+<div class="code nofile"><pre><code class="language-csharp">List&lt;Task&lt;decimal&gt;&gt; pending = invoiceIds.Select(id =&gt; GetInvoiceTotalAsync(id)).ToList();
+
+// .NET 9+: Task.WhenEach yields each task as it completes
+await foreach (Task&lt;decimal&gt; done in Task.WhenEach(pending))
+    Console.WriteLine($"Finished: ₹{await done:N2}");
+
+// Before .NET 9: the WhenAny loop (O(n²) — fine for dozens of tasks, not thousands)
+pending = invoiceIds.Select(id =&gt; GetInvoiceTotalAsync(id)).ToList();
+while (pending.Count &gt; 0)
+{
+    Task&lt;decimal&gt; done = await Task.WhenAny(pending);
+    pending.Remove(done);
+    Console.WriteLine($"Finished: ₹{await done:N2}");
+}</code></pre></div>
+
+<h3>4. CancellationToken: cooperative cancellation</h3>
+<p>Two roles: the <b>CancellationTokenSource</b> is the remote control (whoever may decide to stop: a Cancel button, Ctrl+C, a timeout); the <b>CancellationToken</b> is the receiver you pass into the work. The work decides where it's safe to stop.</p>
+<div class="code"><div class="fname">Cancellation.cs</div><pre><code class="language-csharp">using var cts = new CancellationTokenSource();
+cts.CancelAfter(TimeSpan.FromMilliseconds(700));          // auto-cancel after 700 ms
+
+try
+{
+    await GenerateStatementsAsync(count: 10, cts.Token);
+}
+catch (OperationCanceledException)                        // also catches TaskCanceledException
+{
+    Console.WriteLine("Stopped: statement run cancelled");
+}
+
+static async Task GenerateStatementsAsync(int count, CancellationToken ct)
+{
+    for (int i = 1; i &lt;= count; i++)
+    {
+        await Task.Delay(200, ct);                         // async APIs take the token and throw when cancelled
+        Console.WriteLine($"Statement {i} generated");
+    }
+}
+
+// Statement 1 generated
+// Statement 2 generated
+// Statement 3 generated
+// Stopped: statement run cancelled</code></pre></div>
+<p>CPU-bound loops don't await anything, so they must check the token themselves:</p>
+<div class="code nofile"><pre><code class="language-csharp">static decimal ReconcileLedger(IReadOnlyList&lt;decimal&gt; entries, CancellationToken ct)
+{
+    decimal balance = 0;
+    for (int i = 0; i &lt; entries.Count; i++)
+    {
+        if (i % 10_000 == 0)
+            ct.ThrowIfCancellationRequested();     // check every 10k items: cheap, but responsive
+        balance += entries[i];
+    }
+    return balance;
+}
+
+// Run it on the pool and let the token cancel it too (passing ct to Task.Run also prevents
+// it from starting at all if cancellation was already requested)
+decimal balance = await Task.Run(() =&gt; ReconcileLedger(entries, cts.Token), cts.Token);
+
+// Register a callback that runs when cancellation is requested (e.g. abort a legacy API call)
+using CancellationTokenRegistration reg = cts.Token.Register(() =&gt; Console.WriteLine("Cleanup: closing legacy connection"));</code></pre></div>
+<div class="tbl"><table><tr><th>Do</th><th>Don't</th></tr><tr><td>Accept <code>CancellationToken ct = default</code> as the last parameter</td><td>Create a new CTS deep inside the call chain and ignore the caller's token</td></tr><tr><td>Pass the token to every async call you make</td><td>Swallow OperationCanceledException and carry on as if nothing happened</td></tr><tr><td>Dispose CTS objects you create (<code>using var cts</code>)</td><td>Use <code>Thread.Abort</code> (not supported in .NET Core / .NET 5+)</td></tr><tr><td>Let OperationCanceledException propagate, and catch it at the top</td><td>Treat cancellation as an error in logs (it's a normal outcome)</td></tr></table></div>
+
+<h3>5. Timeouts: CancelAfter, linked tokens and WaitAsync</h3>
+<p>Most real methods have two reasons to stop: the caller cancelled (user clicked Cancel, HTTP request aborted) <i>or</i> our own time limit ran out. Link them:</p>
+<div class="code"><div class="fname">LinkedTimeout.cs</div><pre><code class="language-csharp">static async Task&lt;decimal&gt; GetUsdInrRateAsync(CancellationToken callerToken)
+{
+    using var cts = CancellationTokenSource.CreateLinkedTokenSource(callerToken);
+    cts.CancelAfter(TimeSpan.FromSeconds(2));                // our own limit for this call
+
+    try
+    {
+        await Task.Delay(3000, cts.Token);                   // pretend: slow exchange-rate service
+        return 83.20m;
+    }
+    catch (OperationCanceledException) when (!callerToken.IsCancellationRequested)
+    {
+        // The caller didn't cancel, so it must have been our timeout → report it as a timeout
+        throw new TimeoutException("Exchange-rate service took longer than 2 s");
+    }
+}
+
+try { decimal rate = await GetUsdInrRateAsync(CancellationToken.None); }
+catch (TimeoutException ex) { Console.WriteLine(ex.Message); }
+// Exchange-rate service took longer than 2 s</code></pre></div>
+<p>Some APIs don't accept a token at all. <b>.NET 6</b> added <code>WaitAsync</code> so you can at least stop <i>waiting</i>:</p>
+<div class="code"><div class="fname">WaitAsync.cs</div><pre><code class="language-csharp">Task&lt;string&gt; certificate = FetchGstCertificateAsync("27AAPFU0939F1ZV");   // no CancellationToken parameter
+
+try
+{
+    string pdfPath = await certificate.WaitAsync(TimeSpan.FromSeconds(5));
+    Console.WriteLine($"Saved {pdfPath}");
+}
+catch (TimeoutException)
+{
+    Console.WriteLine("GST portal too slow; we'll retry later");   // the fetch itself is STILL running
+}
+// Overloads: WaitAsync(CancellationToken), WaitAsync(TimeSpan), WaitAsync(TimeSpan, CancellationToken)
+
+static async Task&lt;string&gt; FetchGstCertificateAsync(string gstin)
+{
+    await Task.Delay(8000);                                         // a slow legacy call
+    return $"{gstin}.pdf";
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Technique</th><th>Stops the work?</th><th>Exception on timeout</th><th>Use when</th></tr><tr><td><code>cts.CancelAfter(t)</code> + pass token</td><td>Yes (cooperatively)</td><td>OperationCanceledException</td><td>The API accepts a token (most do)</td></tr><tr><td>Linked CTS + CancelAfter</td><td>Yes</td><td>OperationCanceledException → translate to TimeoutException</td><td>Respect the caller's token <i>and</i> add your own limit</td></tr><tr><td><code>task.WaitAsync(t)</code> (.NET 6)</td><td>No — only stops waiting</td><td>TimeoutException</td><td>The API has no token parameter</td></tr><tr><td><code>WhenAny(task, Task.Delay(t))</code></td><td>No</td><td>None — check which task won</td><td>Pre-.NET 6 code you'll still see</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Awaiting independent tasks one by one and wondering why it's slow.</li><li>Catching the exception from <code>await Task.WhenAll</code> and assuming it was the only failure.</li><li>Forgetting to cancel the losing tasks after <code>Task.WhenAny</code>.</li><li>Accepting a CancellationToken but never passing it on (or never checking it in CPU loops).</li><li>Thinking <code>WaitAsync</code> or a WhenAny timeout cancels the underlying operation.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write three fake async calls for a booking page (train availability 600 ms, fare 300 ms, seat map 450 ms). Time them sequentially and with WhenAll.</li><li>Send "OTP" SMS to 8 numbers with WhenAll where 3 are invalid. Print every failure (not just the first), then rewrite it so each task returns a result record and nothing throws.</li><li>Write <code>async Task&lt;string&gt; GetPnrStatusAsync(string pnr, CancellationToken ct)</code> that takes 1–4 s at random. Call it with a linked token and a 2-second limit; print "timed out" vs "cancelled by user" correctly (cancel the outer CTS from a second task after 1 s to test the second case).</li></ol>
+<h3>Self-check questions</h3><details><summary>What does await Task.WhenAll throw if three tasks fail?</summary>Only one of them — don't rely on which (on .NET 8 it depends on the overload: completion order for non-generic WhenAll, input order for WhenAll&lt;T&gt;). The WhenAll task's .Exception is an AggregateException holding all three.</details><details><summary>Does Task.WhenAny cancel the other tasks?</summary>No. They keep running. Pass them a token and cancel it once you have a winner.</details><details><summary>Why is cancellation called cooperative?</summary>The token only signals a request. The running code has to check it (or pass it to APIs that check it) and stop itself at a safe point; nothing is forcibly aborted.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between Task.WhenAll and Task.WhenAny?</summary><div>WhenAll completes when every task has completed and gives you all results (T[] in input order); if any fail, awaiting it throws one of the exceptions (which one isn't something to rely on) and the task's .Exception holds all of them. WhenAny completes as soon as one task completes and returns that task; it never throws, so you await the winner to get its result or exception.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How does cancellation work in .NET?</summary><div>A CancellationTokenSource issues cancellation via Cancel() or CancelAfter(). Its Token is passed to the work, which checks IsCancellationRequested or calls ThrowIfCancellationRequested, or passes the token to async APIs that observe it. The work then throws OperationCanceledException, and the task ends as Canceled. It's cooperative: nothing is forcibly stopped.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When should you await sequentially instead of using WhenAll?</summary><div>When operations depend on each other (you need the order before you can fetch its customer), when they share a non-thread-safe resource such as a DbContext, or when running everything at once would overload a downstream service (then throttle instead, Friday).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you observe all exceptions from Task.WhenAll?</summary><div>Keep a reference to the WhenAll task, await it in try/catch, and in the catch read whenAllTask.Exception.InnerExceptions. Alternatively make each task catch its own errors and return a result object, so WhenAll never throws and you get per-item outcomes.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you add a timeout to an async operation?</summary><div>If it accepts a token: create a CTS (linked to the caller's token if there is one), call CancelAfter, and pass the token; translate the resulting OperationCanceledException into a TimeoutException when the caller didn't cancel. If it doesn't accept a token: use task.WaitAsync(timeout) in .NET 6+, remembering the operation keeps running in the background.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>OperationCanceledException vs TaskCanceledException — which do you catch and why?</summary><div>TaskCanceledException derives from OperationCanceledException and is thrown by some APIs (Task.Delay, HttpClient); others throw the base type directly (ThrowIfCancellationRequested). Catch OperationCanceledException to handle both. To tell a timeout from user cancellation, check whether the caller's token IsCancellationRequested (HttpClient timeouts also carry an inner TimeoutException since .NET 5).</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>HttpClient and async streams (IAsyncEnumerable)</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Call web APIs correctly — one shared HttpClient, proper status-code handling, sensible timeouts — and produce or consume data that arrives over time with IAsyncEnumerable&lt;T&gt; and await foreach.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>HttpClient</dt><dd>The .NET class for sending HTTP requests. Thread-safe for concurrent requests and designed to be long-lived and reused.</dd></div><div class="def"><dt>SocketsHttpHandler</dt><dd>The default handler underneath HttpClient. It owns the connection pool; settings like PooledConnectionLifetime live here.</dd></div><div class="def"><dt>Socket exhaustion</dt><dd>Running out of local ports because many short-lived HttpClients leave closed connections in TIME_WAIT.</dd></div><div class="def"><dt>PooledConnectionLifetime</dt><dd>How long a pooled connection may be reused before being replaced, so DNS changes are eventually picked up.</dd></div><div class="def"><dt>IHttpClientFactory</dt><dd>A factory (Microsoft.Extensions.Http) that creates configured HttpClients and pools/rotates their handlers for you.</dd></div><div class="def"><dt>Typed client</dt><dd>A class that receives a configured HttpClient in its constructor and wraps one API (e.g. PinCodeClient).</dd></div><div class="def"><dt>HttpResponseMessage</dt><dd>The response: StatusCode, headers and Content. Disposable.</dd></div><div class="def"><dt>EnsureSuccessStatusCode</dt><dd>Throws HttpRequestException if the status is not 2xx.</dd></div><div class="def"><dt>HttpRequestException</dt><dd>Thrown for network failures (DNS, refused connection) and by EnsureSuccessStatusCode; has a StatusCode property since .NET 5.</dd></div><div class="def"><dt>System.Net.Http.Json</dt><dd>Extension methods GetFromJsonAsync, PostAsJsonAsync, ReadFromJsonAsync using System.Text.Json with web defaults (camelCase, case-insensitive).</dd></div><div class="def"><dt>HttpCompletionOption.ResponseHeadersRead</dt><dd>Return as soon as headers arrive, instead of buffering the whole body in memory. Use for large downloads.</dd></div><div class="def"><dt>IAsyncEnumerable&lt;T&gt;</dt><dd>An asynchronous sequence: each next element may require awaiting. The async version of IEnumerable&lt;T&gt;.</dd></div><div class="def"><dt>await foreach</dt><dd>Loops over an IAsyncEnumerable&lt;T&gt;, awaiting each element.</dd></div><div class="def"><dt>Async iterator</dt><dd>A method that is <code>async</code>, returns IAsyncEnumerable&lt;T&gt; and uses <code>yield return</code>.</dd></div><div class="def"><dt>[EnumeratorCancellation]</dt><dd>Attribute on an async iterator's CancellationToken parameter so a token passed via WithCancellation() reaches it.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Create HttpClient once and reuse it (static field, singleton, or via IHttpClientFactory). Never <code>new</code> one per request.</li><li>Set <code>PooledConnectionLifetime</code> on a long-lived client so it notices DNS changes.</li><li>Always dispose the <code>HttpResponseMessage</code> (<code>using</code>), not the shared HttpClient.</li><li>Default <code>HttpClient.Timeout</code> is 100 seconds. A timeout surfaces as TaskCanceledException.</li><li>Retry only transient failures: network errors, 408, 429, 5xx. Never retry a 400 or 404.</li><li>IAsyncEnumerable lets the consumer start working on item 1 while item 2 is still being fetched.</li></ul></div>
+
+<h3>1. One shared HttpClient</h3>
+<div class="code"><div class="fname">SharedClient.cs</div><pre><code class="language-csharp">// ❌ A new client per call. Each disposal closes its connections, which linger in TIME_WAIT
+//    for up to a few minutes. Under load you run out of sockets ("socket exhaustion").
+static async Task&lt;string&gt; GetPageBad(string url)
+{
+    using var client = new HttpClient();
+    return await client.GetStringAsync(url);
+}
+
+// ✓ One long-lived client for the whole app, with connections recycled every 2 minutes
+//   so a changed DNS record (e.g. a failover) is eventually noticed
+public static class Http
+{
+    public static readonly HttpClient Client = new(new SocketsHttpHandler
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(2)
+    })
+    {
+        Timeout = TimeSpan.FromSeconds(30)     // default is 100 s — usually far too long
+    };
+}</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Configure <code>BaseAddress</code>, <code>Timeout</code> and <code>DefaultRequestHeaders</code> <i>before</i> the first request and never change them afterwards: the client is shared across threads. Per-request headers go on an <code>HttpRequestMessage</code>.</div>
+
+<h3>2. Making requests and handling status codes</h3>
+<p>India Post's public PIN-code API is a nice free target: <code>GET https://api.postalpincode.in/pincode/560001</code> returns a JSON array with the post offices for that PIN (it's a third-party service, so its shape and availability can change).</p>
+<div class="code"><div class="fname">PinCodeLookup.cs</div><pre><code class="language-csharp">using System.Net;
+using System.Net.Http.Json;
+
+var http = new HttpClient { BaseAddress = new Uri("https://api.postalpincode.in/") };   // trailing slash matters
+
+// 1. Simplest: GetFromJsonAsync — deserialises the body; throws HttpRequestException on non-2xx
+PinCodeResponse[]? data = await http.GetFromJsonAsync&lt;PinCodeResponse[]&gt;("pincode/560001");
+foreach (PostOffice po in data?[0].PostOffice ?? [])
+    Console.WriteLine($"{po.Name}, {po.District}, {po.State}");
+// e.g. Bangalore G.P.O., Bangalore, Karnataka … (live data; names may differ)
+
+// 2. Full control: check the status yourself
+using HttpResponseMessage response = await http.GetAsync("pincode/560001");
+Console.WriteLine($"{(int)response.StatusCode} {response.StatusCode}");    // 200 OK
+
+if (response.StatusCode == HttpStatusCode.NotFound)
+    Console.WriteLine("No such resource");
+else if (!response.IsSuccessStatusCode)
+    Console.WriteLine($"Server said {(int)response.StatusCode}");
+else
+{
+    var body = await response.Content.ReadFromJsonAsync&lt;PinCodeResponse[]&gt;();
+    Console.WriteLine(body?[0].Message);
+}
+
+// 3. Sending JSON
+// using var created = await http.PostAsJsonAsync("orders", new { Customer = "Asha Rao", Total = 2499m });
+// created.EnsureSuccessStatusCode();
+// var order = await created.Content.ReadFromJsonAsync&lt;OrderDto&gt;();
+
+// Property names match the JSON case-insensitively (web defaults)
+public record PostOffice(string Name, string District, string State, string Pincode);
+public record PinCodeResponse(string Status, string Message, List&lt;PostOffice&gt;? PostOffice);</code></pre></div>
+<div class="tbl"><table><tr><th>Range</th><th>Meaning</th><th>Examples</th><th>Retry?</th></tr><tr><td>2xx</td><td>Success</td><td>200 OK, 201 Created, 204 No Content</td><td>—</td></tr><tr><td>3xx</td><td>Redirect (HttpClient follows these automatically by default)</td><td>301, 302, 304 Not Modified</td><td>—</td></tr><tr><td>4xx</td><td>Client error: <i>your</i> request is wrong</td><td>400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found</td><td>No — except 408 Request Timeout and 429 Too Many Requests (wait, then retry)</td></tr><tr><td>5xx</td><td>Server error: the other side failed</td><td>500, 502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout</td><td>Yes, with backoff (Sunday)</td></tr></table></div>
+<div class="code"><div class="fname">HttpErrors.cs</div><pre><code class="language-csharp">try
+{
+    var data = await http.GetFromJsonAsync&lt;PinCodeResponse[]&gt;("pincode/110001");
+}
+catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+{
+    Console.WriteLine("Rate limited — slow down");                // a non-2xx status (.NET 5+ sets StatusCode)
+}
+catch (HttpRequestException ex)
+{
+    Console.WriteLine($"Request failed: {ex.StatusCode?.ToString() ?? "network error"} — {ex.Message}");
+}                                                                  // StatusCode is null for DNS/connection failures
+catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+{
+    Console.WriteLine("HttpClient.Timeout elapsed");               // .NET 5+: timeouts carry an inner TimeoutException
+}</code></pre></div>
+
+<h3>3. Timeouts and large downloads</h3>
+<p><code>HttpClient.Timeout</code> applies to every request made through that client. For a specific call, use a token with <code>CancelAfter</code> (Wednesday), linked to the caller's token:</p>
+<div class="code"><div class="fname">Timeouts.cs</div><pre><code class="language-csharp">static async Task&lt;string?&gt; GetDistrictAsync(HttpClient http, string pin, CancellationToken ct)
+{
+    using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+    cts.CancelAfter(TimeSpan.FromSeconds(5));              // this call only: 5 s
+
+    var data = await http.GetFromJsonAsync&lt;PinCodeResponse[]&gt;($"pincode/{pin}", cts.Token);
+    return data?[0].PostOffice?.FirstOrDefault()?.District;
+}
+
+// Large file: don't buffer it in memory — stream it straight to disk
+static async Task DownloadFileAsync(HttpClient http, string url, string path, CancellationToken ct)
+{
+    using HttpResponseMessage response =
+        await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);   // returns once headers arrive
+    response.EnsureSuccessStatusCode();
+
+    await using Stream body = await response.Content.ReadAsStreamAsync(ct);
+    await using FileStream file = File.Create(path);
+    await body.CopyToAsync(file, ct);                       // copies in chunks: flat memory for a 2 GB file
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> With <code>ResponseHeadersRead</code>, <code>HttpClient.Timeout</code> only covers the time until headers arrive. Pass a token to <code>CopyToAsync</code> if the body download itself needs a limit.</div>
+
+<h3>4. IHttpClientFactory (preview)</h3>
+<p>In ASP.NET Core you'll rarely create HttpClient yourself. The factory hands out clients whose underlying handlers are pooled and rotated (every 2 minutes by default), which solves both socket exhaustion and stale DNS, and centralises configuration (base address, headers, and later Polly retry policies in Week 43). A taste in a console app:</p>
+<div class="code"><div class="fname">FactoryPreview.cs</div><pre><code class="language-csharp">// dotnet add package Microsoft.Extensions.Http
+// dotnet add package Microsoft.Extensions.DependencyInjection
+using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+services.AddHttpClient&lt;PinCodeClient&gt;(client =&gt;             // registers a TYPED client
+{
+    client.BaseAddress = new Uri("https://api.postalpincode.in/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+using ServiceProvider provider = services.BuildServiceProvider();
+var pins = provider.GetRequiredService&lt;PinCodeClient&gt;();
+Console.WriteLine(await pins.GetDistrictAsync("600001"));   // e.g. Chennai
+
+public class PinCodeClient(HttpClient http)                  // the factory injects a configured HttpClient
+{
+    public async Task&lt;string?&gt; GetDistrictAsync(string pin, CancellationToken ct = default)
+    {
+        var data = await http.GetFromJsonAsync&lt;PinCodeResponse[]&gt;($"pincode/{pin}", ct);
+        return data?[0].PostOffice?.FirstOrDefault()?.District;
+    }
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Approach</th><th>Socket exhaustion?</th><th>Sees DNS changes?</th><th>Where</th></tr><tr><td><code>new HttpClient()</code> per request</td><td>Yes ❌</td><td>Yes</td><td>Never</td></tr><tr><td>One static HttpClient</td><td>No</td><td>Only with PooledConnectionLifetime</td><td>Console apps, simple tools (Saturday's project)</td></tr><tr><td>IHttpClientFactory / typed clients</td><td>No</td><td>Yes (handler rotation)</td><td>ASP.NET Core and anything using DI</td></tr></table></div>
+
+<h3>5. IAsyncEnumerable&lt;T&gt; and await foreach</h3>
+<p>Last week's <code>yield return</code> produced items lazily, but each item had to be ready synchronously. An <b>async iterator</b> can await between items — perfect for paged APIs, database cursors and log tails. The consumer processes page 1 while page 2 hasn't even been requested.</p>
+<div class="code"><div class="fname">AsyncStreams.cs</div><pre><code class="language-csharp">using System.Runtime.CompilerServices;
+
+await foreach (Order order in GetAllOrdersAsync())
+{
+    Console.WriteLine($"Order #{order.Id} {order.Customer} ₹{order.Amount:N0}");
+    if (order.Amount &gt;= 5000) break;                       // breaking stops further pages being fetched
+}
+
+// async + IAsyncEnumerable&lt;T&gt; + yield return = async iterator
+static async IAsyncEnumerable&lt;Order&gt; GetAllOrdersAsync(
+    [EnumeratorCancellation] CancellationToken ct = default)
+{
+    for (int page = 1; ; page++)
+    {
+        Order[] batch = await FetchPageAsync(page, ct);    // one "API call" per page
+        if (batch.Length == 0) yield break;
+        foreach (Order order in batch)
+            yield return order;                            // hand over items while later pages aren't fetched yet
+    }
+}
+
+static async Task&lt;Order[]&gt; FetchPageAsync(int page, CancellationToken ct)
+{
+    await Task.Delay(300, ct);
+    Console.WriteLine($"  [fetched page {page}]");
+    if (page &gt; 3) return Array.Empty&lt;Order&gt;();
+    return Enumerable.Range((page - 1) * 2 + 1, 2)
+                     .Select(i =&gt; new Order(i, $"Customer {i}", 1000m * i))
+                     .ToArray();
+}
+
+record Order(int Id, string Customer, decimal Amount);
+
+//   [fetched page 1]
+// Order #1 Customer 1 ₹1,000
+// Order #2 Customer 2 ₹2,000
+//   [fetched page 2]
+// Order #3 Customer 3 ₹3,000
+// Order #4 Customer 4 ₹4,000
+//   [fetched page 3]
+// Order #5 Customer 5 ₹5,000</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">// Passing a token to an async stream you didn't create: WithCancellation
+using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+try
+{
+    await foreach (Order o in GetAllOrdersAsync().WithCancellation(cts.Token))   // flows into [EnumeratorCancellation]
+        Console.WriteLine(o.Id);
+}
+catch (OperationCanceledException) { Console.WriteLine("Stopped after 1 s"); }</code></pre></div>
+
+<h3>6. Where you'll meet async streams</h3>
+<div class="code"><div class="fname">AsyncStreamSources.cs</div><pre><code class="language-csharp">using System.Net.Http.Json;                       // GetFromJsonAsAsyncEnumerable
+
+// .NET 7+: read a big file line by line without blocking
+await foreach (string line in File.ReadLinesAsync("payments.csv"))
+    if (line.Contains("FAILED")) Console.WriteLine(line);
+
+// .NET 8+: stream a JSON array from an API, item by item, without loading it all
+await foreach (Payment? p in http.GetFromJsonAsAsyncEnumerable&lt;Payment&gt;("payments/today"))
+    Console.WriteLine($"{p?.Id}: ₹{p?.Amount:N2}");
+
+// .NET 6+: the same for any stream
+// await foreach (var p in JsonSerializer.DeserializeAsyncEnumerable&lt;Payment&gt;(stream)) { ... }
+
+// EF Core (Week 14+): await foreach (var c in db.Customers.AsAsyncEnumerable()) { ... }
+// ASP.NET Core: an endpoint can return IAsyncEnumerable&lt;T&gt; and the JSON is streamed as it's produced
+
+record Payment(string Id, decimal Amount);</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>Task&lt;List&lt;T&gt;&gt;</th><th>IAsyncEnumerable&lt;T&gt;</th></tr><tr><td>First item available</td><td>After everything is loaded</td><td>As soon as it's ready</td></tr><tr><td>Memory</td><td>All items at once</td><td>One item / page at a time</td></tr><tr><td>Can stop early and save work</td><td>No (already fetched)</td><td>Yes (break stops fetching)</td></tr><tr><td>Can count / index / reuse</td><td>Yes</td><td>No — enumerate again to re-run</td></tr><tr><td>Best for</td><td>Small results you need as a whole</td><td>Large, paged or unbounded data</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li><code>using var client = new HttpClient()</code> inside a method that's called per request.</li><li>Forgetting to dispose <code>HttpResponseMessage</code>, holding connections longer than needed.</li><li>Calling <code>.Content.ReadAsStringAsync()</code> on a 2 GB response instead of streaming it.</li><li>Retrying 4xx errors like 400 or 404, which will fail the same way every time.</li><li>Forgetting <code>[EnumeratorCancellation]</code>, so a token passed with WithCancellation never reaches the iterator.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a <code>PinCodeClient</code> with a shared HttpClient and <code>Task&lt;string?&gt; GetStateAsync(string pin, CancellationToken ct)</code>. Look up 5 PIN codes concurrently with WhenAll. (No internet? Point it at a fake <code>HttpMessageHandler</code> that returns canned JSON — great practice for Week 10's testing.)</li><li>Handle 404, 429, 500, timeouts and DNS failures with distinct messages. Test the timeout with a 1 ms per-request limit and the DNS failure with <code>https://no-such-host.invalid/</code>.</li><li>Write <code>async IAsyncEnumerable&lt;string&gt; TailAsync(string path, [EnumeratorCancellation] CancellationToken ct)</code> that yields new lines appended to a log file (poll every 500 ms). Consume it with await foreach and stop it after 10 s with WithCancellation.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why is a static HttpClient better than a new one per call, and what's its one weakness?</summary>It reuses pooled connections, avoiding socket exhaustion and connection setup cost. Its weakness is that it may keep using old connections after a DNS change; set PooledConnectionLifetime to fix that.</details><details><summary>What does EnsureSuccessStatusCode do?</summary>Throws HttpRequestException (with StatusCode set) if the response status isn't in the 2xx range; otherwise does nothing.</details><details><summary>What's the difference between IEnumerable&lt;T&gt; with yield and IAsyncEnumerable&lt;T&gt;?</summary>Both are lazy, but an async iterator can await between items (network, disk) without blocking a thread, and is consumed with await foreach.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why shouldn't you create a new HttpClient for every request?</summary><div>Each disposed client closes its connections, which remain in TIME_WAIT on the OS for a while. Under load you exhaust available sockets and requests start failing; you also pay TCP/TLS setup every time. Reuse a single client (or use IHttpClientFactory), which pools connections and is safe for concurrent requests.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does HttpClient do when a request returns 404?</summary><div>GetAsync/SendAsync return normally with StatusCode = NotFound; no exception. GetStringAsync and GetFromJsonAsync, or calling EnsureSuccessStatusCode, throw HttpRequestException with StatusCode 404. Network failures (DNS, refused connection) always throw HttpRequestException with a null StatusCode.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is IAsyncEnumerable&lt;T&gt; and when would you use it?</summary><div>An asynchronous sequence consumed with await foreach, where getting each item may involve awaiting. Use it for paged APIs, streaming database results, reading large files or real-time feeds, so consumers can process items as they arrive with low memory instead of waiting for a whole list.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What problems does IHttpClientFactory solve?</summary><div>It pools HttpMessageHandlers and rotates them periodically, avoiding both socket exhaustion (from creating many clients) and stale DNS (from one client living forever). It also centralises configuration as named or typed clients and integrates with DI, logging and resilience handlers like Polly.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you implement per-request timeouts with HttpClient and tell them apart from cancellation?</summary><div>Create a CTS linked to the caller's token, call CancelAfter(timeout), and pass its token to the request. If OperationCanceledException is thrown and the caller's token is not cancelled, it was the timeout. For HttpClient.Timeout itself, .NET 5+ throws TaskCanceledException with an inner TimeoutException.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you pass a CancellationToken into an async iterator?</summary><div>Add a CancellationToken parameter marked [EnumeratorCancellation]. Callers can pass it directly as an argument, or use source.WithCancellation(token) in await foreach; the attribute makes the compiler combine that token with the parameter. Pass the token to every await inside the iterator.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Thread safety, concurrent collections and Parallel</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>See a race condition happen, fix it with lock, Interlocked or a concurrent collection, throttle async work with SemaphoreSlim, use Parallel.For/ForEach/ForEachAsync for the right kind of work, and recognise and prevent deadlocks.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Shared state</dt><dd>Data that more than one thread can read and write at the same time, e.g. a field, a static, or a captured local.</dd></div><div class="def"><dt>Race condition</dt><dd>A bug where the result depends on the unpredictable timing of threads, e.g. two increments overlapping so one is lost.</dd></div><div class="def"><dt>Atomic operation</dt><dd>An operation that happens completely or not at all, with no other thread able to see it half-done.</dd></div><div class="def"><dt>Critical section</dt><dd>A block of code that only one thread may execute at a time.</dd></div><div class="def"><dt>lock / Monitor</dt><dd>C#'s lock statement: Monitor.Enter/Exit in a try/finally on a private object. Mutual exclusion for synchronous code.</dd></div><div class="def"><dt>System.Threading.Lock</dt><dd>.NET 9 + C# 13: a dedicated lock type. lock(_lock) on it uses Lock.EnterScope(), which is faster and clearer than locking an object.</dd></div><div class="def"><dt>Interlocked</dt><dd>Static methods (Increment, Add, Exchange, CompareExchange) that perform single updates atomically using CPU instructions, without a lock.</dd></div><div class="def"><dt>ConcurrentDictionary&lt;K,V&gt;</dt><dd>A thread-safe dictionary with atomic helpers like GetOrAdd, AddOrUpdate, TryRemove.</dd></div><div class="def"><dt>ConcurrentQueue&lt;T&gt;</dt><dd>A thread-safe FIFO queue (Enqueue, TryDequeue) — lock-free for producers and consumers.</dd></div><div class="def"><dt>SemaphoreSlim</dt><dd>Allows up to N callers into a section at once. WaitAsync makes it the standard tool for async throttling and async locks.</dd></div><div class="def"><dt>Parallel.For / ForEach</dt><dd>Run a loop body on multiple threads for CPU-bound work, blocking until all iterations finish.</dd></div><div class="def"><dt>Parallel.ForEachAsync</dt><dd>.NET 6: run an async body for each item with a cap on how many run at once (MaxDegreeOfParallelism).</dd></div><div class="def"><dt>Deadlock</dt><dd>Two or more threads each waiting for something another holds, so none can ever proceed.</dd></div><div class="def"><dt>Thread-safe</dt><dd>Behaves correctly when called from multiple threads at once, without extra synchronisation by the caller.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li><code>count++</code> is three steps (read, add, write). Two threads can interleave them and lose updates.</li><li>The best shared state is no shared state: give each task its own data, then combine results at the end.</li><li>lock on a <b>private readonly</b> object (or a .NET 9 <code>Lock</code>), never on <code>this</code>, a type, or a string.</li><li>You can't <code>await</code> inside a lock. Use <code>SemaphoreSlim(1, 1)</code> with WaitAsync for async code.</li><li>Concurrent collections make <i>each call</i> atomic, not a sequence of calls. Use their combined methods (GetOrAdd, AddOrUpdate).</li><li><code>Parallel.ForEach</code> with an async lambda is async void. Use <code>Parallel.ForEachAsync</code>.</li></ul></div>
+
+<h3>1. A race condition, live — and lock</h3>
+<div class="code"><div class="fname">RaceDemo.cs</div><pre><code class="language-csharp">int counter = 0;
+Parallel.For(0, 1_000_000, _ =&gt; counter++);    // many threads doing read → add → write
+Console.WriteLine(counter);                    // e.g. 431,207 — different every run, rarely 1,000,000</code></pre></div>
+<div class="tbl"><table><tr><th>Time</th><th>Thread A</th><th>Thread B</th><th>counter in memory</th></tr><tr><td>1</td><td>reads 41</td><td></td><td>41</td></tr><tr><td>2</td><td></td><td>reads 41</td><td>41</td></tr><tr><td>3</td><td>writes 42</td><td></td><td>42</td></tr><tr><td>4</td><td></td><td>writes 42</td><td>42 ← one increment lost</td></tr></table></div>
+<p>The classic real-world version is <b>check-then-act</b>: two threads both see enough balance, and both withdraw. A <code>lock</code> makes the check and the update one indivisible step:</p>
+<div class="code"><div class="fname">Wallet.cs</div><pre><code class="language-csharp">var wallet = new Wallet(openingBalance: 1_000m);
+int paid = 0;
+
+Parallel.For(0, 100, _ =&gt;                      // 100 simultaneous ₹50 UPI payments
+{
+    if (wallet.TryPay(50m)) Interlocked.Increment(ref paid);
+});
+Console.WriteLine($"{paid} payments, balance ₹{wallet.Balance}");   // 20 payments, balance ₹0 — every time
+
+public class Wallet(decimal openingBalance)
+{
+    private readonly object _sync = new();     // private: no outside code can lock on it
+    private decimal _balance = openingBalance;
+
+    public decimal Balance { get { lock (_sync) return _balance; } }
+
+    public bool TryPay(decimal amount)
+    {
+        lock (_sync)                           // one thread at a time in here
+        {
+            if (_balance &lt; amount) return false;   // check...
+            _balance -= amount;                    // ...and act, as one atomic unit
+            return true;
+        }
+    }
+}</code></pre></div>
+<p><b>.NET 9</b> (with C# 13) adds a purpose-built lock type. The syntax stays the same; the compiler sees the type and generates faster code:</p>
+<div class="code"><div class="fname">WalletNet9.cs</div><pre><code class="language-csharp">public class WalletNet9(decimal openingBalance)
+{
+    private readonly Lock _sync = new();       // System.Threading.Lock (.NET 9+)
+    private decimal _balance = openingBalance;
+
+    public bool TryPay(decimal amount)
+    {
+        lock (_sync)                           // compiles to: using (_sync.EnterScope()) { ... }
+        {
+            if (_balance &lt; amount) return false;
+            _balance -= amount;
+            return true;
+        }
+    }
+}</code></pre></div>
+<div class="note warn"><b>Rule.</b> <code>await</code> inside a <code>lock</code> is a compile error (CS1996): a lock is owned by a thread, and after an await you may be on a different thread. Use SemaphoreSlim (section 4) for async critical sections.</div>
+
+<h3>2. Interlocked: lock-free single updates</h3>
+<div class="code"><div class="fname">InterlockedDemo.cs</div><pre><code class="language-csharp">decimal[] payments = [1180m, 499.50m, 2360m, 99m, 15_000m];
+
+int processed = 0;
+long totalPaise = 0;                              // Interlocked has no decimal overloads → count in paise
+
+Parallel.ForEach(payments, amount =&gt;
+{
+    Interlocked.Increment(ref processed);
+    Interlocked.Add(ref totalPaise, (long)(amount * 100));
+});
+Console.WriteLine($"{processed} payments, ₹{totalPaise / 100m:N2}");   // 5 payments, ₹19,138.50
+
+// Exchange: swap in a new value and get the old one back atomically
+int batchNumber = 7;
+int previous = Interlocked.Exchange(ref batchNumber, 8);              // previous = 7
+
+// CompareExchange: "set it only if it's still what I expect" — first writer wins
+int winnerId = 0;
+Parallel.For(1, 9, workerId =&gt; Interlocked.CompareExchange(ref winnerId, workerId, 0));
+Console.WriteLine($"Winner: worker {winnerId}");    // exactly one worker id, never overwritten</code></pre></div>
+<div class="tbl"><table><tr><th>Need</th><th>Use</th></tr><tr><td>Increment/decrement/add to one int or long</td><td><code>Interlocked</code></td></tr><tr><td>Several fields that must change together, or check-then-act</td><td><code>lock</code> (or .NET 9 <code>Lock</code>)</td></tr><tr><td>A critical section containing <code>await</code></td><td><code>SemaphoreSlim(1, 1)</code></td></tr><tr><td>A shared dictionary / queue</td><td><code>ConcurrentDictionary</code> / <code>ConcurrentQueue</code></td></tr><tr><td>Data that never changes after creation</td><td>Nothing! Immutable and frozen collections (Week 4) are safe to read from any thread</td></tr></table></div>
+
+<h3>3. Concurrent collections</h3>
+<div class="code"><div class="fname">ConcurrentCollections.cs</div><pre><code class="language-csharp">using System.Collections.Concurrent;
+
+string[] orderCities = ["Pune", "Delhi", "pune", "Chennai", "Delhi", "Pune", "Kochi"];
+
+// ❌ Dictionary&lt;string,int&gt; here would corrupt itself or throw under concurrent writes
+var ordersByCity = new ConcurrentDictionary&lt;string, int&gt;(StringComparer.OrdinalIgnoreCase);
+
+Parallel.ForEach(orderCities, city =&gt;
+    ordersByCity.AddOrUpdate(city, addValue: 1, updateValueFactory: (_, current) =&gt; current + 1));
+
+foreach (var (city, count) in ordersByCity.OrderByDescending(kv =&gt; kv.Value))
+    Console.WriteLine($"{city}: {count}");
+// Pune: 3   (key spelling is whichever thread added it first)
+// Delhi: 2
+// Chennai: 1
+// Kochi: 1
+
+// GetOrAdd: atomic "find or create". Under contention the factory MAY run more than once
+// (only one result is kept), so the factory must be cheap and side-effect free…
+var gstRates = new ConcurrentDictionary&lt;string, decimal&gt;();
+decimal rate = gstRates.GetOrAdd("8471", hsn =&gt; hsn.StartsWith("84") ? 0.18m : 0.12m);
+
+// …or wrap expensive work in Lazy&lt;T&gt; so it's created only once
+var reports = new ConcurrentDictionary&lt;int, Lazy&lt;string&gt;&gt;();
+string report = reports.GetOrAdd(2026, year =&gt; new Lazy&lt;string&gt;(() =&gt; $"Annual report {year}")).Value;
+
+// ConcurrentQueue: many producers, many consumers, no locks
+var printQueue = new ConcurrentQueue&lt;string&gt;();
+Parallel.For(1, 6, i =&gt; printQueue.Enqueue($"INV-{i:000}"));
+while (printQueue.TryDequeue(out string? invoice))
+    Console.WriteLine($"Printing {invoice}");          // order depends on which thread enqueued first</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Each method is atomic, but two calls in a row are not: <code>if (!dict.ContainsKey(k)) dict[k] = v;</code> is still a race. Use <code>TryAdd</code>, <code>GetOrAdd</code> or <code>AddOrUpdate</code>, which do it in one step.</div>
+<p>Others worth knowing: <code>ConcurrentBag&lt;T&gt;</code> (unordered), <code>BlockingCollection&lt;T&gt;</code> (bounded producer/consumer with blocking), and <code>System.Threading.Channels</code> — the modern async producer/consumer queue you'll use with background services later.</p>
+
+<h3>4. SemaphoreSlim: async throttling and async locks</h3>
+<p>Starting 500 HTTP calls at once with WhenAll may get you rate-limited (429) or overload a partner API. A semaphore with N slots lets at most N callers in at a time; the rest <i>asynchronously</i> wait their turn.</p>
+<div class="code"><div class="fname">Throttling.cs</div><pre><code class="language-csharp">var gate = new SemaphoreSlim(initialCount: 3, maxCount: 3);   // the e-invoice portal allows 3 parallel calls
+int inFlight = 0;
+
+await Task.WhenAll(Enumerable.Range(1, 10).Select(SubmitInvoiceAsync));
+Console.WriteLine("All submitted");
+
+async Task SubmitInvoiceAsync(int invoiceNo)
+{
+    await gate.WaitAsync();                  // take a slot, or wait (no thread blocked) until one frees up
+    try
+    {
+        int now = Interlocked.Increment(ref inFlight);
+        Console.WriteLine($"Submitting INV-{invoiceNo:000} (in flight: {now})");
+        await Task.Delay(500);               // pretend: HTTP POST to the portal
+    }
+    finally
+    {
+        Interlocked.Decrement(ref inFlight);
+        gate.Release();                      // ALWAYS in finally, or a failure leaks a slot forever
+    }
+}
+
+// "in flight" never exceeds 3; 10 invoices take ~2 s (4 waves × 500 ms) instead of 0.5 s unthrottled
+// or 5 s sequential</code></pre></div>
+<div class="code"><div class="fname">TokenCache.cs</div><pre><code class="language-csharp">// SemaphoreSlim(1, 1) = an async-compatible lock
+public class TokenCache(HttpClient http)
+{
+    private readonly SemaphoreSlim _mutex = new(1, 1);
+    private string? _token;
+    private DateTime _expiresUtc;
+
+    public async Task&lt;string&gt; GetTokenAsync(CancellationToken ct = default)
+    {
+        await _mutex.WaitAsync(ct);          // only one caller refreshes the token at a time
+        try
+        {
+            if (_token is null || DateTime.UtcNow &gt;= _expiresUtc)
+            {
+                _token = await http.GetStringAsync("auth/token", ct);   // ✓ await inside is fine
+                _expiresUtc = DateTime.UtcNow.AddMinutes(55);
+            }
+            return _token;
+        }
+        finally { _mutex.Release(); }
+    }
+}</code></pre></div>
+
+<h3>5. Parallel.For, Parallel.ForEach and Parallel.ForEachAsync</h3>
+<div class="code"><div class="fname">ParallelDemo.cs</div><pre><code class="language-csharp">// CPU-bound: compute GST on 1 million invoice lines using all cores
+decimal[] amounts = Enumerable.Range(1, 1_000_000).Select(i =&gt; (decimal)(i % 9000 + 100)).ToArray();
+decimal[] gst = new decimal[amounts.Length];
+
+Parallel.For(0, amounts.Length, i =&gt;
+{
+    gst[i] = Math.Round(amounts[i] * 0.18m, 2);    // each index written by exactly one thread → no lock
+});
+
+// Limit how many cores it may use and allow cancellation
+using var cts = new CancellationTokenSource();
+var options = new ParallelOptions
+{
+    MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
+    CancellationToken = cts.Token
+};
+Parallel.ForEach(Directory.EnumerateFiles(".", "*.csv"), options, file =&gt;
+{
+    int lines = File.ReadLines(file).Count();      // fine for a demo; heavy parsing would go here
+    Console.WriteLine($"{Path.GetFileName(file)}: {lines} lines");
+});
+
+// I/O-bound with a concurrency cap (.NET 6+): the async-aware version
+string[] gstins = ["27AAPFU0939F1ZV", "29AAGCB7383J1Z4", "07AAACI1195H1ZK", "33AABCT1332L1ZZ"];
+var ioOptions = new ParallelOptions { MaxDegreeOfParallelism = 2, CancellationToken = cts.Token };
+
+await Parallel.ForEachAsync(gstins, ioOptions, async (gstin, ct) =&gt;
+{
+    await Task.Delay(400, ct);                     // pretend: verify GSTIN with the portal
+    Console.WriteLine($"{gstin}: Active");
+});</code></pre></div>
+<div class="note warn"><b>Trap.</b> <code>Parallel.ForEach(items, async item =&gt; await SaveAsync(item))</code> compiles, but the lambda becomes <code>async void</code>: ForEach returns as soon as each body hits its first await, nothing waits for the saves, and exceptions crash the process. Use <code>Parallel.ForEachAsync</code> or SemaphoreSlim + WhenAll.</div>
+<div class="tbl"><table><tr><th></th><th>Parallel.For / ForEach</th><th>Parallel.ForEachAsync (.NET 6)</th><th>SemaphoreSlim + Task.WhenAll</th></tr><tr><td>Work type</td><td>CPU-bound</td><td>I/O-bound (async body)</td><td>I/O-bound (async body)</td></tr><tr><td>Blocks the caller?</td><td>Yes, until all iterations finish</td><td>No, returns a Task</td><td>No, returns a Task</td></tr><tr><td>Concurrency limit</td><td>MaxDegreeOfParallelism (default: no fixed limit)</td><td>MaxDegreeOfParallelism (default: processor count)</td><td>Semaphore count</td></tr><tr><td>Results</td><td>Write to an array by index or use thread-safe collections</td><td>Same</td><td>WhenAll gives a T[] in order</td></tr><tr><td>On first exception</td><td>Stops starting new iterations, throws AggregateException</td><td>Stops starting new items, throws the exception</td><td>Others keep running; await throws one of the exceptions</td></tr></table></div>
+
+<h3>6. Deadlocks</h3>
+<p>A deadlock needs threads holding one resource while waiting for another, in a cycle. Bank transfers locking two accounts are the textbook case:</p>
+<div class="code"><div class="fname">Deadlock.cs</div><pre><code class="language-csharp">var sb1001 = new Account("SB1001", 5_000m);
+var sb1002 = new Account("SB1002", 5_000m);
+
+// ❌ Locks taken in "from, to" order: two opposite transfers can deadlock
+static void Transfer(Account from, Account to, decimal amount)
+{
+    lock (from.Sync)
+    {
+        Thread.Sleep(10);                  // widen the window so it happens reliably in the demo
+        lock (to.Sync)
+        {
+            from.Balance -= amount;
+            to.Balance += amount;
+        }
+    }
+}
+// Task t1 = Task.Run(() =&gt; Transfer(sb1001, sb1002, 100));   // holds SB1001, waits for SB1002
+// Task t2 = Task.Run(() =&gt; Transfer(sb1002, sb1001, 200));   // holds SB1002, waits for SB1001
+// await Task.WhenAll(t1, t2);                                  // never completes
+
+// ✓ Always lock in a global order (here: by account number), whatever the direction
+static void SafeTransfer(Account from, Account to, decimal amount)
+{
+    var (first, second) = string.CompareOrdinal(from.Number, to.Number) &lt; 0 ? (from, to) : (to, from);
+    lock (first.Sync)
+    lock (second.Sync)
+    {
+        from.Balance -= amount;
+        to.Balance += amount;
+    }
+}
+
+await Task.WhenAll(
+    Task.Run(() =&gt; SafeTransfer(sb1001, sb1002, 100)),
+    Task.Run(() =&gt; SafeTransfer(sb1002, sb1001, 200)));
+Console.WriteLine($"{sb1001.Balance} {sb1002.Balance}");   // 5100 4900
+
+public class Account(string number, decimal balance)
+{
+    public string Number { get; } = number;
+    public decimal Balance { get; set; } = balance;
+    public object Sync { get; } = new();
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Prevention</th><th>How</th></tr><tr><td>Lock ordering</td><td>Always acquire multiple locks in the same global order</td></tr><tr><td>Hold locks briefly</td><td>No I/O, no calls into unknown code (events, callbacks) while holding a lock</td></tr><tr><td>Timeouts</td><td><code>Monitor.TryEnter(obj, timeout)</code> or <code>await semaphore.WaitAsync(timeout)</code>, then back off</td></tr><tr><td>Fewer locks</td><td>One coarse lock, or no shared state at all (immutable data, message passing with Channels)</td></tr><tr><td>No sync-over-async</td><td>Tuesday's .Result deadlock is the async flavour of the same problem</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Locking on <code>this</code>, <code>typeof(X)</code> or a string literal, which outside code can also lock.</li><li>Protecting writes with a lock but reading the same fields without it.</li><li>Using a check-then-act sequence on a ConcurrentDictionary instead of GetOrAdd/AddOrUpdate.</li><li>Forgetting <code>Release()</code> in a <code>finally</code>, slowly leaking semaphore slots until everything hangs.</li><li>Passing an async lambda to <code>Parallel.ForEach</code> or using Parallel.For for I/O-bound work.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Reproduce the lost-update race with a <code>Dictionary&lt;string,int&gt;</code> word count over 10 text files read in parallel. Fix it three ways: lock, ConcurrentDictionary.AddOrUpdate, and per-file dictionaries merged at the end. Time each.</li><li>Make the Week 3 bank account thread-safe: 50 tasks deposit ₹100 and 50 withdraw ₹100 at once; the final balance must equal the opening balance every run.</li><li>Call a fake <code>CheckStockAsync(sku)</code> (random 200–600 ms) for 30 SKUs with at most 5 in flight, first with SemaphoreSlim + WhenAll, then with Parallel.ForEachAsync. Print the max in-flight count you observed.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why can't you await inside a lock statement?</summary>A Monitor lock is owned by a thread and must be released by that thread; after an await the method may resume on a different thread. The compiler forbids it (CS1996). Use SemaphoreSlim.WaitAsync instead.</details><details><summary>Is ConcurrentDictionary.GetOrAdd's factory guaranteed to run once?</summary>No. Under contention several threads may run it; only one value is stored and returned to everyone. Use Lazy&lt;T&gt; values if the factory must run once.</details><details><summary>Which Parallel API for 200 HTTP calls with at most 8 at once?</summary>Parallel.ForEachAsync with MaxDegreeOfParallelism = 8, or SemaphoreSlim(8) + Task.WhenAll. Not Parallel.ForEach.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a race condition? Give an example.</summary><div>A bug where correctness depends on thread timing. Example: two threads run balance -= amount after both checked the balance was sufficient; or two threads run counter++ and one increment is lost because read-modify-write steps interleave. Fix by making the operation atomic (lock, Interlocked) or by not sharing the state.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between lock and Interlocked?</summary><div>lock gives mutual exclusion over any block of code, so it can protect several fields and check-then-act logic, at the cost of possible contention. Interlocked performs a single operation (increment, add, exchange, compare-exchange) atomically on one variable using CPU instructions, without blocking; it can't protect multi-step logic.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you limit the number of concurrent async operations?</summary><div>Use SemaphoreSlim(n): await WaitAsync() before each operation and Release() in a finally, combined with Task.WhenAll. Or use Parallel.ForEachAsync with ParallelOptions.MaxDegreeOfParallelism = n (.NET 6+).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does the System.Threading.Lock type in .NET 9 change?</summary><div>It's a dedicated lock object. When a lock statement targets a Lock (with C# 13), the compiler calls Lock.EnterScope() and disposes the scope instead of using Monitor on an arbitrary object, which is faster and makes intent explicit. The same rules apply: keep sections short and never await inside.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Compare Parallel.ForEach, Parallel.ForEachAsync and Task.WhenAll.</summary><div>Parallel.ForEach is for CPU-bound synchronous bodies and blocks the caller until done. Parallel.ForEachAsync runs async bodies with a degree-of-parallelism cap and returns a Task, ideal for throttled I/O. Task.WhenAll awaits tasks you've already started; it has no built-in limit, so pair it with SemaphoreSlim for large batches.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a deadlock and how do you prevent it?</summary><div>Two or more threads each hold a resource and wait for one held by another, forming a cycle, so none can continue. Prevent it with a global lock order, holding locks briefly without calling external code, using timeouts (Monitor.TryEnter, WaitAsync(timeout)), reducing shared state, and avoiding sync-over-async blocking such as .Result on a context-bound task.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Micro-project 6: Async web-page downloader</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a console tool that reads URLs from a file, downloads them concurrently with a configurable limit (SemaphoreSlim and Parallel.ForEachAsync), saves each page to disk, and reports time, bytes, successes and failures — then compare it with a plain sequential loop. Budget: about 4 hours.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Throughput</dt><dd>How much work finishes per unit of time, e.g. pages per second.</dd></div><div class="def"><dt>Latency</dt><dd>How long one operation takes from start to finish, e.g. 800 ms for one page.</dd></div><div class="def"><dt>Max concurrency</dt><dd>The most operations allowed in flight at once; protects both your machine and the servers you call.</dd></div><div class="def"><dt>Speed-up</dt><dd>Sequential time ÷ concurrent time. For I/O-bound work it's limited by the slowest item and the concurrency cap, not by CPU cores.</dd></div><div class="def"><dt>Test double</dt><dd>A stand-in implementation (here, <code>FakePageSource</code>) that behaves like the real dependency without needing the network.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Downloads are I/O-bound: concurrency helps hugely even on one core.</li><li>All network access goes through an <code>IPageSource</code> interface, so an offline fake can replace HTTP (useful when the sandbox or your office Wi-Fi blocks sites).</li><li>Each download returns a <code>DownloadResult</code> instead of throwing, so one bad URL never stops the batch.</li><li>Two concurrent strategies side by side: SemaphoreSlim + Task.WhenAll, and Parallel.ForEachAsync.</li><li>Tomorrow adds Ctrl+C cancellation, per-request timeouts, retries with backoff and live progress.</li></ul></div>
+
+<h3>Requirements</h3>
+<ul>
+<li>Read URLs from a text file (default <code>urls.txt</code>): one per line, ignore blank lines and <code>#</code> comments, reject anything that isn't an absolute http/https URL, and skip duplicates — reporting each rejected line.</li>
+<li>Download every URL and save the body to <code>downloads/&lt;mode&gt;/&lt;safe-file-name&gt;.html</code>.</li>
+<li>Run three ways and time each: <b>sequential</b>, <b>SemaphoreSlim + Task.WhenAll</b>, and <b>Parallel.ForEachAsync</b>, both concurrent modes capped at <code>--max N</code> (default 4).</li>
+<li>For every URL report OK/FAIL, elapsed ms, bytes or the error (HTTP status, DNS failure…). Print totals and the speed-up.</li>
+<li>Non-2xx responses and network errors are failures, not crashes.</li>
+<li><code>--offline</code> uses a fake page source with random latency, so everything works without internet.</li>
+<li>One shared, correctly configured <code>HttpClient</code> (Thursday).</li>
+</ul>
+
+<h3>Scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash">mkdir Downloader &amp;&amp; cd Downloader
+dotnet new sln -n Downloader
+dotnet new classlib -n Downloader.Core
+dotnet new console  -n Downloader.App
+dotnet sln add Downloader.Core Downloader.App
+dotnet add Downloader.App reference Downloader.Core
+rm Downloader.Core/Class1.cs</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">Downloader/
+├─ Downloader.sln
+├─ Downloader.Core/
+│  ├─ DownloadResult.cs      (DownloadStatus, DownloadResult, DownloadSummary)
+│  ├─ DownloadOptions.cs
+│  ├─ IPageSource.cs         (IPageSource, PageContent)
+│  ├─ HttpPageSource.cs
+│  ├─ FakePageSource.cs
+│  ├─ FileNames.cs
+│  ├─ UrlList.cs
+│  └─ PageDownloader.cs
+└─ Downloader.App/
+   ├─ Program.cs
+   └─ urls.txt               (copied to the output folder)</code></pre></div>
+
+<h3>Step 1 — Results and options</h3>
+<div class="code"><div class="fname">Downloader.Core/DownloadResult.cs</div><pre><code class="language-csharp">namespace Downloader.Core;
+
+public enum DownloadStatus { Succeeded, Failed, Cancelled }
+
+public sealed record DownloadResult(
+    Uri Url,
+    DownloadStatus Status,
+    TimeSpan Elapsed,
+    int? StatusCode = null,
+    long Bytes = 0,
+    string? FilePath = null,
+    string? Error = null,
+    int Attempts = 1)
+{
+    public bool Success =&gt; Status == DownloadStatus.Succeeded;
+
+    public static DownloadResult Cancelled(Uri url, TimeSpan elapsed = default, int attempts = 0) =&gt;
+        new(url, DownloadStatus.Cancelled, elapsed, Error: "cancelled", Attempts: attempts);
+}
+
+public sealed record DownloadSummary(IReadOnlyList&lt;DownloadResult&gt; Results, TimeSpan Total)
+{
+    public int Succeeded =&gt; Results.Count(r =&gt; r.Status == DownloadStatus.Succeeded);
+    public int Failed    =&gt; Results.Count(r =&gt; r.Status == DownloadStatus.Failed);
+    public int Cancelled =&gt; Results.Count(r =&gt; r.Status == DownloadStatus.Cancelled);
+    public long TotalBytes =&gt; Results.Sum(r =&gt; r.Bytes);
+}</code></pre></div>
+<div class="code"><div class="fname">Downloader.Core/DownloadOptions.cs</div><pre><code class="language-csharp">namespace Downloader.Core;
+
+public sealed record DownloadOptions
+{
+    public int MaxConcurrency { get; init; } = 4;
+    public string OutputDirectory { get; init; } = "downloads";
+}</code></pre></div>
+
+<h3>Step 2 — The page source abstraction</h3>
+<p>The downloader only needs "give me the status code and bytes for this URL". Hiding HTTP behind an interface lets us swap in a fake for offline runs today and for unit tests in Week 10.</p>
+<div class="code"><div class="fname">Downloader.Core/IPageSource.cs</div><pre><code class="language-csharp">namespace Downloader.Core;
+
+public sealed record PageContent(int StatusCode, byte[] Body);
+
+public interface IPageSource
+{
+    /// &lt;summary&gt;Fetches a page. Returns non-2xx statuses normally; throws for network failures.&lt;/summary&gt;
+    Task&lt;PageContent&gt; GetAsync(Uri url, CancellationToken ct);
+}</code></pre></div>
+<div class="code"><div class="fname">Downloader.Core/HttpPageSource.cs</div><pre><code class="language-csharp">namespace Downloader.Core;
+
+public sealed class HttpPageSource(HttpClient http) : IPageSource
+{
+    public async Task&lt;PageContent&gt; GetAsync(Uri url, CancellationToken ct)
+    {
+        using HttpResponseMessage response = await http.GetAsync(url, ct);
+        byte[] body = await response.Content.ReadAsByteArrayAsync(ct);   // web pages are small: buffering is fine
+        return new PageContent((int)response.StatusCode, body);
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Downloader.Core/FakePageSource.cs</div><pre><code class="language-csharp">using System.Text;
+
+namespace Downloader.Core;
+
+/// &lt;summary&gt;
+/// Simulates a web server so the project runs without internet.
+/// Hosts ending in .invalid fail like a DNS error; /status/NNN returns that status;
+/// /delay/N waits N extra seconds (same conventions as httpbin.org).
+/// &lt;/summary&gt;
+public sealed class FakePageSource(int minDelayMs = 200, int maxDelayMs = 1200, double transientFailureRate = 0)
+    : IPageSource
+{
+    public async Task&lt;PageContent&gt; GetAsync(Uri url, CancellationToken ct)
+    {
+        int delay = Random.Shared.Next(minDelayMs, maxDelayMs + 1);
+        await Task.Delay(delay, ct);                                   // "network latency"; honours cancellation
+
+        if (url.Host.EndsWith(".invalid", StringComparison.OrdinalIgnoreCase))
+            throw new HttpRequestException($"Name or service not known ({url.Host}:{url.Port})");
+
+        string path = url.AbsolutePath;
+        if (path.StartsWith("/status/") &amp;&amp; int.TryParse(path["/status/".Length..], out int code))
+            return new PageContent(code, []);
+        if (path.StartsWith("/delay/") &amp;&amp; int.TryParse(path["/delay/".Length..], out int seconds))
+            await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
+
+        if (Random.Shared.NextDouble() &lt; transientFailureRate)
+            return new PageContent(503, []);                           // Service Unavailable: worth retrying (Sunday)
+
+        string html = $"&lt;!doctype html&gt;&lt;title&gt;{url.Host}&lt;/title&gt;&lt;h1&gt;{url}&lt;/h1&gt;" +
+                      $"&lt;p&gt;Fake page served in {delay} ms.&lt;/p&gt;" + new string(' ', delay * 10);
+        return new PageContent(200, Encoding.UTF8.GetBytes(html));
+    }
+}</code></pre></div>
+
+<h3>Step 3 — Safe file names and the URL file</h3>
+<div class="code"><div class="fname">Downloader.Core/FileNames.cs</div><pre><code class="language-csharp">using System.Security.Cryptography;
+using System.Text;
+
+namespace Downloader.Core;
+
+public static class FileNames
+{
+    private static readonly char[] Invalid = Path.GetInvalidFileNameChars();
+
+    // https://learn.microsoft.com/en-us/dotnet/  →  learn.microsoft.com_en-us_dotnet.html
+    public static string FromUrl(Uri url)
+    {
+        string path = url.AbsolutePath.Trim('/');
+        string raw = path.Length == 0 ? url.Host : $"{url.Host}_{path}";
+
+        var sb = new StringBuilder(raw.Length);
+        foreach (char c in raw)
+            sb.Append(c is '/' or '\\' or ':' || Array.IndexOf(Invalid, c) &gt;= 0 ? '_' : c);
+        string name = sb.Length &gt; 80 ? sb.ToString(0, 80) : sb.ToString();
+
+        if (url.Query.Length &gt; 1)   // ?page=2 and ?page=3 must not overwrite each other
+        {
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(url.Query));
+            name += "_" + Convert.ToHexString(hash)[..8].ToLowerInvariant();
+        }
+
+        return name.EndsWith(".html", StringComparison.OrdinalIgnoreCase) ? name : name + ".html";
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Downloader.Core/UrlList.cs</div><pre><code class="language-csharp">namespace Downloader.Core;
+
+public sealed record UrlListResult(IReadOnlyList&lt;Uri&gt; Urls, IReadOnlyList&lt;string&gt; Rejected);
+
+public static class UrlList
+{
+    public static async Task&lt;UrlListResult&gt; LoadAsync(string path, CancellationToken ct = default)
+    {
+        var urls = new List&lt;Uri&gt;();
+        var rejected = new List&lt;string&gt;();
+        var seen = new HashSet&lt;string&gt;(StringComparer.Ordinal);
+        int lineNo = 0;
+
+        await foreach (string raw in File.ReadLinesAsync(path, ct))       // .NET 7+: an async stream of lines
+        {
+            lineNo++;
+            string line = raw.Trim();
+            if (line.Length == 0 || line.StartsWith('#')) continue;        // blank lines and comments
+
+            if (!Uri.TryCreate(line, UriKind.Absolute, out Uri? uri) || uri.Scheme is not ("http" or "https"))
+                rejected.Add($"line {lineNo}: not an http(s) URL → {line}");
+            else if (!seen.Add(uri.AbsoluteUri))
+                rejected.Add($"line {lineNo}: duplicate → {line}");
+            else
+                urls.Add(uri);
+        }
+        return new UrlListResult(urls, rejected);
+    }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> The scheme check matters: on Linux and macOS, <code>Uri.TryCreate("/etc/passwd", UriKind.Absolute, ...)</code> succeeds and produces a <code>file://</code> URI. Never let a URL list read local files.</div>
+
+<h3>Step 4 — PageDownloader: sequential, SemaphoreSlim and Parallel.ForEachAsync</h3>
+<div class="code"><div class="fname">Downloader.Core/PageDownloader.cs</div><pre><code class="language-csharp">using System.Diagnostics;
+
+namespace Downloader.Core;
+
+public sealed class PageDownloader(IPageSource source, DownloadOptions options)
+{
+    // Baseline: one at a time
+    public async Task&lt;DownloadSummary&gt; DownloadSequentialAsync(IReadOnlyList&lt;Uri&gt; urls, CancellationToken ct = default)
+    {
+        Directory.CreateDirectory(options.OutputDirectory);
+        var sw = Stopwatch.StartNew();
+        var results = new List&lt;DownloadResult&gt;(urls.Count);
+        foreach (Uri url in urls)
+            results.Add(await DownloadOneAsync(url, ct));
+        return new DownloadSummary(results, sw.Elapsed);
+    }
+
+    // Strategy 1: start a task per URL, but let only MaxConcurrency past the gate at once
+    public async Task&lt;DownloadSummary&gt; DownloadWithSemaphoreAsync(IReadOnlyList&lt;Uri&gt; urls, CancellationToken ct = default)
+    {
+        Directory.CreateDirectory(options.OutputDirectory);
+        var sw = Stopwatch.StartNew();
+        using var gate = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
+
+        async Task&lt;DownloadResult&gt; ThrottledAsync(Uri url)
+        {
+            await gate.WaitAsync(ct);
+            try { return await DownloadOneAsync(url, ct); }
+            finally { gate.Release(); }
+        }
+
+        DownloadResult[] results = await Task.WhenAll(urls.Select(ThrottledAsync));   // results in input order
+        return new DownloadSummary(results, sw.Elapsed);
+    }
+
+    // Strategy 2: let Parallel.ForEachAsync (.NET 6+) manage the workers
+    public async Task&lt;DownloadSummary&gt; DownloadWithParallelAsync(IReadOnlyList&lt;Uri&gt; urls, CancellationToken ct = default)
+    {
+        Directory.CreateDirectory(options.OutputDirectory);
+        var sw = Stopwatch.StartNew();
+        var results = new DownloadResult[urls.Count];        // each index written by exactly one worker → no lock
+        var po = new ParallelOptions { MaxDegreeOfParallelism = options.MaxConcurrency, CancellationToken = ct };
+
+        await Parallel.ForEachAsync(Enumerable.Range(0, urls.Count), po, async (i, token) =&gt;
+        {
+            results[i] = await DownloadOneAsync(urls[i], token);
+        });
+        return new DownloadSummary(results, sw.Elapsed);
+    }
+
+    private async Task&lt;DownloadResult&gt; DownloadOneAsync(Uri url, CancellationToken ct)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            PageContent page = await source.GetAsync(url, ct);
+            if (page.StatusCode is &lt; 200 or &gt; 299)
+                return new DownloadResult(url, DownloadStatus.Failed, sw.Elapsed, page.StatusCode, Error: $"HTTP {page.StatusCode}");
+
+            string path = Path.Combine(options.OutputDirectory, FileNames.FromUrl(url));
+            await File.WriteAllBytesAsync(path, page.Body, ct);
+            return new DownloadResult(url, DownloadStatus.Succeeded, sw.Elapsed, page.StatusCode, page.Body.LongLength, path);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;                                            // the CALLER cancelled: stop the whole batch
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or IOException or UnauthorizedAccessException)
+        {
+            // HttpRequestException: DNS / connection failure. OperationCanceledException (caller didn't cancel):
+            // HttpClient.Timeout. IOException / UnauthorizedAccessException (read-only folder): couldn't write the file. One bad URL must not stop the rest.
+            return new DownloadResult(url, DownloadStatus.Failed, sw.Elapsed, Error: ex.Message);
+        }
+    }
+}</code></pre></div>
+<p>Why two concurrent strategies? They're the two idioms you'll meet in real code. <code>SemaphoreSlim</code> creates every task up front (cheap for hundreds of URLs, wasteful for millions) and gives an ordered array from WhenAll. <code>Parallel.ForEachAsync</code> keeps exactly N workers pulling items and needs you to store results yourself.</p>
+
+<h3>Step 5 — Program.cs</h3>
+<div class="code"><div class="fname">Downloader.App/Program.cs</div><pre><code class="language-csharp">using System.Net;
+using Downloader.Core;
+
+string urlFile = args.Length &gt; 0 &amp;&amp; !args[0].StartsWith("--")
+    ? args[0]
+    : Path.Combine(AppContext.BaseDirectory, "urls.txt");    // the copy next to the .exe (dotnet run keeps YOUR working directory)
+int maxConcurrency = IntOption("--max", 4);
+bool offline = args.Contains("--offline");
+
+UrlListResult list = await UrlList.LoadAsync(urlFile);
+foreach (string bad in list.Rejected)
+    Console.WriteLine($"  skipped {bad}");
+if (list.Urls.Count == 0)
+{
+    Console.WriteLine("No valid URLs to download.");
+    return 1;
+}
+Console.WriteLine($"{list.Urls.Count} URLs · max concurrency {maxConcurrency} · " +
+                  (offline ? "offline (fake pages)" : "live HTTP") + "\n");
+
+using HttpClient http = CreateHttpClient();
+IPageSource source = offline ? new FakePageSource() : new HttpPageSource(http);
+
+DownloadOptions Options(string mode) =&gt;
+    new() { MaxConcurrency = maxConcurrency, OutputDirectory = Path.Combine("downloads", mode) };
+
+DownloadSummary seq = await new PageDownloader(source, Options("sequential")).DownloadSequentialAsync(list.Urls);
+Print("Sequential", seq);
+
+DownloadSummary sem = await new PageDownloader(source, Options("semaphore")).DownloadWithSemaphoreAsync(list.Urls);
+Print($"SemaphoreSlim + WhenAll (max {maxConcurrency})", sem);
+
+DownloadSummary par = await new PageDownloader(source, Options("parallel")).DownloadWithParallelAsync(list.Urls);
+Print($"Parallel.ForEachAsync (max {maxConcurrency})", par);
+
+Console.WriteLine($"Speed-up vs sequential: SemaphoreSlim {seq.Total / sem.Total:N1}x · " +
+                  $"Parallel.ForEachAsync {seq.Total / par.Total:N1}x");
+return 0;
+
+int IntOption(string name, int fallback)
+{
+    int i = Array.IndexOf(args, name);
+    return i &gt;= 0 &amp;&amp; i + 1 &lt; args.Length &amp;&amp; int.TryParse(args[i + 1], out int v) &amp;&amp; v &gt; 0 ? v : fallback;
+}
+
+static HttpClient CreateHttpClient()
+{
+    var handler = new SocketsHttpHandler
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+        AutomaticDecompression = DecompressionMethods.All      // accept gzip/brotli: fewer bytes on the wire
+    };
+    var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(30) };
+    http.DefaultRequestHeaders.UserAgent.ParseAdd("DotnetLearningDownloader/1.0");   // some sites reject requests with no UA
+    return http;
+}
+
+static void Print(string title, DownloadSummary s)
+{
+    Console.WriteLine($"== {title} ==");
+    foreach (DownloadResult r in s.Results)
+    {
+        string mark = r.Success ? "OK  " : "FAIL";
+        string detail = r.Success ? $"{r.Bytes,9:N0} bytes" : r.Error ?? "";
+        Console.WriteLine($"  {mark} {r.Elapsed.TotalMilliseconds,6:N0} ms  {Short(r.Url.ToString()),-44} {detail}");
+    }
+    Console.WriteLine($"  {s.Succeeded} ok · {s.Failed} failed · {s.TotalBytes:N0} bytes · {s.Total.TotalSeconds:N2} s\n");
+}
+
+static string Short(string s) =&gt; s.Length &lt;= 44 ? s : s[..41] + "...";</code></pre></div>
+<div class="code"><div class="fname">Downloader.App/urls.txt</div><pre><code class="language-text"># One URL per line. Blank lines and lines starting with # are ignored.
+https://example.com/
+https://learn.microsoft.com/en-us/dotnet/csharp/
+https://www.python.org/
+https://en.wikipedia.org/wiki/Bengaluru
+https://en.wikipedia.org/wiki/Pune
+https://www.isro.gov.in/
+https://httpbin.org/delay/2
+https://httpbin.org/status/404
+https://httpbin.org/status/503
+https://no-such-site.invalid/
+
+not a url
+https://example.com/</code></pre></div>
+<p><code>dotnet run --project ...</code> keeps your current folder as the working directory, so Program.cs looks for the default <code>urls.txt</code> in <code>AppContext.BaseDirectory</code> (the build output folder). Copy it there on every build:</p>
+<div class="code"><div class="fname">Downloader.App/Downloader.App.csproj (add)</div><pre><code class="language-xml">&lt;ItemGroup&gt;
+  &lt;None Update="urls.txt" CopyToOutputDirectory="PreserveNewest" /&gt;
+&lt;/ItemGroup&gt;</code></pre></div>
+
+<h3>Run it</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet run --project Downloader.App -- --offline          # works anywhere, no internet needed
+dotnet run --project Downloader.App -- --max 8            # real downloads, 8 at a time
+dotnet run --project Downloader.App -- my-urls.txt --max 2</code></pre></div>
+<div class="code"><div class="fname">Sample output (--offline; your timings will differ)</div><pre><code class="language-text">  skipped line 13: not an http(s) URL → not a url
+  skipped line 14: duplicate → https://example.com/
+10 URLs · max concurrency 4 · offline (fake pages)
+
+== Sequential ==
+  OK      944 ms  https://example.com/                             9,484 bytes
+  OK      468 ms  https://learn.microsoft.com/en-us/dotnet/...     4,810 bytes
+  OK    1,196 ms  https://www.python.org/                         12,061 bytes
+  OK      709 ms  https://en.wikipedia.org/wiki/Bengaluru          7,208 bytes
+  OK      370 ms  https://en.wikipedia.org/wiki/Pune               3,843 bytes
+  OK    1,038 ms  https://www.isro.gov.in/                        10,483 bytes
+  OK    3,140 ms  https://httpbin.org/delay/2                     11,442 bytes
+  FAIL    730 ms  https://httpbin.org/status/404               HTTP 404
+  FAIL    467 ms  https://httpbin.org/status/503               HTTP 503
+  FAIL    425 ms  https://no-such-site.invalid/                Name or service not known (no-such-site.invalid:443)
+  7 ok · 3 failed · 59,331 bytes · 9.49 s
+
+== SemaphoreSlim + WhenAll (max 4) ==
+  OK      892 ms  https://example.com/                             9,024 bytes
+  OK      503 ms  https://learn.microsoft.com/en-us/dotnet/...     5,170 bytes
+  OK      293 ms  https://www.python.org/                          3,030 bytes
+  OK      955 ms  https://en.wikipedia.org/wiki/Bengaluru          9,658 bytes
+  OK    1,169 ms  https://en.wikipedia.org/wiki/Pune              11,764 bytes
+  OK      794 ms  https://www.isro.gov.in/                         8,052 bytes
+  OK    2,788 ms  https://httpbin.org/delay/2                      7,961 bytes
+  FAIL    748 ms  https://httpbin.org/status/404               HTTP 404
+  FAIL    472 ms  https://httpbin.org/status/503               HTTP 503
+  FAIL    494 ms  https://no-such-site.invalid/                Name or service not known (no-such-site.invalid:443)
+  7 ok · 3 failed · 54,659 bytes · 3.68 s
+
+== Parallel.ForEachAsync (max 4) ==
+  OK      965 ms  https://example.com/                             9,734 bytes
+  OK    1,171 ms  https://learn.microsoft.com/en-us/dotnet/...    11,841 bytes
+  OK    1,090 ms  https://www.python.org/                         10,961 bytes
+  OK      549 ms  https://en.wikipedia.org/wiki/Bengaluru          5,578 bytes
+  OK      504 ms  https://en.wikipedia.org/wiki/Pune               5,163 bytes
+  OK      537 ms  https://www.isro.gov.in/                         5,502 bytes
+  OK    2,775 ms  https://httpbin.org/delay/2                      7,851 bytes
+  FAIL    733 ms  https://httpbin.org/status/404               HTTP 404
+  FAIL    247 ms  https://httpbin.org/status/503               HTTP 503
+  FAIL    709 ms  https://no-such-site.invalid/                Name or service not known (no-such-site.invalid:443)
+  7 ok · 3 failed · 56,630 bytes · 3.84 s
+
+Speed-up vs sequential: SemaphoreSlim 2.6x · Parallel.ForEachAsync 2.5x</code></pre></div>
+<p>Read the numbers: sequential time is roughly the <i>sum</i> of every download; concurrent time is roughly the slowest "wave". With 10 URLs and a cap of 4 you get about three waves — and the <code>/delay/2</code> URL dominates one of them. Try <code>--max 1</code> (concurrent ≈ sequential) and <code>--max 20</code> (≈ the single slowest URL).</p>
+<div class="note warn"><b>Etiquette.</b> Be polite with real sites: keep <code>--max</code> modest, don't hammer one host, and respect <code>robots.txt</code> and terms of use. Many sites rate-limit or block aggressive clients.</div>
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Stream large responses straight to disk with <code>HttpCompletionOption.ResponseHeadersRead</code> and <code>CopyToAsync</code> instead of buffering bytes (Thursday).</li>
+<li>Add a per-host limit (at most 2 concurrent requests to the same host) with a <code>ConcurrentDictionary&lt;string, SemaphoreSlim&gt;</code>.</li>
+<li>Write a CSV report (<code>url,status,ms,bytes,error</code>) alongside the downloads.</li>
+<li>Print the page <code>&lt;title&gt;</code> of each download (a simple regex is fine for now).</li>
+</ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why are concurrent downloads faster even on a single-core machine?</summary><div>Downloading is I/O-bound: almost all the time is spent waiting for the network, during which no thread is busy. With async I/O, one core can have many requests in flight and handle each response as it arrives, so total time approaches the slowest request instead of the sum.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why does DownloadOneAsync return a result instead of throwing for a 404 or DNS failure?</summary><div>Failures of individual URLs are expected outcomes in a batch, not exceptional conditions for the whole run. Returning a DownloadResult keeps one bad URL from aborting the others (awaiting WhenAll would surface only one exception) and gives the report per-URL detail. Only caller cancellation is allowed to propagate.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>SemaphoreSlim + Task.WhenAll vs Parallel.ForEachAsync for this tool — which would you choose?</summary><div>Both cap concurrency. SemaphoreSlim + WhenAll creates all tasks immediately and returns results in input order — simple and fine for hundreds of URLs. Parallel.ForEachAsync keeps a fixed number of workers pulling from the source, so it scales to huge or streaming inputs (IAsyncEnumerable) with constant memory, but you store results yourself. For a big crawl I'd pick Parallel.ForEachAsync.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is writing results[i] from many workers in Parallel.ForEachAsync thread-safe?</summary><div>Yes, because each index is written by exactly one worker and array element writes don't interfere with each other; the array itself isn't resized. Adding to a shared List&lt;T&gt; instead would be a race. The completed ForEachAsync task also guarantees all writes are visible to the code after the await.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Cancellation, timeouts, retries, progress — and revision</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Make the downloader production-shaped: Ctrl+C cancels cleanly and still reports what finished, each request has its own timeout, transient failures are retried with exponential backoff, and progress is shown live. Then document it, push it and revise the week.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Graceful shutdown</dt><dd>Stopping on request (Ctrl+C) by cancelling work cooperatively, finishing or abandoning in-flight items, and still reporting results.</dd></div><div class="def"><dt>Console.CancelKeyPress</dt><dd>Event raised on Ctrl+C / Ctrl+Break. Setting <code>e.Cancel = true</code> stops the process from terminating immediately.</dd></div><div class="def"><dt>Transient fault</dt><dd>A temporary failure likely to succeed on retry: timeouts, connection resets, 408, 429, 502, 503, 504.</dd></div><div class="def"><dt>Exponential backoff</dt><dd>Waiting longer between each retry (e.g. 0.5 s, 1 s, 2 s) so a struggling server gets breathing room.</dd></div><div class="def"><dt>Jitter</dt><dd>A small random addition to each backoff delay so many clients don't all retry at the same instant.</dd></div><div class="def"><dt>IProgress&lt;T&gt;</dt><dd>Interface with one method, <code>Report(T value)</code>, for publishing progress from work to whoever displays it.</dd></div><div class="def"><dt>Progress&lt;T&gt;</dt><dd>Built-in IProgress&lt;T&gt; that invokes a handler on the SynchronizationContext captured when it was created — or on the thread pool if there wasn't one.</dd></div><div class="def"><dt>Idempotent</dt><dd>Safe to repeat: doing it twice has the same effect as once. GET requests are; "charge ₹500" is not — only retry idempotent operations blindly.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Ctrl+C → cancel the token; work stops at the next await; the summary still prints.</li><li>A linked token per attempt gives each request its own timeout while still honouring Ctrl+C.</li><li>Retry only transient failures, a limited number of times, with growing delays and jitter.</li><li>In a console app <code>Progress&lt;T&gt;</code> runs handlers on pool threads — possibly concurrently and out of order. A tiny custom IProgress&lt;T&gt; that prints synchronously under a lock keeps lines from interleaving.</li><li>Polly (Week 43) does retries, timeouts and circuit breakers properly; writing a simple version first shows you what it's doing.</li></ul></div>
+
+<h3>1. New options and progress type</h3>
+<div class="code"><div class="fname">Downloader.Core/DownloadOptions.cs</div><pre><code class="language-csharp">namespace Downloader.Core;
+
+public sealed record DownloadOptions
+{
+    public int MaxConcurrency { get; init; } = 4;
+    public string OutputDirectory { get; init; } = "downloads";
+    public TimeSpan PerRequestTimeout { get; init; } = TimeSpan.FromSeconds(10);
+    public int MaxRetries { get; init; } = 2;                         // so up to 3 attempts in total
+    public TimeSpan BaseRetryDelay { get; init; } = TimeSpan.FromMilliseconds(500);
+}
+
+public readonly record struct DownloadProgress(int Completed, int Total, DownloadResult Last);</code></pre></div>
+
+<h3>2. PageDownloader with cancellation, per-request timeout, retry and progress</h3>
+<div class="code"><div class="fname">Downloader.Core/PageDownloader.cs</div><pre><code class="language-csharp">using System.Diagnostics;
+
+namespace Downloader.Core;
+
+public sealed class PageDownloader(IPageSource source, DownloadOptions options, IProgress&lt;DownloadProgress&gt;? progress = null)
+{
+    private int _completed;
+
+    public async Task&lt;DownloadSummary&gt; DownloadSequentialAsync(IReadOnlyList&lt;Uri&gt; urls, CancellationToken ct = default)
+    {
+        Prepare();
+        var sw = Stopwatch.StartNew();
+        var results = new List&lt;DownloadResult&gt;(urls.Count);
+        foreach (Uri url in urls)
+            results.Add(await DownloadOneAsync(url, urls.Count, ct));    // after Ctrl+C these return "cancelled" instantly
+        return new DownloadSummary(results, sw.Elapsed);
+    }
+
+    public async Task&lt;DownloadSummary&gt; DownloadWithSemaphoreAsync(IReadOnlyList&lt;Uri&gt; urls, CancellationToken ct = default)
+    {
+        Prepare();
+        var sw = Stopwatch.StartNew();
+        using var gate = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
+
+        async Task&lt;DownloadResult&gt; ThrottledAsync(Uri url)
+        {
+            try { await gate.WaitAsync(ct); }
+            catch (OperationCanceledException) { return Report(DownloadResult.Cancelled(url), urls.Count); }   // never got a slot
+            try { return await DownloadOneAsync(url, urls.Count, ct); }
+            finally { gate.Release(); }
+        }
+
+        DownloadResult[] results = await Task.WhenAll(urls.Select(ThrottledAsync));
+        return new DownloadSummary(results, sw.Elapsed);
+    }
+
+    public async Task&lt;DownloadSummary&gt; DownloadWithParallelAsync(IReadOnlyList&lt;Uri&gt; urls, CancellationToken ct = default)
+    {
+        Prepare();
+        var sw = Stopwatch.StartNew();
+        var results = new DownloadResult[urls.Count];
+        // No token in ParallelOptions on purpose: every item still runs and records "cancelled",
+        // so the summary is complete instead of ForEachAsync throwing away partial results
+        var po = new ParallelOptions { MaxDegreeOfParallelism = options.MaxConcurrency };
+
+        await Parallel.ForEachAsync(Enumerable.Range(0, urls.Count), po, async (i, _) =&gt;
+        {
+            results[i] = await DownloadOneAsync(urls[i], urls.Count, ct);
+        });
+        return new DownloadSummary(results, sw.Elapsed);
+    }
+
+    private void Prepare()
+    {
+        Directory.CreateDirectory(options.OutputDirectory);
+        Interlocked.Exchange(ref _completed, 0);
+    }
+
+    private async Task&lt;DownloadResult&gt; DownloadOneAsync(Uri url, int total, CancellationToken ct) =&gt;
+        Report(await DownloadWithRetryAsync(url, ct), total);
+
+    private DownloadResult Report(DownloadResult result, int total)
+    {
+        int done = Interlocked.Increment(ref _completed);              // many workers finish at once
+        progress?.Report(new DownloadProgress(done, total, result));
+        return result;
+    }
+
+    private async Task&lt;DownloadResult&gt; DownloadWithRetryAsync(Uri url, CancellationToken ct)
+    {
+        var sw = Stopwatch.StartNew();
+        string? lastError = null;
+        int? lastStatus = null;
+        int attempts = 0;
+
+        while (attempts &lt;= options.MaxRetries)
+        {
+            if (ct.IsCancellationRequested) return DownloadResult.Cancelled(url, sw.Elapsed, attempts);
+            attempts++;
+
+            // One token per attempt: fires on Ctrl+C (ct) OR when this attempt's time is up
+            using var attemptCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            attemptCts.CancelAfter(options.PerRequestTimeout);
+
+            try
+            {
+                PageContent page = await source.GetAsync(url, attemptCts.Token);
+                if (page.StatusCode is &gt;= 200 and &lt;= 299)
+                {
+                    string path = Path.Combine(options.OutputDirectory, FileNames.FromUrl(url));
+                    await File.WriteAllBytesAsync(path, page.Body, ct);
+                    return new DownloadResult(url, DownloadStatus.Succeeded, sw.Elapsed,
+                        page.StatusCode, page.Body.LongLength, path, Attempts: attempts);
+                }
+
+                lastStatus = page.StatusCode;
+                lastError = $"HTTP {page.StatusCode}";
+                if (!IsTransient(page.StatusCode)) break;               // 404, 403…: retrying won't help
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                return DownloadResult.Cancelled(url, sw.Elapsed, attempts);   // Ctrl+C
+            }
+            catch (OperationCanceledException)
+            {
+                lastError = $"timed out after {options.PerRequestTimeout.TotalSeconds:0.#} s";   // our timeout
+            }
+            catch (HttpRequestException ex)
+            {
+                lastError = ex.Message;                                  // DNS failure, connection refused/reset
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)   // a read-only folder throws the latter
+            {
+                lastError = $"disk error: {ex.Message}";                 // not transient: don't retry
+                break;
+            }
+
+            if (attempts &lt;= options.MaxRetries)
+            {
+                try { await Task.Delay(Backoff(attempts), ct); }
+                catch (OperationCanceledException) { return DownloadResult.Cancelled(url, sw.Elapsed, attempts); }
+            }
+        }
+
+        return new DownloadResult(url, DownloadStatus.Failed, sw.Elapsed, lastStatus, Error: lastError, Attempts: attempts);
+    }
+
+    // 408 Request Timeout, 429 Too Many Requests, and every 5xx are worth another try
+    private static bool IsTransient(int statusCode) =&gt; statusCode is 408 or 429 or &gt;= 500;
+
+    // 500 ms, 1 s, 2 s, 4 s… plus 0–20% random jitter
+    private TimeSpan Backoff(int attempt)
+    {
+        double ms = options.BaseRetryDelay.TotalMilliseconds * Math.Pow(2, attempt - 1);
+        return TimeSpan.FromMilliseconds(ms + Random.Shared.NextDouble() * ms * 0.2);
+    }
+}</code></pre></div>
+<div class="tbl"><table><tr><th>Failure</th><th>Retried?</th><th>Why</th></tr><tr><td>DNS failure / connection refused (HttpRequestException)</td><td>Yes</td><td>Networks blip; but a permanently wrong host just fails after MaxRetries</td></tr><tr><td>Per-request timeout</td><td>Yes</td><td>The server may have been briefly slow</td></tr><tr><td>408, 429, 500, 502, 503, 504</td><td>Yes</td><td>Server-side or rate-limit conditions that often clear</td></tr><tr><td>400, 401, 403, 404</td><td>No</td><td>The request itself is wrong; the answer won't change</td></tr><tr><td>Disk write error</td><td>No</td><td>Retrying the download doesn't fix a full or read-only disk</td></tr><tr><td>Ctrl+C</td><td>No</td><td>The user asked us to stop</td></tr></table></div>
+
+<h3>3. Live progress</h3>
+<p><code>Progress&lt;T&gt;</code> captures <code>SynchronizationContext.Current</code> when it's created. In a WinForms app that's the UI thread, so its handler can safely update a progress bar. In a console app there is none, so every <code>Report</code> is posted to the thread pool: handlers can run concurrently and out of order (you might see 7/10 printed before 6/10). For console output, a tiny synchronous implementation is clearer:</p>
+<div class="code"><div class="fname">Downloader.App/ConsoleProgress.cs</div><pre><code class="language-csharp">using Downloader.Core;
+
+namespace Downloader.App;
+
+/// &lt;summary&gt;Prints each report immediately, one at a time, in the order Report is called.&lt;/summary&gt;
+public sealed class ConsoleProgress : IProgress&lt;DownloadProgress&gt;
+{
+    private readonly object _sync = new();        // on .NET 9: private readonly Lock _sync = new();
+
+    public void Report(DownloadProgress p)
+    {
+        lock (_sync)                               // workers report from many threads at once
+        {
+            (string mark, ConsoleColor color) = p.Last.Status switch
+            {
+                DownloadStatus.Succeeded =&gt; ("✓", ConsoleColor.Green),
+                DownloadStatus.Failed    =&gt; ("✗", ConsoleColor.Red),
+                _                        =&gt; ("–", ConsoleColor.DarkYellow)
+            };
+            Console.ForegroundColor = color;
+            Console.Write($"  [{p.Completed,2}/{p.Total}] {mark} ");
+            Console.ResetColor();
+            string tries = p.Last.Attempts &gt; 1 ? $" · {p.Last.Attempts} attempts" : "";
+            string info = p.Last.Success ? $"{p.Last.Bytes:N0} bytes" : p.Last.Error ?? "";
+            Console.WriteLine($"{p.Last.Url} ({p.Last.Elapsed.TotalMilliseconds:N0} ms{tries}) {info}");
+        }
+    }
+}</code></pre></div>
+
+<h3>4. Program.cs with Ctrl+C and new options</h3>
+<div class="code"><div class="fname">Downloader.App/Program.cs</div><pre><code class="language-csharp">using System.Globalization;
+using System.Net;
+using System.Text;
+using Downloader.App;
+using Downloader.Core;
+
+Console.OutputEncoding = Encoding.UTF8;               // ✓ ✗ symbols on Windows terminals
+
+string urlFile = args.Length &gt; 0 &amp;&amp; !args[0].StartsWith("--")
+    ? args[0]
+    : Path.Combine(AppContext.BaseDirectory, "urls.txt");    // the copy next to the .exe (dotnet run keeps YOUR working directory)
+int maxConcurrency = IntOption("--max", 4, min: 1);
+int timeoutSeconds = IntOption("--timeout", 10, min: 1);
+int retries        = IntOption("--retries", 2, min: 0);
+string mode        = StringOption("--mode", "compare");   // compare | sequential | semaphore | parallel
+bool offline       = args.Contains("--offline");
+double failRate    = DoubleOption("--fail-rate", 0);      // offline only: fraction of fake 503s
+
+if (!File.Exists(urlFile))
+{
+    Console.WriteLine($"URL file not found: {Path.GetFullPath(urlFile)}");
+    return 2;
+}
+
+// Ctrl+C: first press cancels gracefully, second press lets the process die immediately
+using var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) =&gt;
+{
+    if (cts.IsCancellationRequested) return;          // second Ctrl+C → default behaviour (terminate)
+    e.Cancel = true;                                  // first Ctrl+C → keep the process alive...
+    Console.WriteLine("\n  Cancelling… in-flight downloads will stop (Ctrl+C again to force quit)");
+    cts.Cancel();                                     // ...and ask all work to stop
+};
+
+UrlListResult list = await UrlList.LoadAsync(urlFile, cts.Token);
+foreach (string bad in list.Rejected)
+    Console.WriteLine($"  skipped {bad}");
+if (list.Urls.Count == 0)
+{
+    Console.WriteLine("No valid URLs to download.");
+    return 1;
+}
+
+var options = new DownloadOptions
+{
+    MaxConcurrency = maxConcurrency,
+    PerRequestTimeout = TimeSpan.FromSeconds(timeoutSeconds),
+    MaxRetries = retries
+};
+Console.WriteLine($"{list.Urls.Count} URLs · max {maxConcurrency} · timeout {timeoutSeconds} s · " +
+                  $"retries {retries} · {(offline ? "offline" : "live HTTP")}");
+
+using HttpClient http = CreateHttpClient();
+IPageSource source = offline ? new FakePageSource(transientFailureRate: failRate) : new HttpPageSource(http);
+var progress = new ConsoleProgress();
+
+string[] modes = mode == "compare" ? ["sequential", "semaphore", "parallel"] : [mode];
+var runs = new List&lt;(string Mode, DownloadSummary Summary)&gt;();
+
+foreach (string m in modes)
+{
+    if (cts.IsCancellationRequested) break;
+    Console.WriteLine($"\n== {m} ==");
+    var downloader = new PageDownloader(source, options with { OutputDirectory = Path.Combine("downloads", m) }, progress);
+
+    DownloadSummary summary = m switch
+    {
+        "sequential" =&gt; await downloader.DownloadSequentialAsync(list.Urls, cts.Token),
+        "semaphore"  =&gt; await downloader.DownloadWithSemaphoreAsync(list.Urls, cts.Token),
+        "parallel"   =&gt; await downloader.DownloadWithParallelAsync(list.Urls, cts.Token),
+        _ =&gt; throw new ArgumentException($"Unknown --mode '{m}'. Use compare, sequential, semaphore or parallel.")
+    };
+    Console.WriteLine($"  {summary.Succeeded} ok · {summary.Failed} failed · {summary.Cancelled} cancelled · " +
+                      $"{summary.TotalBytes:N0} bytes · {summary.Total.TotalSeconds:N2} s");
+    runs.Add((m, summary));
+}
+
+if (runs.Count &gt; 1)
+{
+    Console.WriteLine("\n== Comparison ==");
+    TimeSpan baseline = runs[0].Summary.Total;
+    foreach (var (m, s) in runs)
+        Console.WriteLine($"  {m,-11} {s.Total.TotalSeconds,6:N2} s   {baseline / s.Total,4:N1}x");
+}
+
+return cts.IsCancellationRequested ? 130 : 0;        // 130 = conventional "terminated by Ctrl+C" exit code
+
+int IntOption(string name, int fallback, int min)
+{
+    int i = Array.IndexOf(args, name);
+    return i &gt;= 0 &amp;&amp; i + 1 &lt; args.Length &amp;&amp; int.TryParse(args[i + 1], out int v) &amp;&amp; v &gt;= min ? v : fallback;
+}
+
+double DoubleOption(string name, double fallback)
+{
+    int i = Array.IndexOf(args, name);
+    return i &gt;= 0 &amp;&amp; i + 1 &lt; args.Length &amp;&amp;
+           double.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out double v) &amp;&amp;
+           v is &gt;= 0 and &lt;= 1 ? v : fallback;
+}
+
+string StringOption(string name, string fallback)
+{
+    int i = Array.IndexOf(args, name);
+    return i &gt;= 0 &amp;&amp; i + 1 &lt; args.Length ? args[i + 1].ToLowerInvariant() : fallback;
+}
+
+static HttpClient CreateHttpClient()
+{
+    var handler = new SocketsHttpHandler
+    {
+        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+        AutomaticDecompression = DecompressionMethods.All
+    };
+    // Our per-request timeout is in DownloadOptions, so switch off HttpClient's own 100 s default
+    var http = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
+    http.DefaultRequestHeaders.UserAgent.ParseAdd("DotnetLearningDownloader/1.0");
+    return http;
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">dotnet run --project Downloader.App -- --offline --mode semaphore --fail-rate 0.4 --timeout 1</code></pre></div>
+<div class="code"><div class="fname">Sample output (offline, 40% fake 503s, 1 s timeout)</div><pre><code class="language-text">  skipped line 13: not an http(s) URL → not a url
+  skipped line 14: duplicate → https://example.com/
+10 URLs · max 4 · timeout 1 s · retries 2 · offline
+
+== semaphore ==
+  [ 1/10] ✓ https://en.wikipedia.org/wiki/Bengaluru (497 ms) 4,858 bytes
+  [ 2/10] ✓ https://learn.microsoft.com/en-us/dotnet/csharp/ (581 ms) 5,940 bytes
+  [ 3/10] ✓ https://en.wikipedia.org/wiki/Pune (819 ms) 8,293 bytes
+  [ 4/10] ✓ https://www.isro.gov.in/ (1,161 ms · 2 attempts) 2,212 bytes
+  [ 5/10] ✓ https://example.com/ (2,134 ms · 2 attempts) 5,794 bytes
+  [ 6/10] ✗ https://httpbin.org/status/404 (826 ms) HTTP 404
+  [ 7/10] ✓ https://www.python.org/ (3,714 ms · 3 attempts) 3,670 bytes
+  [ 8/10] ✗ https://httpbin.org/delay/2 (4,685 ms · 3 attempts) timed out after 1 s
+  [ 9/10] ✗ https://httpbin.org/status/503 (4,196 ms · 3 attempts) HTTP 503
+  [10/10] ✗ https://no-such-site.invalid/ (3,941 ms · 3 attempts) Name or service not known (no-such-site.invalid:443)
+  6 ok · 4 failed · 0 cancelled · 30,767 bytes · 6.53 s</code></pre></div>
+<p>Notice <code>/delay/2</code> timing out on every attempt with a 1-second limit, the 503s being retried (some recover, the permanent <code>/status/503</code> never does), and the 404 failing after a single attempt. Because the fake latency is 200–1200 ms, a 1-second limit can also time out an ordinary page now and then; it is simply retried.</p>
+
+<h3>5. Try to break it</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected</th></tr><tr><td><code>urls.txt</code> missing</td><td>"URL file not found: …" with the full path, exit code 2</td></tr><tr><td>File with only comments and blank lines</td><td>"No valid URLs to download.", exit code 1</td></tr><tr><td>Lines <code>not a url</code>, <code>/etc/passwd</code>, <code>ftp://files.example.com</code></td><td>Each reported as "not an http(s) URL" with its line number; never downloaded</td></tr><tr><td>Same URL twice</td><td>Second one reported as duplicate</td></tr><tr><td><code>--max 0</code>, <code>--max abc</code></td><td>Falls back to 4</td></tr><tr><td><code>--max 50</code> with 10 URLs</td><td>Works; total ≈ the slowest single URL</td></tr><tr><td><code>/status/404</code></td><td>FAIL HTTP 404 after 1 attempt (not retried)</td></tr><tr><td><code>/status/503</code></td><td>FAIL HTTP 503 after 3 attempts with growing delays</td></tr><tr><td><code>--timeout 1</code> with <code>/delay/2</code></td><td>"timed out after 1 s" after 3 attempts</td></tr><tr><td>Live mode with Wi-Fi off</td><td>Every URL fails fast with a DNS/connection error (after retries); no crash. Use <code>--offline</code></td></tr><tr><td>Ctrl+C halfway through</td><td>Remaining URLs marked cancelled, summary still printed, exit code 130</td></tr><tr><td>Ctrl+C twice</td><td>Process terminates immediately</td></tr><tr><td>Output folder read-only</td><td>"disk error: …" for each URL, not retried</td></tr><tr><td>Two URLs differing only in <code>?page=</code></td><td>Saved as two files (hash suffix)</td></tr><tr><td>Ctrl+C while a file is being written</td><td>A partial file may remain — fix as a stretch goal: write to <code>.part</code>, then <code>File.Move</code></td></tr></table></div>
+
+<h3>6. README and push</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-markdown"># Async Web-Page Downloader
+
+Micro-project 6 of my .NET full-stack roadmap (Week 7: async and concurrency).
+
+## Features
+- Reads URLs from a file (comments, blank lines, invalid and duplicate URLs handled)
+- Downloads concurrently with a configurable limit, two ways:
+  `SemaphoreSlim` + `Task.WhenAll`, and `Parallel.ForEachAsync`
+- Compares sequential vs concurrent timing; reports bytes, successes and failures
+- Ctrl+C cancels gracefully and still prints a summary
+- Per-request timeout, retry with exponential backoff + jitter for transient errors
+- Live progress via `IProgress&lt;T&gt;`
+- `--offline` mode with a fake page source (no internet needed)
+
+## Usage
+```bash
+dotnet run --project Downloader.App -- [urls.txt] [--max 4] [--timeout 10] [--retries 2]
+                                       [--mode compare|sequential|semaphore|parallel]
+                                       [--offline] [--fail-rate 0.3]
+```
+
+## What I learned
+async/await, Task.WhenAll, CancellationToken and linked tokens, SemaphoreSlim,
+Parallel.ForEachAsync, Interlocked, IAsyncEnumerable (File.ReadLinesAsync),
+HttpClient lifetime, transient-fault handling, IProgress&lt;T&gt;</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">cd Downloader
+dotnet new gitignore
+echo "downloads/" &gt;&gt; .gitignore           # don't commit downloaded pages
+git init
+git add .
+git commit -m "Async downloader: concurrency limit, cancellation, timeouts, retries, progress"
+git branch -M main
+git remote add origin https://github.com/&lt;your-username&gt;/async-downloader.git
+git push -u origin main</code></pre></div>
+
+<h3>7. Week 7 revision checklist</h3>
+<ul>
+<li>Thread vs thread pool vs Task; why tasks are the default</li>
+<li>CPU-bound (Task.Run, Parallel) vs I/O-bound (async APIs); concurrency vs parallelism</li>
+<li>Task states; exceptions stored in tasks; await vs .Wait() (AggregateException); unobserved exceptions</li>
+<li>ValueTask: when, and its four rules</li>
+<li>What await does step by step; the compiler state machine; where continuations run</li>
+<li>SynchronizationContext per app type; ConfigureAwait(false) in libraries; none in ASP.NET Core</li>
+<li>The .Result deadlock; async all the way; async void only for event handlers (and hidden async void lambdas)</li>
+<li>WhenAll (results in order, one rethrown exception vs all exceptions), WhenAny, .NET 9 WhenEach</li>
+<li>CancellationTokenSource vs CancellationToken; cooperative cancellation; OperationCanceledException</li>
+<li>Timeouts: CancelAfter, linked tokens, WaitAsync; telling timeout from cancellation</li>
+<li>HttpClient lifetime, socket exhaustion, PooledConnectionLifetime, IHttpClientFactory; status codes; what to retry</li>
+<li>IAsyncEnumerable, await foreach, async iterators, [EnumeratorCancellation]</li>
+<li>Race conditions; lock and .NET 9 Lock; Interlocked; ConcurrentDictionary pitfalls; SemaphoreSlim; Parallel APIs; deadlock prevention</li>
+</ul>
+
+<h3>8. Quick quiz — predict the output</h3>
+<details><summary>Q1. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">Console.Write("A");
+Task t = WorkAsync();
+Console.Write("C");
+await t;
+Console.Write("E");
+
+static async Task WorkAsync()
+{
+    Console.Write("B");
+    await Task.Delay(100);
+    Console.Write("D");
+}</code></pre></div><b>ABCDE.</b> WorkAsync runs synchronously until its first await on an incomplete task, so B prints before the call returns. Then C prints while the delay runs, D after it, and E once <code>t</code> completes.</details>
+<details><summary>Q2. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">Task&lt;int&gt; t = GetAsync();
+Console.Write("3");
+Console.Write(await t);
+
+static async Task&lt;int&gt; GetAsync()
+{
+    Console.Write("1");
+    await Task.CompletedTask;     // already complete
+    Console.Write("2");
+    return 4;
+}</code></pre></div><b>1234.</b> Awaiting an already-completed task doesn't pause: the method runs straight through (1, 2) and returns a completed task before the caller prints 3.</details>
+<details><summary>Q3. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">try { Boom(); }
+catch (Exception) { Console.Write("caught "); }
+await Task.Delay(500);
+Console.Write("end");
+
+static async void Boom()
+{
+    await Task.Yield();
+    throw new InvalidOperationException("boom");
+}</code></pre></div><b>Nothing — the process crashes</b> with an unhandled InvalidOperationException. <code>Boom</code> returns at its first await, so the try block finishes without error; the exception is later thrown on a thread-pool thread where nobody can catch it. That's why async void is only for event handlers.</details>
+<details><summary>Q4. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">Task all = Task.WhenAll(FailAsync("A", 300), FailAsync("B", 100));
+try { await all; }
+catch (Exception ex) { Console.Write($"{ex.Message} {all.Exception!.InnerExceptions.Count}"); }
+
+static async Task FailAsync(string message, int delayMs)
+{
+    await Task.Delay(delayMs);
+    throw new InvalidOperationException(message);
+}</code></pre></div><b>B 2</b> on .NET 8 — but only the <b>2</b> is guaranteed. WhenAll waits for both tasks and collects both exceptions; <code>await</code> rethrows just one of them. On .NET 8 the non-generic <code>Task.WhenAll</code> records failures in completion order (B failed first, after 100 ms), whereas <code>WhenAll&lt;T&gt;</code> uses argument order, so never write code that depends on which exception you get. The full list is in <code>all.Exception.InnerExceptions</code>.</details>
+<details><summary>Q5. What prints?</summary>
+<div class="code nofile"><pre><code class="language-csharp">try { int n = ParseAsync("abc").Result; }
+catch (FormatException) { Console.Write("F"); }
+catch (AggregateException) { Console.Write("A"); }
+
+try { int n = await ParseAsync("abc"); }
+catch (FormatException) { Console.Write("F"); }
+catch (AggregateException) { Console.Write("A"); }
+
+static async Task&lt;int&gt; ParseAsync(string s)
+{
+    await Task.Delay(10);
+    return int.Parse(s);
+}</code></pre></div><b>AF.</b> <code>.Result</code> (like <code>.Wait()</code>) wraps the failure in an AggregateException; <code>await</code> unwraps it and rethrows the original FormatException. (In a console app the blocking call doesn't deadlock — there's no SynchronizationContext — but it still blocks a thread.)</details>
+
+<div class="note tip"><b>Next week:</b> Week 8 — .NET internals. What really happens under all this async code: the CLR and JIT (tiered compilation), stack vs heap, how the garbage collector works (generations, LOH, workstation vs server GC), IDisposable, <code>using</code> and finalizers, <code>Span&lt;T&gt;</code>/<code>Memory&lt;T&gt;</code> for allocation-free code, and measuring it all with BenchmarkDotNet.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How do you handle Ctrl+C gracefully in a .NET console app?</summary><div>Create a CancellationTokenSource, subscribe to Console.CancelKeyPress, set e.Cancel = true so the process isn't killed, and call cts.Cancel(). Pass the token through all async work so it stops at the next await, then let the program print what finished and exit with a suitable code. Hosted apps (Generic Host) do this for you via IHostApplicationLifetime.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Which failures should you retry, and why use exponential backoff with jitter?</summary><div>Only transient ones: network errors, timeouts, 408, 429 and 5xx — and only for idempotent operations, or ones protected by an idempotency key. Backoff gives an overloaded server time to recover instead of hammering it; jitter spreads retries from many clients so they don't all hit the server at the same instant (thundering herd). Always cap the number of attempts.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does the downloader tell a per-request timeout from a user cancellation?</summary><div>Each attempt uses a CTS linked to the user's token with CancelAfter(timeout). When OperationCanceledException is thrown, an exception filter checks the user's token: if it's cancelled, the user pressed Ctrl+C and the item is marked cancelled; otherwise the attempt timed out, which is treated as transient and retried.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What's the difference between Progress&lt;T&gt; and a custom IProgress&lt;T&gt; in a console app?</summary><div>Progress&lt;T&gt; posts each Report to the SynchronizationContext captured at construction. In UI apps that marshals to the UI thread, which is what you want. Console apps have no context, so handlers are queued to the thread pool and can run concurrently or out of order. A custom IProgress&lt;T&gt; that runs the handler synchronously under a lock prints each report immediately and never interleaves lines (counter numbers can still, rarely, appear one out of order, because two workers may increment before either takes the lock).</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week7-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>
