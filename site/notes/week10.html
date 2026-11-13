@@ -866,7 +866,8 @@ foreach (var (roll, avg, grade) in report)
 
 <h3>5. Let analyzers enforce the boring parts</h3>
 <div class="code"><div class="fname">Directory.Build.props</div><pre><code class="language-xml">&lt;Project&gt;
-  &lt;!-- Directory.Build.props at the solution root: applies to EVERY project below it --&gt;
+  &lt;!-- Directory.Build.props at the solution root: applies to EVERY project below it.
+       Remove TargetFramework/Nullable/ImplicitUsings from each .csproj once they live here. --&gt;
   &lt;PropertyGroup&gt;
     &lt;TargetFramework&gt;net8.0&lt;/TargetFramework&gt;
     &lt;Nullable&gt;enable&lt;/Nullable&gt;
@@ -878,7 +879,7 @@ foreach (var (roll, avg, grade) in report)
     &lt;NoWarn&gt;$(NoWarn);CS1591&lt;/NoWarn&gt;                       &lt;!-- ...but don't demand XML docs on everything --&gt;
   &lt;/PropertyGroup&gt;
 &lt;/Project&gt;</code></pre></div>
-<div class="code"><div class="fname">.editorconfig</div><pre><code class="language-ini"># Remove TargetFramework/Nullable/ImplicitUsings from each .csproj once they live here.
+<div class="code"><div class="fname">.editorconfig</div><pre><code class="language-ini"># .editorconfig at the solution root
 root = true
 
 [*]
@@ -903,6 +904,11 @@ dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_style.underscore_camel.capitalization  = camel_case
 
 # Rule severities (keep comments on their own lines in .editorconfig)
+# The ':warning' suffix above and the naming-rule severity are honoured only in the IDE.
+# dotnet build / CI enforce IDE rules only through dotnet_diagnostic lines like these:
+# IDE0161 file-scoped namespace; IDE1006 naming rules
+dotnet_diagnostic.IDE0161.severity = warning
+dotnet_diagnostic.IDE1006.severity = warning
 # IDE0005 unnecessary using; IDE0044 field can be readonly
 dotnet_diagnostic.IDE0005.severity = warning
 dotnet_diagnostic.IDE0044.severity = warning
@@ -1455,10 +1461,7 @@ public class ParkingLotServiceTests
 
 <h3>2. Value vs reference types</h3>
 <div class="note tip"><b>Model 2-minute answer.</b> Value types — structs, enums, and primitives like int, decimal and DateTime — store their data directly in the variable, so assigning or passing one copies the data. Reference types — classes, records, strings, arrays, delegates — store a reference to an object on the managed heap, so assignment copies the reference and both variables point to the same object. A common misconception is that value types always live on the stack; they actually live wherever their container lives: a local int is on the stack or in a register, but an int field inside a class lives on the heap with that object. When a value type is converted to object or an interface it's boxed, which allocates a heap copy. In my bank simulator, Transaction is a readonly record struct — small, immutable, no heap allocation per ledger entry — while Account is a class because it has identity and changing state that must be shared. The gotcha: mutating a struct you got from a list indexer or a property only changes a copy. So I keep structs small and readonly, and use classes for anything with identity.</div>
-<div class="code"><div class="fname">ValueVsReference.cs</div><pre><code class="language-csharp">public struct PointS { public int X; }
-public class  PointC { public int X; }
-
-var s1 = new PointS { X = 1 };
+<div class="code"><div class="fname">ValueVsReference.cs</div><pre><code class="language-csharp">var s1 = new PointS { X = 1 };
 var s2 = s1;          // copies the data
 s2.X = 99;
 Console.WriteLine(s1.X);   // 1
@@ -1474,7 +1477,11 @@ Console.WriteLine(c1.X);   // 0 — the mutation is visible, the reassignment is
 
 object boxed = s1;    // boxing: heap allocation of a copy
 s1.X = 7;
-Console.WriteLine(((PointS)boxed).X);   // 1 — the box holds the old copy</code></pre></div>
+Console.WriteLine(((PointS)boxed).X);   // 1 — the box holds the old copy
+
+// Type declarations go after the top-level statements (otherwise CS8803)
+public struct PointS { public int X; }
+public class  PointC { public int X; }</code></pre></div>
 <div class="tbl"><table><tr><th>Interviewer listens for</th><th>Common wrong answer</th><th>Why it's wrong</th></tr><tr><td>Copy semantics on assignment and parameter passing</td><td>"Value types are on the stack, reference types on the heap" (full stop)</td><td>Value-type fields of classes, array elements and boxed values live on the heap</td></tr><tr><td>Boxing and its cost</td><td>"Reference types are passed by reference"</td><td>The reference is passed by value; only <code>ref</code>/<code>out</code>/<code>in</code> pass by reference</td></tr><tr><td>string is a reference type that behaves like a value (immutable, == compares content)</td><td>"string is a value type"</td><td>It's a class; immutability and overloaded == make it feel like a value</td></tr><tr><td>When to choose a struct (small, immutable, short-lived)</td><td>"Structs are always faster"</td><td>Large structs cost more to copy than a reference; mutable structs cause bugs</td></tr></table></div>
 <p><b>Follow-ups to practise:</b> What does <code>ref</code> do with a reference type? (Lets the method replace the caller's reference.) Where does a lambda's captured local live? (In a compiler-generated closure class on the heap.) Can a struct be null? (Only as <code>Nullable&lt;T&gt;</code>.) What's a <code>ref struct</code>? (A stack-only type such as <code>Span&lt;T&gt;</code>; it can't be boxed or stored on the heap.)</p>
 
@@ -1486,7 +1493,15 @@ using (var writer = new StreamWriter("statement.csv"))
     writer.WriteLine("Date,Description,Amount");
 }                                   // Dispose() → flushed and closed here, not "some time later"
 
-// 2. A classic managed leak: the long-lived publisher keeps the subscriber reachable
+// 2. Seeing generations
+var order = new object();
+Console.WriteLine(GC.GetGeneration(order));   // 0
+GC.Collect();                                  // demo only — don't call this in real code
+Console.WriteLine(GC.GetGeneration(order));   // 1 (survived one collection; order is still used below)
+GC.KeepAlive(order);
+
+// 3. A classic managed leak: the long-lived publisher keeps the subscriber reachable
+//    (type declarations must come after the top-level statements)
 public class RateTicker                                 // lives for the whole app
 {
     public event EventHandler&lt;decimal&gt;? RateChanged;
@@ -1498,14 +1513,7 @@ public class QuoteWindow : IDisposable
     public QuoteWindow(RateTicker ticker) { _ticker = ticker; _ticker.RateChanged += OnRate; }
     private void OnRate(object? sender, decimal rate) =&gt; Console.WriteLine($"USD/INR {rate}");
     public void Dispose() =&gt; _ticker.RateChanged -= OnRate;   // without this, every window ever opened stays alive
-}
-
-// 3. Seeing generations
-var order = new object();
-Console.WriteLine(GC.GetGeneration(order));   // 0
-GC.Collect();                                  // demo only — don't call this in real code
-Console.WriteLine(GC.GetGeneration(order));   // 1 (survived one collection; order is still used below)
-GC.KeepAlive(order);</code></pre></div>
+}</code></pre></div>
 <div class="tbl"><table><tr><th>Interviewer listens for</th><th>Common wrong answer</th><th>Why it's wrong</th></tr><tr><td>Reachability from roots, mark and compact</td><td>"It counts references"</td><td>That's COM/Swift; .NET traces, so cycles are collected fine</td></tr><tr><td>Generations and why (most objects die young)</td><td>"Setting a variable to null frees memory"</td><td>It only removes one root; memory is reclaimed at the next relevant collection (and the JIT already knows when a local is no longer used)</td></tr><tr><td>IDisposable vs finalizer</td><td>"The GC calls Dispose"</td><td>It never does; finalizers run if defined, and Dispose is for <i>you</i> to call via using</td></tr><tr><td>LOH, ArrayPool, avoiding allocations in hot paths</td><td>"Call GC.Collect to fix memory problems"</td><td>Forced collections promote objects and pause threads; find the root that keeps objects alive instead</td></tr></table></div>
 <p><b>Follow-ups to practise:</b> Workstation vs server GC? (Server GC uses a heap and GC thread per core for throughput; ASP.NET Core uses it by default.) What is the dispose pattern with <code>Dispose(bool)</code>? (Only needed when a class directly owns unmanaged handles; otherwise a simple Dispose is enough, and SafeHandle is preferred.) How would you investigate a leak? (<code>dotnet-counters</code> to watch heap size, <code>dotnet-gcdump</code>/<code>dotnet-dump</code> to see what roots keep objects alive — Week 8.)</p>
 
@@ -1843,12 +1851,12 @@ var large = amounts.Where(a =&gt; a &gt; 200);
 amounts.Add(900);
 Console.WriteLine(large.Count());</code></pre></div><b>3.</b> Where is deferred: the filter runs when Count() enumerates, after 900 was added (250, 400, 900).</details>
 <details><summary>Q3. What prints?</summary>
-<div class="code nofile"><pre><code class="language-csharp">record Order(int Id, List&lt;string&gt; Items);
-
-var a = new Order(1, ["Pen"]);
+<div class="code nofile"><pre><code class="language-csharp">var a = new Order(1, ["Pen"]);
 var b = a with { Id = 2 };
 b.Items.Add("Ink");
-Console.WriteLine($"{a.Items.Count} {a == b}");</code></pre></div><b>2 False.</b> <code>with</code> makes a shallow copy, so both records share the same list. They're not equal because the Ids differ.</details>
+Console.WriteLine($"{a.Items.Count} {a == b}");
+
+record Order(int Id, List&lt;string&gt; Items);</code></pre></div><b>2 False.</b> <code>with</code> makes a shallow copy, so both records share the same list. They're not equal because the Ids differ.</details>
 <details><summary>Q4. Does this test pass?</summary>
 <div class="code nofile"><pre><code class="language-csharp">[Fact]
 public void Deposit_Negative_Throws()
