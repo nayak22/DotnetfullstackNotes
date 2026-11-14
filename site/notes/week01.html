@@ -163,7 +163,7 @@ pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--lin
 <!-- ============ DAY 1 ============ -->
 <section class="day" id="day1">
 <div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Setup, the dotnet CLI and your first program</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
-<div class="goal"><strong>Goal</strong>By the end you can create, build and run a console app from the terminal, understand every file it generated, and push it to GitHub.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>SDK</dt><dd>Software Development Kit: compiler (Roslyn), <code>dotnet</code> CLI, templates and build tools needed to <i>create</i> apps.</dd></div><div class="def"><dt>Runtime</dt><dd>The minimum needed to <i>run</i> a compiled app: the CLR plus the base libraries.</dd></div><div class="def"><dt>CLR</dt><dd>Common Language Runtime: the virtual machine that loads assemblies, JIT-compiles IL, manages memory (GC), enforces type safety and handles exceptions.</dd></div><div class="def"><dt>IL / MSIL / CIL</dt><dd>Intermediate Language: CPU-independent instructions the C# compiler emits into a .dll.</dd></div><div class="def"><dt>JIT</dt><dd>Just-In-Time compiler: turns IL into native machine code the first time a method runs.</dd></div><div class="def"><dt>Assembly</dt><dd>The compiled unit of deployment (.dll or .exe) containing IL plus metadata and a manifest.</dd></div><div class="def"><dt>BCL</dt><dd>Base Class Library: the standard types every app gets (System, System.IO, System.Collections…).</dd></div><div class="def"><dt>NuGet</dt><dd>The .NET package manager and package format (.nupkg); packages come from nuget.org.</dd></div><div class="def"><dt>Project (.csproj)</dt><dd>An MSBuild file describing one buildable unit: target framework, references, packages, settings.</dd></div><div class="def"><dt>Solution (.sln)</dt><dd>A container that groups related projects so they build and open together.</dd></div><div class="def"><dt>Target Framework Moniker (TFM)</dt><dd>The framework a project builds for, e.g. <code>net8.0</code>, <code>net9.0</code>.</dd></div><div class="def"><dt>Top-level statements</dt><dd>C# 9+ feature letting Program.cs contain statements directly; the compiler generates the <code>Main</code> method.</dd></div><div class="def"><dt>Implicit usings</dt><dd>Global <code>using</code> directives (System, System.Linq, …) added automatically when <code>&lt;ImplicitUsings&gt;</code> is enabled.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>C# source → <b>Roslyn compiler</b> → IL in an assembly → <b>CLR + JIT</b> → native code.</li><li>Install the SDK on dev machines, only the runtime on servers (or ship self-contained).</li><li><code>dotnet new</code> creates, <code>dotnet build</code> compiles, <code>dotnet run</code> builds + runs, <code>dotnet watch</code> hot-reloads.</li><li>bin/ and obj/ are build output — always ignored by Git.</li><li>One solution → many projects; projects reference each other with <code>dotnet add reference</code>.</li><li>Prefer LTS releases (8, 10) for production work.</li></ul></div>
+<div class="goal"><strong>Goal</strong>By the end you can create, build and run a console app from the terminal, understand every file it generated, and push it to GitHub.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>SDK</dt><dd>Software Development Kit: compiler (Roslyn), <code>dotnet</code> CLI, templates and build tools needed to <i>create</i> apps.</dd></div><div class="def"><dt>Runtime</dt><dd>The minimum needed to <i>run</i> a compiled app: the CLR plus the base libraries.</dd></div><div class="def"><dt>CLR</dt><dd>Common Language Runtime: the virtual machine that loads assemblies, JIT-compiles IL, manages memory (GC), enforces type safety and handles exceptions.</dd></div><div class="def"><dt>IL / MSIL / CIL</dt><dd>Intermediate Language: CPU-independent instructions the C# compiler emits into a .dll.</dd></div><div class="def"><dt>JIT</dt><dd>Just-In-Time compiler: turns IL into native machine code the first time a method runs.</dd></div><div class="def"><dt>Assembly</dt><dd>The compiled unit of deployment (.dll or .exe) containing IL plus metadata and a manifest.</dd></div><div class="def"><dt>BCL</dt><dd>Base Class Library: the standard types every app gets (System, System.IO, System.Collections…).</dd></div><div class="def"><dt>NuGet</dt><dd>The .NET package manager and package format (.nupkg); packages come from nuget.org.</dd></div><div class="def"><dt>Project (.csproj)</dt><dd>An MSBuild file describing one buildable unit: target framework, references, packages, settings.</dd></div><div class="def"><dt>Solution (.sln)</dt><dd>A container that groups related projects so they build and open together. From the .NET 10 SDK, <code>dotnet new sln</code> creates the newer XML <code>.slnx</code> format by default.</dd></div><div class="def"><dt>Target Framework Moniker (TFM)</dt><dd>The framework a project builds for, e.g. <code>net8.0</code>, <code>net9.0</code>.</dd></div><div class="def"><dt>Top-level statements</dt><dd>C# 9+ feature letting Program.cs contain statements directly; the compiler generates the <code>Main</code> method.</dd></div><div class="def"><dt>Implicit usings</dt><dd>Global <code>using</code> directives (System, System.Linq, …) added automatically when <code>&lt;ImplicitUsings&gt;</code> is enabled.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>C# source → <b>Roslyn compiler</b> → IL in an assembly → <b>CLR + JIT</b> → native code.</li><li>Install the SDK on dev machines, only the runtime on servers (or ship self-contained).</li><li><code>dotnet new</code> creates, <code>dotnet build</code> compiles, <code>dotnet run</code> builds + runs, <code>dotnet watch</code> hot-reloads.</li><li>bin/ and obj/ are build output — always ignored by Git.</li><li>One solution → many projects; projects reference each other with <code>dotnet add reference</code>.</li><li>Prefer LTS releases (8, 10) for production work.</li></ul></div>
 
 <h3>1. What .NET actually is</h3>
 <p>.NET is a free, cross-platform runtime plus a large standard library. You write C#, the compiler turns it into <b>IL</b> (Intermediate Language) stored in a <code>.dll</code>, and at run time the <b>CLR</b> (Common Language Runtime) compiles that IL to machine code with the <b>JIT</b> compiler. You will study these internals in Week 8; for now remember the pipeline.</p>
@@ -172,7 +172,7 @@ pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--lin
 <tr><td><b>SDK</b></td><td>Compiler, CLI and templates — what developers install</td></tr>
 <tr><td><b>Runtime</b></td><td>What a machine needs only to <i>run</i> apps</td></tr>
 <tr><td><b>BCL</b></td><td>Base Class Library: <code>System.Collections</code>, <code>System.IO</code>, <code>System.Text.Json</code>…</td></tr>
-<tr><td><b>LTS / STS</b></td><td>LTS releases (even numbers: 8, 10) get 3 years of support; STS (odd: 9) get 18 months</td></tr>
+<tr><td><b>LTS / STS</b></td><td>LTS releases (even numbers: 8, 10) get 3 years of support; STS (odd: 9) got 18 months, extended to 24 months from .NET 9 on. .NET 8 support ends November 2026, so .NET 10 is the current LTS</td></tr>
 <tr><td><b>NuGet</b></td><td>The package manager, like npm for .NET</td></tr>
 </table></div>
 
@@ -213,11 +213,11 @@ dotnet watch run        # re-runs automatically on every save</code></pre></div>
 &lt;/Project&gt;</code></pre></div>
 
 <h3>4. Top-level statements vs the classic Main method</h3>
-<p>Since C# 9, <code>Program.cs</code> can contain statements directly. The compiler wraps them in a hidden <code>Main</code> method. Both versions below compile to the same thing.</p>
+<p>Since C# 9, <code>Program.cs</code> can contain statements directly. The compiler wraps them in a hidden <code>Main</code> method. The two versions below are equivalent. The real generated class is called <code>Program</code>, sits in the global namespace and has a method with the unspeakable name <code>&lt;Main&gt;$</code>.</p>
 <div class="code"><div class="fname">Program.cs — modern</div><pre><code class="language-csharp">Console.WriteLine("What's your name?");
 string? name = Console.ReadLine();
 Console.WriteLine($"Hello, {name}! Today is {DateTime.Now:dddd}.");</code></pre></div>
-<div class="code"><div class="fname">Program.cs — classic (what the compiler generates)</div><pre><code class="language-csharp">using System;
+<div class="code"><div class="fname">Program.cs — classic (equivalent to what the compiler generates)</div><pre><code class="language-csharp">using System;
 
 namespace HelloDotnet;
 
@@ -227,14 +227,15 @@ internal class Program
     {
         Console.WriteLine("What's your name?");
         string? name = Console.ReadLine();
-        Console.WriteLine($"Hello, {name}!");
+        Console.WriteLine($"Hello, {name}! Today is {DateTime.Now:dddd}.");
     }
 }</code></pre></div>
 <div class="note tip"><b>Tip.</b> <code>args</code> still works in top-level programs. Run <code>dotnet run -- Samrath</code> and read it with <code>args[0]</code>.</div>
 
 <h3>5. Solutions and multiple projects</h3>
 <p>Real apps have several projects (API, class library, tests) grouped in a <b>solution</b> (<code>.sln</code>). Practise the shape now.</p>
-<div class="code nofile"><pre><code class="language-bash">dotnet new sln -n Week1
+<div class="code nofile"><pre><code class="language-bash">cd ..                          # back to dotnet-week1/
+dotnet new sln -n Week1
 dotnet new classlib -n Week1.Core
 dotnet sln add HelloDotnet/HelloDotnet.csproj Week1.Core/Week1.Core.csproj
 dotnet add HelloDotnet reference Week1.Core     # HelloDotnet can now use Core's classes
@@ -272,7 +273,7 @@ git push -u origin main</code></pre></div>
 <!-- ============ DAY 2 ============ -->
 <section class="day" id="day2">
 <div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Variables, types, value vs reference, conversion</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
-<div class="goal"><strong>Goal</strong>Pick the right built-in type, explain where value and reference types live in memory, and convert between types safely.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Variable</dt><dd>A named storage location with a fixed type.</dd></div><div class="def"><dt>Value type</dt><dd>A type whose variable holds the data itself; assignment copies the data. Structs, enums and primitives like int, double, bool.</dd></div><div class="def"><dt>Reference type</dt><dd>A type whose variable holds a reference to an object on the managed heap; assignment copies the reference. Classes, string, arrays, delegates, records (class).</dd></div><div class="def"><dt>Stack</dt><dd>Fast LIFO memory for method calls and their local value-type variables; freed automatically when the method returns.</dd></div><div class="def"><dt>Managed heap</dt><dd>Memory where reference-type objects live, managed by the garbage collector.</dd></div><div class="def"><dt>var</dt><dd>Implicitly typed local; the compiler infers a fixed type from the initializer. Still strongly typed.</dd></div><div class="def"><dt>const</dt><dd>Compile-time constant baked into the IL; must be a primitive or string.</dd></div><div class="def"><dt>readonly</dt><dd>A field that can be assigned only at declaration or in the constructor; evaluated at runtime.</dd></div><div class="def"><dt>Implicit conversion</dt><dd>Automatic, lossless conversion (int → long).</dd></div><div class="def"><dt>Explicit conversion (cast)</dt><dd>Conversion that may lose data and must be written out: <code>(int)9.7</code>.</dd></div><div class="def"><dt>Boxing</dt><dd>Wrapping a value type in an object on the heap so it can be treated as <code>object</code>.</dd></div><div class="def"><dt>Unboxing</dt><dd>Extracting the value type back out of a boxed object with an explicit cast to the exact type.</dd></div><div class="def"><dt>Default value</dt><dd>What an unassigned field holds: 0, false, '\0', or null for references.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Value types copy data; reference types copy the reference — the core idea for the whole course.</li><li>Use <code>decimal</code> for money, <code>double</code> for measurements, <code>int</code>/<code>long</code> for counts.</li><li><code>TryParse</code> for user input; <code>Parse</code> only when bad input is truly exceptional.</li><li><code>const</code> = compile time, <code>readonly</code> = set once at runtime.</li><li>Integer overflow wraps silently unless you use <code>checked</code>.</li><li>Boxing allocates on the heap — avoid it in loops; generics prevent it.</li></ul></div>
+<div class="goal"><strong>Goal</strong>Pick the right built-in type, explain where value and reference types live in memory, and convert between types safely.</div><h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Variable</dt><dd>A named storage location with a fixed type.</dd></div><div class="def"><dt>Value type</dt><dd>A type whose variable holds the data itself; assignment copies the data. Structs, enums and primitives like int, double, bool.</dd></div><div class="def"><dt>Reference type</dt><dd>A type whose variable holds a reference to an object on the managed heap; assignment copies the reference. Classes, string, arrays, delegates, records (class).</dd></div><div class="def"><dt>Stack</dt><dd>Fast LIFO memory for method calls and their local value-type variables; freed automatically when the method returns.</dd></div><div class="def"><dt>Managed heap</dt><dd>Memory where reference-type objects live, managed by the garbage collector.</dd></div><div class="def"><dt>var</dt><dd>Implicitly typed local; the compiler infers a fixed type from the initializer. Still strongly typed.</dd></div><div class="def"><dt>const</dt><dd>Compile-time constant baked into the IL; must be a primitive, enum or string (or null for other reference types).</dd></div><div class="def"><dt>readonly</dt><dd>A field that can be assigned only at declaration or in the constructor; evaluated at runtime.</dd></div><div class="def"><dt>Implicit conversion</dt><dd>Automatic, lossless conversion (int → long).</dd></div><div class="def"><dt>Explicit conversion (cast)</dt><dd>Conversion that may lose data and must be written out: <code>(int)9.7</code>.</dd></div><div class="def"><dt>Boxing</dt><dd>Wrapping a value type in an object on the heap so it can be treated as <code>object</code>.</dd></div><div class="def"><dt>Unboxing</dt><dd>Extracting the value type back out of a boxed object with an explicit cast to the exact type.</dd></div><div class="def"><dt>Default value</dt><dd>What an unassigned field holds: 0, false, '\0', or null for references.</dd></div></dl><div class="notes"><strong>Quick notes</strong><ul><li>Value types copy data; reference types copy the reference — the core idea for the whole course.</li><li>Use <code>decimal</code> for money, <code>double</code> for measurements, <code>int</code>/<code>long</code> for counts.</li><li><code>TryParse</code> for user input; <code>Parse</code> only when bad input is truly exceptional.</li><li><code>const</code> = compile time, <code>readonly</code> = set once at runtime.</li><li>Integer overflow wraps silently unless you use <code>checked</code>.</li><li>Boxing allocates on the heap — avoid it in loops; generics prevent it.</li></ul></div>
 
 <h3>1. Declaring variables</h3>
 <div class="code nofile"><pre><code class="language-csharp">int age = 29;              // explicit type
@@ -294,7 +295,7 @@ var count = 10;
 <tr><td><code>bool</code></td><td>System.Boolean</td><td>1 byte</td><td>true / false</td></tr>
 <tr><td><code>char</code></td><td>System.Char</td><td>2 bytes</td><td>One UTF-16 character</td></tr>
 <tr><td><code>string</code></td><td>System.String</td><td>reference</td><td>Text (immutable)</td></tr>
-<tr><td><code>DateTime</code> / <code>DateOnly</code></td><td>struct</td><td>8 bytes</td><td>Dates and times</td></tr>
+<tr><td><code>DateTime</code> / <code>DateOnly</code></td><td>struct</td><td>8 / 4 bytes</td><td>Dates and times</td></tr>
 </table></div>
 <div class="code nofile"><pre><code class="language-csharp">Console.WriteLine(0.1 + 0.2 == 0.3);     // False  (double is binary floating point)
 Console.WriteLine(0.1m + 0.2m == 0.3m);  // True   (decimal is exact)
@@ -364,8 +365,8 @@ else
 int r = Convert.ToInt32(9.6);     // 10 (banker's rounding: 2.5 → 2)
 
 // Culture matters for decimals: "1,5" vs "1.5"
-using System.Globalization;
-double x = double.Parse("1.5", CultureInfo.InvariantCulture);</code></pre></div>
+// needs: using System.Globalization;  (using directives must go at the top of the file)
+double x = double.Parse("1.5", System.Globalization.CultureInfo.InvariantCulture);</code></pre></div>
 
 <h3>5. Boxing and unboxing (preview)</h3>
 <div class="code nofile"><pre><code class="language-csharp">int v = 5;
@@ -392,7 +393,7 @@ int back = (int)o; // unboxing: must cast to the exact type
 <details><summary>Why is string a reference type but behaves like a value type?</summary>It's immutable. Any "change" creates a new string object, so other variables referencing the old one are never affected. <code>==</code> is overloaded to compare content.</details>
 <details><summary>When would you choose a struct over a class?</summary>For small (≈16 bytes or less), immutable values that represent a single value, like a coordinate or money amount, and are created often — to avoid heap allocations.</details>
 <details><summary>What's the difference between Parse, TryParse and Convert?</summary>Parse throws on bad input; TryParse returns false and gives the value through <code>out</code>; Convert handles null (returns default) and rounds floating values.</details>
-<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between value types and reference types?</summary><div>Value types store their data directly and are copied on assignment; reference types store a reference to a heap object and assignment copies only the reference, so both variables see changes. Value types can't be null unless nullable (<code>int?</code>); reference types default to null.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>const vs readonly?</summary><div><code>const</code> is a compile-time constant, implicitly static, restricted to primitives/strings, and its value is copied into callers' IL (changing it requires recompiling callers). <code>readonly</code> is set at declaration or in a constructor, can hold any type, and is evaluated at runtime.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why use decimal instead of double for money?</summary><div>double is binary floating point and can't represent many base-10 fractions exactly (0.1 + 0.2 ≠ 0.3). decimal is a 128-bit base-10 type with 28–29 significant digits, so currency arithmetic is exact. The cost is speed and range.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is it true that value types always live on the stack?</summary><div>No. Local value-type variables usually live on the stack (or in registers), but a value-type field of a class lives on the heap inside that object, and boxed values and array elements of value types are on the heap too. The real distinction is copy semantics, not location.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is boxing and why is it a performance concern?</summary><div>Boxing allocates a heap object and copies the value into it when a value type is converted to object or an interface. It creates GC pressure and costs CPU, which is why non-generic ArrayList was replaced by List&lt;T&gt;.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is var dynamic typing?</summary><div>No. <code>var</code> is resolved at compile time to one fixed type. <code>dynamic</code> defers type checking to runtime via the DLR. Use var when the type is obvious from the right-hand side.</div></details></section>
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between value types and reference types?</summary><div>Value types store their data directly and are copied on assignment; reference types store a reference to a heap object and assignment copies only the reference, so both variables see changes. Value types can't be null unless nullable (<code>int?</code>); reference types default to null.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>const vs readonly?</summary><div><code>const</code> is a compile-time constant, implicitly static, restricted to primitives, enums and strings, and its value is copied into callers' IL (changing it requires recompiling callers). <code>readonly</code> is set at declaration or in a constructor, can hold any type, and is evaluated at runtime.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why use decimal instead of double for money?</summary><div>double is binary floating point and can't represent many base-10 fractions exactly (0.1 + 0.2 ≠ 0.3). decimal is a 128-bit base-10 type with 28–29 significant digits, so currency values like 0.10 are stored exactly and adding or subtracting them is exact. Division such as 1/3 still rounds. The cost is speed and range.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is it true that value types always live on the stack?</summary><div>No. Local value-type variables usually live on the stack (or in registers), but a value-type field of a class lives on the heap inside that object, and boxed values and array elements of value types are on the heap too. The real distinction is copy semantics, not location.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is boxing and why is it a performance concern?</summary><div>Boxing allocates a heap object and copies the value into it when a value type is converted to object or an interface. It creates GC pressure and costs CPU, which is why non-generic ArrayList was replaced by List&lt;T&gt;.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Is var dynamic typing?</summary><div>No. <code>var</code> is resolved at compile time to one fixed type. <code>dynamic</code> defers type checking to runtime via the DLR. Use var when the type is obvious from the right-hand side.</div></details></section>
 
 <!-- ============ DAY 3 ============ -->
 <section class="day" id="day3">
@@ -451,14 +452,14 @@ switch (day)
         break;   // every section needs break/return — no fall-through
 }</code></pre></div>
 
-<h3>4. Switch expressions and patterns (C# 8+)</h3>
+<h3>4. Switch expressions and patterns (C# 8+; relational and <code>and</code>/<code>or</code>/<code>not</code> patterns are C# 9+)</h3>
 <p>Switch expressions return a value, are shorter, and the compiler warns if you miss a case. Prefer them for mapping input to output.</p>
 <div class="code nofile"><pre><code class="language-csharp">string Grade(int score) => score switch
 {
+    &lt; 0 or &gt; 100    => throw new ArgumentOutOfRangeException(nameof(score)),   // first: arms match top-down
     &gt;= 90           => "A",
     &gt;= 75 and &lt; 90  => "B",
     &gt;= 50           => "C",
-    &lt; 0 or &gt; 100    => throw new ArgumentOutOfRangeException(nameof(score)),
     _               => "Fail"        // _ is the discard: "anything else"
 };
 
@@ -558,8 +559,8 @@ s.Replace("Stack", "Developer");
 s.Trim().Split(' ');                   // ["Learn", ".NET", "Full", "Stack"]
 string.Join(" | ", new[] { "C#", "SQL" }); // "C# | SQL"
 s.Trim().Substring(0, 5);              // "Learn"
-s.Trim()[..5];                         // "Learn" — range syntax
-s.Trim()[^5..];                        // "Stack" — ^ counts from the end
+string first = s.Trim()[..5];          // "Learn" — range syntax
+string last = s.Trim()[^5..];          // "Stack" — ^ counts from the end
 
 string.IsNullOrWhiteSpace(s);          // validate input with this
 
@@ -701,14 +702,17 @@ Console.WriteLine($"{min} {max} {avg:F1}");</code></pre></div>
 <div class="note tip"><b>Classes and ref.</b> Passing an object without <code>ref</code> still lets the method change its <i>properties</i>, because the reference is copied, not the object. <code>ref</code> on a class parameter lets the method replace the caller's object entirely.</div>
 
 <h3>3. Overloading</h3>
-<div class="code nofile"><pre><code class="language-csharp">static double Area(double radius) =&gt; Math.PI * radius * radius;          // circle
-static double Area(double width, double height) =&gt; width * height;       // rectangle
-static double Area(double a, double b, double c)                         // triangle (Heron)
+<div class="code nofile"><pre><code class="language-csharp">static class Shapes   // overloads must be class members: local functions can't be overloaded
 {
-    double s = (a + b + c) / 2;
-    return Math.Sqrt(s * (s - a) * (s - b) * (s - c));
-}
-// Overloads differ by parameter count or types — NOT by return type alone.</code></pre></div>
+    public static double Area(double radius) =&gt; Math.PI * radius * radius;          // circle
+    public static double Area(double width, double height) =&gt; width * height;       // rectangle
+    public static double Area(double a, double b, double c)                         // triangle (Heron)
+    {
+        double s = (a + b + c) / 2;
+        return Math.Sqrt(s * (s - a) * (s - b) * (s - c));
+    }
+    // Overloads differ by parameter count or types — NOT by return type alone.
+}</code></pre></div>
 
 <h3>4. Nullable types and null operators</h3>
 <div class="code nofile"><pre><code class="language-csharp">// Nullable VALUE types: int? is Nullable&lt;int&gt;
@@ -733,7 +737,7 @@ string sure = FindName()!;
 // Guard clauses
 static void Register(string email)
 {
-    ArgumentException.ThrowIfNullOrWhiteSpace(email);   // .NET 7+
+    ArgumentException.ThrowIfNullOrWhiteSpace(email);   // .NET 8+ (ThrowIfNullOrEmpty is .NET 7+)
     // ...
 }</code></pre></div>
 
@@ -821,7 +825,9 @@ public static class Calculator
         {
             error = (op is '/' or '%') &amp;&amp; b == 0
                 ? "Cannot divide by zero."
-                : $"Unknown operator '{op}'. Use + - * / % ^";
+                : "+-*x/%^".Contains(op)
+                    ? "Result is not a real number (e.g. -8 ^ 0.5)."
+                    : $"Unknown operator '{op}'. Use + - * / % ^";
             return false;
         }
         return true;
@@ -1060,9 +1066,9 @@ Second number: 0
 <tr><td><code>1e309</code></td><td>number</td><td>Reject infinity</td></tr>
 <tr><td><code>/ 0</code></td><td>calculator</td><td>"Cannot divide by zero"</td></tr>
 <tr><td><code>-300</code> Celsius</td><td>converter</td><td>Below absolute zero</td></tr>
-<tr><td>Ctrl+Z / Ctrl+D</td><td>any prompt</td><td><code>ReadLine()</code> returns null — exit cleanly</td></tr>
+<tr><td>Ctrl+Z / Ctrl+D</td><td>any prompt</td><td><code>ReadLine()</code> returns null — exit cleanly (guard <code>ReadDouble</code>, <code>ReadOperator</code> and <code>ReadChoice</code>, or they re-prompt forever)</td></tr>
 </table></div>
-<div class="code"><div class="fname">ConsoleInput.cs — improved ReadDouble</div><pre><code class="language-csharp">public static double ReadDouble(string prompt)
+<div class="code"><div class="fname">ConsoleInput.cs — improved ReadDouble, ReadOperator, ReadChoice</div><pre><code class="language-csharp">public static double ReadDouble(string prompt)
 {
     while (true)
     {
@@ -1084,13 +1090,40 @@ Second number: 0
             continue;
         }
 
-        if (double.IsInfinity(value))
+        if (!double.IsFinite(value))              // rejects 1e309 (Infinity) and "NaN"
         {
-            Console.WriteLine("  ✗ Number is too large.");
+            Console.WriteLine("  ✗ Number is too large or not a number.");
             continue;
         }
 
         return value;
+    }
+}
+
+// Same EOF guard in the other readers — without it they loop forever on null
+public static char ReadOperator(string prompt)
+{
+    while (true)
+    {
+        Console.Write(prompt);
+        string? text = Console.ReadLine()?.Trim();
+        if (text is null) Environment.Exit(0);
+        if (text is { Length: 1 } &amp;&amp; "+-*x/%^".Contains(text[0]))
+            return text[0];
+        Console.WriteLine("  ✗ Use one of: + - * / % ^");
+    }
+}
+
+public static int ReadChoice(string prompt, int min, int max)
+{
+    while (true)
+    {
+        Console.Write(prompt);
+        string? text = Console.ReadLine();
+        if (text is null) Environment.Exit(0);
+        if (int.TryParse(text, out int n) &amp;&amp; n &gt;= min &amp;&amp; n &lt;= max)
+            return n;
+        Console.WriteLine($"  ✗ Choose a number from {min} to {max}.");
     }
 }</code></pre></div>
 
@@ -1155,7 +1188,7 @@ Console.WriteLine(s?.Length ?? -1);</code></pre></div>
 <details><summary>Q4. Does this compile?</summary>
 <div class="code nofile"><pre><code class="language-csharp">static int Get() =&gt; 1;
 static double Get() =&gt; 1.0;</code></pre></div>
-<b>No.</b> Overloads can't differ by return type only.</details>
+<b>No.</b> Overloads can't differ by return type only (CS0111 inside a class). Pasted as top-level local functions it fails anyway, because local functions can't be overloaded at all (CS0128).</details>
 <details><summary>Q5. What prints?</summary>
 <div class="code nofile"><pre><code class="language-csharp">int x = 10;
 Change(x);

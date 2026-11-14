@@ -58,3 +58,26 @@ Weeks 1–4 already exist and set the quality bar. Match them exactly in structu
 - Avoid mermaid diagrams unless they truly help. If you use one: put it in `<pre class="mermaid">`,
   escape `<` `>` in it as `&lt;` `&gt;`, write generics in labels as `#lt;T#gt;`, and line breaks as `&lt;br/&gt;`.
 - Keep the file self-contained; no new external libraries.
+
+## Phase 2 notes (Weeks 11–22: SQL Server, EF Core, ASP.NET Core Web API)
+- Chips: ["Phase 2 · Week N of 74", ".NET 8 LTS / 9", "SQL Server 2022", "~18 hrs", "<project chip>"].
+  Keep C# 12 chip only where the week is mostly C#.
+- Template argument for build(...): always "/home/claude/build/week04.html".
+- SQL code blocks: C(src, "file.sql", lang="sql"). There is NO SQL Server in this sandbox: write T-SQL
+  carefully from knowledge, keep statements standard SQL Server 2019+ (note version when newer), and show
+  expected result sets as lang="text" blocks clearly labelled as example output.
+- Learner setup assumption: SQL Server 2022 Developer in Docker (`mcr.microsoft.com/mssql/server:2022-latest`)
+  or local install, with the VS Code MSSQL extension or SSMS. Week 11 Monday covers this setup.
+- C#/.NET: the sandbox has .NET 8 SDK, offline NuGet. The ASP.NET Core shared framework IS available via
+  <FrameworkReference Include="Microsoft.AspNetCore.App" /> (minimal APIs, controllers, SignalR server,
+  health checks, rate limiting, output caching compile). NOT available offline: EF Core, Dapper,
+  Microsoft.Data.SqlClient, JwtBearer, Identity.EntityFrameworkCore, Serilog, FluentValidation, Mapster,
+  Hangfire, Swashbuckle. Write that code carefully against the real APIs; reviewers will read-check it.
+- Weekend projects in Phase 2 depend on a database, so they cannot RUN in the sandbox. Still give complete,
+  correct code and exact `dotnet` + `docker` + sqlcmd commands, plus expected console/HTTP output blocks.
+- Continuity: Phase 1 projects exist (Toolkit W1, City Library W2/W4, Bank W3, Grade analyzer W5, Expense
+  tracker W6, Downloader W7, Parking lot W9). Phase 2 micro-projects per the roadmap: W11 HR schema,
+  W13 sales procs, W17 to-do API, W18 product catalog API, W19 blog API, W20 auth service, W21 report
+  emailer + SignalR chat.
+- Interview questions in Phase 2 may use "Advanced" sparingly for topics like isolation levels, execution
+  plans, JWT security — but prefer Basic/Intermediate.

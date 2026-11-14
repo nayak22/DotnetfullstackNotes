@@ -1,0 +1,1522 @@
+<title>.NET Notes · Week 20</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 20</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">JWT Fundamentals</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">ASP.NET Identity</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">JWT Issuance</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Refresh Tokens</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Authorisation</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: AuthService</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Secure Blog API</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 2 · Week 20 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">SQL Server 2022</span><span class="chip">~18 hrs</span><span class="chip">Auth service</span></div>
+  <h1>Week 20 — Authentication and Authorisation</h1>
+  <p>Security is not a feature you add at the end — it is load-bearing from day one. This week you'll understand how JWT authentication and ASP.NET Core Identity fit together, issue and validate tokens correctly, implement refresh-token rotation with reuse detection, and design authorisation policies from simple role checks to resource-based handlers. The weekend project is a standalone AuthService that you then wire into the Week 19 Blog API.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>AuthN vs AuthZ, Cookies vs Tokens, JWT Anatomy</h3><p>AuthN vs AuthZ, cookie vs token, JWT structure, HMAC vs RSA, storage risks, HTTPS.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>ASP.NET Core Identity</h3><p>IdentityDbContext, ApplicationUser, UserManager, RoleManager, seeding.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Issuing and Validating JWTs</h3><p>JwtBearer, TokenValidationParameters, JsonWebTokenHandler, 401 vs 403.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Refresh Tokens and Password Reset</h3><p>Rotation, reuse detection, token chain, password reset, lockout.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Roles, Policies and Resource-Based Checks</h3><p>Custom requirements, handlers, IAuthorizationService, secure-by-default.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>AuthService Micro-Project</h3><p>Full service: register, login, refresh, logout, curl lifecycle.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Secure Blog API and Try-to-Break</h3><p>BlogApi JWT integration, author-or-admin, adversarial tests, checklist, quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Authentication, Authorisation and JWT Fundamentals</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Understand the difference between AuthN and AuthZ, compare cookie vs token strategies, dissect a JWT, and reason clearly about where tokens should be stored and why HTTPS is non-negotiable.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Authentication (AuthN)</dt><dd>Proving who you are — verifying identity, e.g. entering a password or OTP.</dd></div><div class="def"><dt>Authorisation (AuthZ)</dt><dd>Deciding what you are allowed to do once identity is established.</dd></div><div class="def"><dt>Cookie-based session</dt><dd>Server stores session data, sends a session ID in a Set-Cookie header; browser resends it automatically.</dd></div><div class="def"><dt>Token-based (JWT)</dt><dd>Server issues a signed token; client stores it and sends it in the Authorization header.</dd></div><div class="def"><dt>JWT (JSON Web Token)</dt><dd>A compact, URL-safe token with three Base64Url parts: header.payload.signature.</dd></div><div class="def"><dt>Header</dt><dd>First JWT part: algorithm (<code>alg</code>) and type (<code>typ</code>).</dd></div><div class="def"><dt>Payload</dt><dd>Second JWT part: claims — standard (<code>sub</code>, <code>exp</code>, <code>iat</code>, <code>iss</code>, <code>aud</code>) plus custom.</dd></div><div class="def"><dt>Signature</dt><dd>Third JWT part: HMAC or RSA over header + payload using the secret or private key.</dd></div><div class="def"><dt>Claim</dt><dd>A statement about a subject, e.g. <code>role: admin</code> or <code>mobile: +919876543210</code>.</dd></div><div class="def"><dt>HMAC-SHA256 (HS256)</dt><dd>Symmetric signing — same secret signs and verifies. Good for a single service.</dd></div><div class="def"><dt>RS256</dt><dd>Asymmetric RSA signing — private key signs, public key verifies. Services can verify without the secret.</dd></div><div class="def"><dt>XSS (Cross-Site Scripting)</dt><dd>Injected script reads <code>localStorage</code>; a reason NOT to store tokens there.</dd></div><div class="def"><dt>CSRF (Cross-Site Request Forgery)</dt><dd>Tricks the browser into sending a cookie to your server from another site.</dd></div><div class="def"><dt>HTTPS</dt><dd>TLS over HTTP; encrypts the channel so tokens can't be intercepted in transit.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>AuthN always comes before AuthZ — you must know who someone is before deciding what they can do.</li><li>JWTs are <b>signed, not encrypted</b>. Anyone can Base64-decode the payload. Never put secrets (Aadhaar number, CVV) in a JWT.</li><li><b>HMAC:</b> single shared secret — fast, fine for a monolith. <b>RSA:</b> private key signs, public key verifies — needed when other services or mobile clients verify tokens without the secret.</li><li><code>exp</code> (expiry) is a Unix timestamp in seconds, not milliseconds.</li><li><b>localStorage</b> is XSS-vulnerable — an injected script can steal the token. <b>HttpOnly cookies</b> are immune to XSS but need CSRF protection. Many SPAs choose cookies for access tokens in production.</li><li>HTTPS is not optional. Without it, every token you issue travels in plaintext across the network.</li></ul></div>
+
+<h3>1. AuthN vs AuthZ — why the distinction matters</h3>
+<p>When a customer of <em>Ugaav Agro</em>'s ordering portal logs in, two checks happen in sequence:</p>
+<div class="tbl"><table><tr><th>Step</th><th>Question answered</th><th>Example decision</th></tr><tr><td>Authentication</td><td>Is this really Priya Sharma?</td><td>OTP to +91 98765 43210 matches → identity confirmed</td></tr><tr><td>Authorisation</td><td>Can Priya access this route?</td><td>Role = <code>farmer</code> → can place orders, cannot view admin dashboard</td></tr></table></div>
+<p>A bug that swaps these is catastrophic: authorisation without authentication lets anyone reach admin pages.</p>
+
+<h3>2. Cookies vs Tokens</h3>
+<div class="tbl"><table><tr><th></th><th>Cookie/Session</th><th>JWT (token)</th></tr><tr><td>Where state lives</td><td>Server (session store)</td><td>Client (token is self-contained)</td></tr><tr><td>Scalability</td><td>Need sticky sessions or shared cache</td><td>Stateless — any server can verify</td></tr><tr><td>Revocation</td><td>Delete session from store → instant</td><td>Tricky — token stays valid until expiry (see Thu: refresh tokens)</td></tr><tr><td>XSS exposure</td><td>HttpOnly cookie not reachable from JS</td><td>localStorage / JS-accessible cookie is reachable</td></tr><tr><td>CSRF risk</td><td>Yes, if cookie sent automatically</td><td>No, unless stored in a cookie</td></tr><tr><td>Best for</td><td>Traditional server-rendered apps</td><td>SPAs, mobile apps, microservices</td></tr></table></div>
+
+<h3>3. JWT anatomy</h3>
+<p>A JWT is three Base64Url-encoded JSON objects joined by dots: <code>header.payload.signature</code>.</p>
+<div class="code"><div class="fname">jwt-anatomy.json</div><pre><code class="language-json">// --- Decoded header ---
+{
+  "alg": "HS256",    // HMAC-SHA256
+  "typ": "JWT"
+}
+
+// --- Decoded payload (claims) ---
+{
+  "sub": "user_42",                     // subject (user ID)
+  "name": "Priya Sharma",
+  "mobile": "+919876543210",
+  "role": "farmer",
+  "iss": "ugaav-auth",                  // issuer
+  "aud": "ugaav-orders",               // audience
+  "iat": 1700000000,                    // issued-at (Unix seconds)
+  "exp": 1700003600                     // expires-at (Unix seconds) — 1 hour later
+}
+
+// --- Signature ---
+// HMAC_SHA256(
+//   base64url(header) + "." + base64url(payload),
+//   SECRET_KEY                        // server holds this; never send it to clients
+// )</code></pre></div>
+<div class="note warn"><b>Avoid.</b> The payload is Base64Url-encoded, NOT encrypted. Paste any JWT into jwt.io and you can read every claim. Never put a user's password, Aadhaar number, CVV, or any private data in a JWT claim.</div>
+
+<h3>4. HMAC vs RSA signing</h3>
+<div class="code nofile"><pre><code class="language-text">// HMAC-SHA256 (HS256) — symmetric
+// One secret: sign with it, verify with it
+// If a second service needs to verify tokens, it must also have the secret → risk of exposure
+
+// RS256 — asymmetric RSA
+// Private key (server keeps safe): signs tokens
+// Public key (can be published as JWKS endpoint): verifies tokens
+// A mobile app or microservice downloads the public key and verifies locally — never touches the secret
+
+// Choosing:
+// Single API + single trust boundary  → HS256 is fine, simpler
+// Multiple services or public clients → RS256 (or ES256 — ECDSA, same idea, smaller keys)</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>HS256</th><th>RS256</th></tr><tr><td>Key type</td><td>Single shared secret</td><td>Private key (signs) + public key (verifies)</td></tr><tr><td>Speed</td><td>Faster</td><td>Slower (RSA math)</td></tr><tr><td>Secret exposure</td><td>Every verifier needs the secret</td><td>Verifiers only need the public key</td></tr><tr><td>Key rotation</td><td>Must redistribute secret to all verifiers</td><td>Rotate private key, publish new public key</td></tr><tr><td>Use case</td><td>Single API, internal services</td><td>Microservices, public JWKS, mobile clients</td></tr></table></div>
+
+<h3>5. Token storage risks</h3>
+<div class="code nofile"><pre><code class="language-text">// OPTION 1: localStorage / sessionStorage
+// ✗ Readable by any JavaScript on the page
+// ✗ XSS attack steals token with document.cookie is not needed; localStorage.getItem("token") works
+// ✓ No automatic CSRF risk
+
+// OPTION 2: HttpOnly Secure cookie
+// ✓ Not readable by JavaScript at all (XSS can't steal it)
+// ✓ Sent only over HTTPS (Secure flag)
+// ✗ Browser sends it automatically → CSRF risk (mitigate with SameSite=Strict/Lax + CSRF token)
+
+// OPTION 3: In-memory (JS variable)
+// ✓ XSS can't survive a page reload (token is gone)
+// ✗ Lost on refresh → needs silent re-auth (refresh token in HttpOnly cookie)</code></pre></div>
+
+<h3>6. Why HTTPS is non-negotiable</h3>
+<p>Without TLS, an attacker on the same Wi-Fi (café, airport) can read your Authorization header
+and replay the JWT for the token's full lifetime. All traffic between the mobile app and
+Ugaav's API must be over HTTPS. Use <code>app.UseHttpsRedirection()</code> in development;
+ensure your hosting (Azure App Service, AWS ALB) terminates TLS in production.</p>
+<div class="code"><div class="fname">Program.cs (excerpt)</div><pre><code class="language-csharp">// Program.cs — always present in production
+app.UseHttpsRedirection();
+
+// In development (launchSettings.json sets HTTPS port automatically)
+// dotnet dev-certs https --trust    ← run once per machine</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Saying 'JWT is encrypted' — it is signed. Tampered payloads are rejected, but anyone can read them.</li><li>Putting sensitive data (passwords, PAN numbers) in a JWT claim.</li><li>Using HS256 when multiple independent services verify tokens — they'd all need the secret.</li><li>Storing JWTs in localStorage in a production SPA facing real XSS risk.</li><li>Forgetting to set an expiry (<code>exp</code>) claim — the token is then valid forever.</li><li>Confusing authentication (who) with authorisation (can they?).</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Paste any JWT from jwt.io's playground into a base64 decoder manually — confirm you can read the payload without the secret.</li><li>Draw on paper: HTTP request flow for cookie-session auth vs JWT auth. Label where AuthN and AuthZ happen.</li><li>List three claim types you would and three you would NOT put in a JWT for a fintech app. Justify each.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does JWT stand for and what are its three parts?</summary>JSON Web Token. Header (algorithm + type), Payload (claims), Signature (HMAC or RSA over header+payload).</details><details><summary>Signed vs encrypted — what does 'signed' mean for a JWT?</summary>The signature lets any holder of the key verify that the token hasn't been tampered with. The payload is still readable by anyone; it is not encrypted.</details><details><summary>When would you prefer RS256 over HS256?</summary>When multiple independent services or public clients need to verify tokens. They receive the public key and verify locally without ever receiving the secret private key.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between authentication and authorisation?</summary><div>Authentication proves identity — are you who you claim to be? Authorisation decides what an authenticated identity may do. AuthN comes first; without it, AuthZ has no subject to evaluate.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why are JWTs called 'self-contained'?</summary><div>All the information needed to authorise a request (user ID, roles, expiry) is encoded in the token itself. The server doesn't need a database round-trip to validate — it just verifies the signature and reads the claims.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Name two risks of storing a JWT in localStorage.</summary><div>(1) XSS — injected JavaScript can call localStorage.getItem and exfiltrate the token. (2) Persistent across tabs/sessions; a stolen token stays usable until expiry.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is CSRF and how does it relate to cookie-based auth?</summary><div>CSRF tricks the browser into making an authenticated request to your server from a malicious page, because the browser automatically attaches cookies. Mitigations: SameSite cookie attribute (Strict or Lax), CSRF tokens in forms, or not using cookies and requiring an explicit Authorization header.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Your company has an ASP.NET Core API, an iOS app, and a React SPA — all using the same auth service. Should you use HS256 or RS256? Why?</summary><div>RS256. The iOS app and React SPA can verify tokens using the published public key (JWKS endpoint) without ever receiving the secret. With HS256 you'd need to give the secret to every verifier, increasing the blast radius if it leaks.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>A JWT's exp claim has passed but the user is still active. What are your options for keeping them logged in without asking them to re-enter their password?</summary><div>Issue a short-lived access token (15 min) paired with a long-lived refresh token stored securely (HttpOnly cookie or secure storage). When the access token expires, the client exchanges the refresh token for a new access token silently. Rotate the refresh token on each use to detect reuse attacks. This is Thursday's topic.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>ASP.NET Core Identity</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Wire up ASP.NET Core Identity to your API — IdentityDbContext, ApplicationUser, password options, UserManager, SignInManager, RoleManager, and seeding roles and an admin account.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>ASP.NET Core Identity</dt><dd>A membership system providing user storage, password hashing, roles, claims, lockout, and two-factor support — integrated with EF Core.</dd></div><div class="def"><dt>IdentityDbContext</dt><dd>An EF Core DbContext that includes all Identity tables (AspNetUsers, AspNetRoles, AspNetUserRoles, AspNetUserClaims, etc.).</dd></div><div class="def"><dt>ApplicationUser</dt><dd>Your custom user class inheriting from <code>IdentityUser</code>; add extra columns here (e.g. FullName, MobileNumber).</dd></div><div class="def"><dt>IdentityUser</dt><dd>The base Identity user with Id (Guid string), UserName, Email, PasswordHash, PhoneNumber, LockoutEnabled, etc.</dd></div><div class="def"><dt>UserManager&lt;T&gt;</dt><dd>Service for user CRUD: CreateAsync, FindByEmailAsync, CheckPasswordAsync, AddToRoleAsync, GetClaimsAsync.</dd></div><div class="def"><dt>SignInManager&lt;T&gt;</dt><dd>Service for sign-in flows: PasswordSignInAsync, SignOutAsync — also handles lockout and 2FA.</dd></div><div class="def"><dt>RoleManager&lt;T&gt;</dt><dd>Service for creating and querying roles: CreateAsync, RoleExistsAsync.</dd></div><div class="def"><dt>PasswordHasher</dt><dd>Hashes passwords with PBKDF2+SHA512 by default; never store plain-text passwords.</dd></div><div class="def"><dt>LockoutOptions</dt><dd>How many failed attempts trigger a lockout and for how long.</dd></div><div class="def"><dt>IdentityResult</dt><dd>Returned by most UserManager operations; has Succeeded, Errors.</dd></div><div class="def"><dt>Data protection</dt><dd>ASP.NET Core's key-ring for protecting tokens (email confirmation, password reset links).</dd></div><div class="def"><dt>NuGet packages</dt><dd><code>Microsoft.AspNetCore.Identity.EntityFrameworkCore</code> and an EF Core provider like <code>Microsoft.EntityFrameworkCore.SqlServer</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Identity is a library, not a middleware — you call it via UserManager/SignInManager, not via HTTP pipeline.</li><li><code>IdentityUser.Id</code> is a <code>string</code> (GUID by default). If you need an <code>int</code> key, use <code>IdentityUser&lt;int&gt;</code>.</li><li>Never call <code>SaveChangesAsync</code> after <code>UserManager.CreateAsync</code> — Identity does it for you.</li><li><code>PasswordSignInAsync</code> returns a <code>SignInResult</code>; check <code>.Succeeded</code>, <code>.IsLockedOut</code>, <code>.RequiresTwoFactor</code>.</li><li>Seeding roles and the admin account should run on startup — not in a migration — so it works in every environment.</li><li>Identity ships with PBKDF2 (100,000 rounds in .NET 8). Do NOT replace it with MD5 or SHA1.</li></ul></div>
+
+<h3>1. Package references</h3>
+<div class="code"><div class="fname">AuthService.csproj (relevant)</div><pre><code class="language-xml">&lt;!-- AuthService.csproj --&gt;
+&lt;PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.0" /&gt;
+&lt;PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" /&gt;
+&lt;PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0" PrivateAssets="All" /&gt;
+&lt;PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" /&gt;</code></pre></div>
+
+<h3>2. ApplicationUser and IdentityDbContext</h3>
+<div class="code"><div class="fname">Models/ApplicationUser.cs</div><pre><code class="language-csharp">// Models/ApplicationUser.cs
+using Microsoft.AspNetCore.Identity;
+
+namespace AuthService.Models;
+
+public class ApplicationUser : IdentityUser
+{
+    // IdentityUser already has: Id, UserName, Email, PasswordHash,
+    //   PhoneNumber, LockoutEnabled, AccessFailedCount, etc.
+
+    // Add your columns here
+    public string FullName { get; set; } = string.Empty;
+
+    // Indian context: mobile number is the primary identity for OTP
+    // PhoneNumber is already on IdentityUser — just validate the format
+}</code></pre></div>
+<div class="code"><div class="fname">Data/AppDbContext.cs</div><pre><code class="language-csharp">// Data/AppDbContext.cs
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using AuthService.Models;
+
+namespace AuthService.Data;
+
+public class AppDbContext : IdentityDbContext&lt;ApplicationUser&gt;
+{
+    public AppDbContext(DbContextOptions&lt;AppDbContext&gt; options) : base(options) { }
+
+    // Add your own DbSets below; Identity tables are added by IdentityDbContext
+    public DbSet&lt;RefreshToken&gt; RefreshTokens { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);  // ← MUST call base; Identity tables are configured here
+
+        builder.Entity&lt;RefreshToken&gt;(e =&gt;
+        {
+            e.HasIndex(r =&gt; r.Token).IsUnique();
+            e.HasIndex(r =&gt; r.UserId);
+        });
+    }
+}</code></pre></div>
+
+<h3>3. Identity registration in Program.cs</h3>
+<div class="code"><div class="fname">Program.cs (excerpt)</div><pre><code class="language-csharp">// Program.cs
+using AuthService.Data;
+using AuthService.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// 1. EF Core
+builder.Services.AddDbContext&lt;AppDbContext&gt;(opt =&gt;
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+// 2. Identity
+builder.Services.AddIdentity&lt;ApplicationUser, IdentityRole&gt;(opt =&gt;
+{
+    // Password policy
+    opt.Password.RequiredLength = 8;
+    opt.Password.RequireDigit = true;
+    opt.Password.RequireUppercase = true;
+    opt.Password.RequireNonAlphanumeric = false;  // relax for demos
+
+    // Lockout: 5 failed attempts → locked for 10 minutes
+    opt.Lockout.MaxFailedAccessAttempts = 5;
+    opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
+    opt.Lockout.AllowedForNewUsers = true;
+
+    // User options
+    opt.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores&lt;AppDbContext&gt;()   // hooks Identity to your DbContext
+.AddDefaultTokenProviders();                // needed for password-reset tokens
+
+// 3. JWT auth — Day 3
+// builder.Services.AddAuthentication(...)...</code></pre></div>
+
+<h3>4. UserManager, SignInManager, RoleManager at a glance</h3>
+<div class="code"><div class="fname">Controllers/AuthController.cs (excerpt)</div><pre><code class="language-csharp">// All three are injected via constructor DI
+
+public class AuthController(
+    UserManager&lt;ApplicationUser&gt; userManager,
+    SignInManager&lt;ApplicationUser&gt; signInManager,
+    RoleManager&lt;IdentityRole&gt; roleManager) : ControllerBase
+{
+    // --- Create a user ---
+    var user = new ApplicationUser { UserName = "priya.sharma", Email = dto.Email, FullName = dto.FullName };
+    IdentityResult result = await userManager.CreateAsync(user, dto.Password);
+    if (!result.Succeeded)
+        return BadRequest(result.Errors);  // e.g. "Passwords must have at least 8 characters."
+
+    // --- Add to role ---
+    await userManager.AddToRoleAsync(user, "Farmer");
+
+    // --- Check password (login) ---
+    var found = await userManager.FindByEmailAsync(dto.Email);
+    if (found is null) return Unauthorized();
+    var signIn = await signInManager.CheckPasswordSignInAsync(found, dto.Password, lockoutOnFailure: true);
+    // signIn.Succeeded / .IsLockedOut / .RequiresTwoFactor
+
+    // --- Get user's roles and claims ---
+    IList&lt;string&gt; roles  = await userManager.GetRolesAsync(found);
+    IList&lt;Claim&gt;  claims = await userManager.GetClaimsAsync(found);
+}</code></pre></div>
+
+<h3>5. Seeding roles and an admin account</h3>
+<p>Seed on startup, not in a migration — migrations run on the developer's machine, not production.</p>
+<div class="code"><div class="fname">Data/DbSeeder.cs</div><pre><code class="language-csharp">// Data/DbSeeder.cs
+using AuthService.Models;
+using Microsoft.AspNetCore.Identity;
+
+namespace AuthService.Data;
+
+public static class DbSeeder
+{
+    public static async Task SeedAsync(IServiceProvider sp)
+    {
+        var roleManager = sp.GetRequiredService&lt;RoleManager&lt;IdentityRole&gt;&gt;();
+        var userManager = sp.GetRequiredService&lt;UserManager&lt;ApplicationUser&gt;&gt;();
+        var cfg         = sp.GetRequiredService&lt;IConfiguration&gt;();
+
+        string[] roles = ["Admin", "Farmer", "Buyer"];
+        foreach (var role in roles)
+            if (!await roleManager.RoleExistsAsync(role))
+                await roleManager.CreateAsync(new IdentityRole(role));
+
+        // Seed admin — credentials come from user-secrets or environment variables
+        string adminEmail = cfg["Seed:AdminEmail"] ?? "admin@ugaav.in";
+        string adminPass  = cfg["Seed:AdminPassword"]
+            ?? throw new InvalidOperationException("Seed:AdminPassword not configured");
+
+        if (await userManager.FindByEmailAsync(adminEmail) is null)
+        {
+            var admin = new ApplicationUser
+            {
+                UserName = adminEmail,
+                Email    = adminEmail,
+                FullName = "Super Admin",
+                EmailConfirmed = true
+            };
+            var result = await userManager.CreateAsync(admin, adminPass);
+            if (result.Succeeded)
+                await userManager.AddToRoleAsync(admin, "Admin");
+        }
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Program.cs (startup)</div><pre><code class="language-csharp">// Program.cs — call seeder after building the app
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService&lt;AppDbContext&gt;();
+    await db.Database.MigrateAsync();             // apply pending migrations
+    await DbSeeder.SeedAsync(scope.ServiceProvider);
+}</code></pre></div>
+
+<h3>6. Identity tables created by EF Core</h3>
+<div class="tbl"><table><tr><th>Table</th><th>Purpose</th></tr><tr><td><code>AspNetUsers</code></td><td>One row per user; Id, PasswordHash, Email, LockoutEnd, AccessFailedCount…</td></tr><tr><td><code>AspNetRoles</code></td><td>Role names (Admin, Farmer, Buyer)</td></tr><tr><td><code>AspNetUserRoles</code></td><td>Many-to-many join: which user is in which role</td></tr><tr><td><code>AspNetUserClaims</code></td><td>Per-user extra claims stored in the DB</td></tr><tr><td><code>AspNetUserLogins</code></td><td>External login providers (Google, Microsoft)</td></tr><tr><td><code>AspNetUserTokens</code></td><td>Tokens for password reset, email confirmation</td></tr><tr><td><code>AspNetRoleClaims</code></td><td>Claims attached to a role</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Calling <code>context.SaveChangesAsync()</code> after <code>userManager.CreateAsync()</code> — double write, may cause duplicate-key errors.</li><li>Not calling <code>base.OnModelCreating(builder)</code> in <code>IdentityDbContext</code> — Identity tables won't be configured.</li><li>Storing the admin seed password hard-coded in source code — use user-secrets or environment variables.</li><li>Forgetting <code>.AddDefaultTokenProviders()</code> — password reset emails throw at runtime.</li><li>Using <code>AddAuthentication().AddIdentityCookies()</code> instead of <code>AddIdentity()</code> and then wondering why JWT auth doesn't work.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Scaffold the AuthService project with <code>dotnet new webapi -n AuthService</code>, add the NuGet packages, and create <code>ApplicationUser</code> + <code>AppDbContext</code>.</li><li>Run <code>dotnet ef migrations add InitialIdentity</code> and inspect the generated migration — verify the AspNetUsers and AspNetRoles tables are present.</li><li>Implement the <code>DbSeeder</code> and confirm the admin user and three roles are created on startup.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is IdentityDbContext?</summary>An EF Core DbContext preconfigured with all the Identity tables (AspNetUsers, AspNetRoles, AspNetUserRoles, etc.). You inherit from it and add your own DbSets.</details><details><summary>Why not call SaveChangesAsync after CreateAsync?</summary>UserManager.CreateAsync already calls SaveChangesAsync internally. Calling it again risks a second write or concurrency conflicts.</details><details><summary>What does LockoutOnFailure: true do in CheckPasswordSignInAsync?</summary>It increments AccessFailedCount on each failure. When it reaches MaxFailedAccessAttempts, Identity sets LockoutEnd to now + LockoutTimeSpan and all sign-in attempts return IsLockedOut until the period expires.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What tables does ASP.NET Core Identity create?</summary><div>AspNetUsers (users), AspNetRoles (roles), AspNetUserRoles (many-to-many), AspNetUserClaims, AspNetUserLogins (OAuth), AspNetUserTokens, and AspNetRoleClaims. All are configured by AddIdentity and IdentityDbContext.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between UserManager and SignInManager?</summary><div>UserManager handles CRUD on users: create, find, update, password check, role and claim management. SignInManager manages sign-in flows including lockout, 2FA, and external providers. For a JWT API you often use only UserManager and build tokens yourself.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How does Identity store passwords?</summary><div>It uses PBKDF2 with SHA-512, 100,000 iterations by default in .NET 8. The hash, salt, and iteration count are all stored in the PasswordHash column; plain text is never stored.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you add a custom field (e.g. MobileNumber) to the Identity user?</summary><div>Inherit from IdentityUser to create ApplicationUser, add the property, use ApplicationUser throughout. The EF Core migration will add the column to AspNetUsers.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why seed roles in code rather than a migration?</summary><div>Migrations run once and are specific to the developer's DB; they don't re-run. Startup seeding runs on every deploy, ensuring every environment (dev, staging, prod) has the required roles, and idempotent checks (RoleExistsAsync) prevent duplicates.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does lockout work in ASP.NET Core Identity?</summary><div>Every failed CheckPasswordSignInAsync with lockoutOnFailure:true increments AccessFailedCount. When it hits MaxFailedAccessAttempts, LockoutEnd is set. Until that time all logins return IsLockedOut. A successful login resets the count via ResetAccessFailedCountAsync.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Issuing and Validating JWTs</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Issue signed JWTs with JsonWebTokenHandler, configure JwtBearer middleware to validate them, understand every TokenValidationParameters field, and handle 401 vs 403 correctly.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>JwtBearer middleware</dt><dd>ASP.NET Core middleware (<code>AddAuthentication().AddJwtBearer()</code>) that extracts, validates, and sets the <code>ClaimsPrincipal</code> for each request.</dd></div><div class="def"><dt>JsonWebTokenHandler</dt><dd>The modern (.NET 6+) handler for creating and reading JWTs; faster than the legacy JwtSecurityTokenHandler.</dd></div><div class="def"><dt>JwtSecurityTokenHandler</dt><dd>The legacy handler; still works but Microsoft recommends JsonWebTokenHandler for new code.</dd></div><div class="def"><dt>TokenValidationParameters</dt><dd>A class holding all validation rules: issuer, audience, signing key, clock skew, lifetime.</dd></div><div class="def"><dt>ClockSkew</dt><dd>The allowed time difference between servers. Default is 5 minutes; set to <code>TimeSpan.Zero</code> for stricter tests.</dd></div><div class="def"><dt>SecurityTokenDescriptor</dt><dd>Describes the token to issue: subject (claims), issuer, audience, expiry, signing credentials.</dd></div><div class="def"><dt>SigningCredentials</dt><dd>Wraps the key and algorithm used to sign: <code>new SigningCredentials(key, SecurityAlgorithms.HmacSha256)</code>.</dd></div><div class="def"><dt>SymmetricSecurityKey</dt><dd>A key created from a byte array; use a secret of 256+ bits for HS256.</dd></div><div class="def"><dt>RequireAuthorization</dt><dd>Extension on <code>IEndpointConventionBuilder</code>: requires auth on that route/group.</dd></div><div class="def"><dt>401 Unauthorized</dt><dd>The request has no valid credentials — not authenticated.</dd></div><div class="def"><dt>403 Forbidden</dt><dd>The user is authenticated but not authorised for this resource.</dd></div><div class="def"><dt>User-secrets</dt><dd><code>dotnet user-secrets set Jwt:Key &quot;...&quot;</code> — keeps secrets out of source control in development.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li><code>RequireAuthorization()</code> causes a 401 when no token is present. A valid token with wrong role causes 403.</li><li>Always validate issuer and audience in production — a token from a different service must not work on yours.</li><li><code>ClockSkew</code> defaults to 5 minutes; set it to <code>TimeSpan.Zero</code> in tests to catch off-by-one errors.</li><li>The JWT signing key must be at least 256 bits (32 bytes) for HS256. A short key will throw a runtime exception.</li><li>Use <code>dotnet user-secrets</code> in development; use environment variables or Azure Key Vault in production. Never commit keys.</li><li><code>JsonWebTokenHandler</code> is recommended over <code>JwtSecurityTokenHandler</code> for new code (.NET 6+).</li></ul></div>
+
+<h3>1. Storing the signing key in user-secrets</h3>
+<div class="code nofile"><pre><code class="language-bash"># Run once per developer machine (inside the project directory)
+dotnet user-secrets init
+dotnet user-secrets set "Jwt:Key"      "ugaav-super-secret-key-must-be-32chars+"
+dotnet user-secrets set "Jwt:Issuer"   "ugaav-auth"
+dotnet user-secrets set "Jwt:Audience" "ugaav-api"
+
+# In production use environment variables or Azure Key Vault — NEVER commit to git
+# ASPNETCORE_Jwt__Key=...</code></pre></div>
+<div class="code"><div class="fname">appsettings.json (excerpt)</div><pre><code class="language-json">// appsettings.json (non-secret defaults only — do NOT put the key here)
+{{
+  "Jwt": {{
+    "Issuer":          "ugaav-auth",
+    "Audience":        "ugaav-api",
+    "AccessTokenMins": 15,
+    "RefreshTokenDays": 7
+  }}
+}}</code></pre></div>
+
+<h3>2. Registering JwtBearer in Program.cs</h3>
+<div class="code"><div class="fname">Program.cs — JWT setup</div><pre><code class="language-csharp">using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+// --- in builder.Services ---
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Jwt:Key not configured");
+
+builder.Services.AddAuthentication(opt =&gt;
+{
+    opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    opt.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(opt =&gt;
+{
+    opt.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer           = true,
+        ValidIssuer              = builder.Configuration["Jwt:Issuer"],
+
+        ValidateAudience         = true,
+        ValidAudience            = builder.Configuration["Jwt:Audience"],
+
+        ValidateLifetime         = true,
+        ClockSkew                = TimeSpan.Zero,   // no grace period — expiry is exact
+
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+    };
+});
+
+builder.Services.AddAuthorization();
+
+// --- in app (middleware order matters!) ---
+app.UseAuthentication();   // must be before UseAuthorization
+app.UseAuthorization();</code></pre></div>
+
+<h3>3. TokenService — issuing JWTs</h3>
+<div class="code"><div class="fname">Services/TokenService.cs</div><pre><code class="language-csharp">// Services/TokenService.cs
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using AuthService.Models;
+
+namespace AuthService.Services;
+
+public interface ITokenService
+{
+    string CreateAccessToken(ApplicationUser user, IEnumerable&lt;string&gt; roles);
+    string CreateRefreshTokenValue();   // secure random string — stored in DB (Thu)
+}
+
+public class TokenService(IConfiguration cfg) : ITokenService
+{
+    private readonly string _key      = cfg["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key missing");
+    private readonly string _issuer   = cfg["Jwt:Issuer"] ?? "ugaav-auth";
+    private readonly string _audience = cfg["Jwt:Audience"] ?? "ugaav-api";
+    private readonly int    _minutes  = int.TryParse(cfg["Jwt:AccessTokenMins"], out var m) ? m : 15;
+
+    public string CreateAccessToken(ApplicationUser user, IEnumerable&lt;string&gt; roles)
+    {
+        var claims = new List&lt;Claim&gt;
+        {
+            new(JwtRegisteredClaimNames.Sub,   user.Id),
+            new(JwtRegisteredClaimNames.Email, user.Email!),
+            new(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),  // unique token ID
+            new("name",                         user.FullName),
+        };
+        // Add a claim per role — the [Authorize(Roles="Admin")] attribute reads these
+        foreach (var role in roles)
+            claims.Add(new Claim(ClaimTypes.Role, role));
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Subject            = new ClaimsIdentity(claims),
+            Issuer             = _issuer,
+            Audience           = _audience,
+            Expires            = DateTime.UtcNow.AddMinutes(_minutes),
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+        };
+
+        var handler = new JsonWebTokenHandler();          // modern handler (.NET 6+)
+        return handler.CreateToken(descriptor);            // returns the token string
+    }
+
+    public string CreateRefreshTokenValue() =&gt;
+        Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(64));
+}</code></pre></div>
+
+<h3>4. Reading claims inside a controller</h3>
+<div class="code"><div class="fname">Controllers/MeController.cs</div><pre><code class="language-csharp">[ApiController]
+[Route("api/[controller]")]
+public class MeController(UserManager&lt;ApplicationUser&gt; um) : ControllerBase
+{
+    [HttpGet]
+    [Authorize]                              // 401 if no valid token
+    public async Task&lt;IActionResult&gt; Get()
+    {
+        // User is a ClaimsPrincipal set by JwtBearer middleware
+        string userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        //  or:  User.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
+
+        var user = await um.FindByIdAsync(userId);
+        return Ok(new { user!.Email, user.FullName, Roles = User.FindAll(ClaimTypes.Role).Select(c =&gt; c.Value) });
+    }
+}</code></pre></div>
+
+<h3>5. Protecting routes — 401 vs 403</h3>
+<div class="code"><div class="fname">Program.cs — route authorisation</div><pre><code class="language-csharp">// Global default: require auth on all routes except those you opt out
+// Or opt-in per route/group:
+
+// 1. Attribute on a controller
+[Authorize]                              // any authenticated user
+[Authorize(Roles = "Admin")]             // only Admin role → 403 if wrong role
+
+// 2. Minimal API route groups
+var auth = app.MapGroup("/api").RequireAuthorization();
+var admin = app.MapGroup("/api/admin").RequireAuthorization(p =&gt; p.RequireRole("Admin"));
+
+auth.MapGet("/products", GetProducts);
+admin.MapGet("/users", GetAllUsers);
+
+// 3. AllowAnonymous overrides for specific routes inside a protected group
+auth.MapPost("/auth/login", Login).AllowAnonymous();</code></pre></div>
+<div class="tbl"><table><tr><th>Code</th><th>When it fires</th><th>Cause</th></tr><tr><td>401 Unauthorized</td><td>No token / invalid token / expired token</td><td>Not authenticated at all</td></tr><tr><td>403 Forbidden</td><td>Valid token, but missing role or policy</td><td>Authenticated, insufficient permissions</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> JwtBearer returns 401 by default when validation fails. If you want a custom response body, hook <code>opt.Events.OnChallenge</code> and <code>opt.Events.OnForbidden</code>.</div>
+
+<h3>6. Quick validation test with curl</h3>
+<div class="code nofile"><pre><code class="language-bash"># 1. Login to get a token
+TOKEN=$(curl -s -X POST https://localhost:5001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{{"email":"priya@ugaav.in","password":"Secret@123"}}' \
+  | jq -r '.accessToken')
+
+# 2. Call a protected endpoint
+curl -s https://localhost:5001/api/me \
+  -H "Authorization: Bearer $TOKEN" | jq .
+
+# 3. No token → 401
+curl -s -o /dev/null -w "%{{http_code}}" https://localhost:5001/api/me
+# → 401
+
+# 4. Farmer token hitting Admin endpoint → 403
+curl -s -o /dev/null -w "%{{http_code}}" https://localhost:5001/api/admin/users \
+  -H "Authorization: Bearer $FARMER_TOKEN"
+# → 403</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Setting <code>ClockSkew = TimeSpan.FromMinutes(5)</code> explicitly (the default) and not realising tokens remain valid 5 minutes after <code>exp</code>.</li><li>Forgetting <code>app.UseAuthentication()</code> before <code>app.UseAuthorization()</code> — all requests appear unauthenticated.</li><li>Using a signing key shorter than 32 bytes for HS256 — a <code>SecurityTokenInvalidSigningKeyException</code> at runtime.</li><li>Not storing the signing key in user-secrets/env-var — commit to git once and you must rotate the key.</li><li>Setting <code>ValidateAudience = false</code> in production — a token from another service works on yours.</li><li>Confusing <code>ClaimTypes.NameIdentifier</code> (URN) with <code>JwtRegisteredClaimNames.Sub</code> — both refer to the subject but as different claim type strings.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Implement <code>TokenService.CreateAccessToken</code> and register it with <code>AddScoped&lt;ITokenService, TokenService&gt;()</code>.</li><li>Add the JwtBearer configuration to Program.cs and verify a protected endpoint returns 401 without a token.</li><li>Decode a token you issued with <code>https://jwt.io</code> and confirm all expected claims are present.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is the difference between JsonWebTokenHandler and JwtSecurityTokenHandler?</summary>JsonWebTokenHandler is the modern replacement; it is faster, returns a string from CreateToken directly, and is recommended for all new code. JwtSecurityTokenHandler is legacy but still functional.</details><details><summary>What does ClockSkew do?</summary>It adds a time window around the token expiry to tolerate clock drift between servers. Default is 5 minutes, meaning a token is accepted for 5 minutes after its stated exp. Setting it to TimeSpan.Zero makes expiry exact.</details><details><summary>Why should ValidateIssuer and ValidateAudience both be true in production?</summary>Issuer check ensures the token was issued by your auth service. Audience check ensures it was intended for this API. Without both, any valid JWT from any service in your infrastructure could be used on any other.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What middleware order is required for JWT auth in ASP.NET Core?</summary><div>app.UseAuthentication() must come before app.UseAuthorization(). Authentication sets the ClaimsPrincipal; authorization evaluates it. The order is enforced at runtime — reversing them means every request appears unauthenticated.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How does RequireAuthorization() differ from [Authorize] on a controller?</summary><div>[Authorize] is an attribute; RequireAuthorization() is an extension method on IEndpointConventionBuilder, used for Minimal APIs and route groups. Both enforce the same policy engine; the syntax differs by programming model.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you read the current user's ID inside a controller?</summary><div>User.FindFirstValue(ClaimTypes.NameIdentifier) or User.FindFirstValue(JwtRegisteredClaimNames.Sub). JwtBearer maps the sub claim to NameIdentifier by default.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you return a custom 401 response body from JwtBearer?</summary><div>Hook opt.Events.OnChallenge in AddJwtBearer. Set context.HandleResponse() to suppress the default, then write your JSON body with context.Response.WriteAsJsonAsync().</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>A token was valid when issued but the user's role was changed in the DB. How do you handle this?</summary><div>Short-lived access tokens (15 min) mean the stale role data expires quickly. For immediate revocation, store a user version number as a claim and invalidate tokens whose version doesn't match the DB — or use opaque tokens with a database lookup on every request.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>Explain the TokenValidationParameters fields that defend against token substitution attacks.</summary><div>ValidateIssuer ensures the token came from your auth service (not a different one that also uses HS256). ValidateAudience ensures it was intended for your API (not reused from another service). ValidateIssuerSigningKey ensures the signature was produced with your key. All three together make a token non-transferable across services.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Refresh Tokens, Password Reset and Account Lockout</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Issue short-lived access tokens paired with long-lived refresh tokens, implement rotation with reuse detection, design a password-reset flow, and configure lockout correctly.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Refresh token</dt><dd>A long-lived opaque random string that lets a client get a new access token without re-entering credentials.</dd></div><div class="def"><dt>Token rotation</dt><dd>Issuing a brand-new refresh token every time the old one is used, invalidating the old one.</dd></div><div class="def"><dt>Reuse detection</dt><dd>Detecting when a refresh token that was already rotated (replaced) is used again — a sign of theft — and revoking the entire refresh-token chain.</dd></div><div class="def"><dt>Token family / chain</dt><dd>A set of refresh tokens linked by <code>ReplacedBy</code> that all trace back to one original login.</dd></div><div class="def"><dt>PBKDF2</dt><dd>Password-Based Key Derivation Function 2; used by ASP.NET Core Identity for password hashing.</dd></div><div class="def"><dt>Password reset flow</dt><dd>User requests reset → email with signed token (Identity DataProtectionTokenProvider) → user submits new password with token → token validated and invalidated.</dd></div><div class="def"><dt>Lockout</dt><dd>ASP.NET Core Identity's built-in brute-force protection: N failed logins → account locked for T minutes.</dd></div><div class="def"><dt>AccessFailedCount</dt><dd>Column on AspNetUsers tracking consecutive login failures, reset on success.</dd></div><div class="def"><dt>LockoutEnd</dt><dd>Nullable DateTimeOffset on AspNetUsers; if set and in the future, sign-in returns IsLockedOut.</dd></div><div class="def"><dt>RefreshToken (table)</dt><dd>Your own table: Token (hashed), UserId, ExpiresAt, RevokedAt, ReplacedBy, CreatedAt.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Store the <b>hash</b> of the refresh token in the database — not the plain value. If the DB is compromised, tokens are still useless.</li><li>Rotate on every use. The old token is immediately marked <code>ReplacedBy = newTokenId</code>.</li><li>Reuse detection: if a token that was already replaced is presented, revoke the entire chain — it means one copy was stolen.</li><li>Logout = revoke the refresh token in the DB (and all its chain if you like). The access token expires naturally.</li><li>Password reset tokens from Identity are single-use and time-limited (default 1 day) — do not roll your own.</li><li>Lockout applies to the sign-in action, not token refresh. Refresh reuse detection is a separate revocation mechanism.</li></ul></div>
+
+<h3>1. RefreshToken entity</h3>
+<div class="code"><div class="fname">Models/RefreshToken.cs</div><pre><code class="language-csharp">// Models/RefreshToken.cs
+namespace AuthService.Models;
+
+public class RefreshToken
+{{
+    public int    Id          {{ get; set; }}
+    public string UserId      {{ get; set; }} = string.Empty;   // FK → AspNetUsers.Id
+    public string Token       {{ get; set; }} = string.Empty;   // HASHED value stored here
+    public string? ReplacedBy {{ get; set; }}                    // hash of the successor token
+    public DateTime ExpiresAt {{ get; set; }}
+    public DateTime CreatedAt {{ get; set; }} = DateTime.UtcNow;
+    public DateTime? RevokedAt {{ get; set; }}
+
+    public bool IsExpired  =&gt; DateTime.UtcNow &gt;= ExpiresAt;
+    public bool IsRevoked  =&gt; RevokedAt is not null;
+    public bool IsActive   =&gt; !IsExpired &amp;&amp; !IsRevoked;
+}}</code></pre></div>
+
+<h3>2. Storing and hashing refresh tokens</h3>
+<div class="code"><div class="fname">Services/TokenService.cs (additions)</div><pre><code class="language-csharp">// Services/TokenService.cs (additions)
+using System.Security.Cryptography;
+
+public string CreateRefreshTokenValue() =&gt;
+    Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));  // 64 raw bytes → 88 char base64
+
+public string HashToken(string tokenValue) =&gt;
+    Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(tokenValue)));
+
+// In your auth service:
+string rawToken = tokenService.CreateRefreshTokenValue();      // send this to the client
+string hashed   = tokenService.HashToken(rawToken);            // store THIS in the DB
+
+var refreshToken = new RefreshToken
+{{
+    UserId    = user.Id,
+    Token     = hashed,
+    ExpiresAt = DateTime.UtcNow.AddDays(int.Parse(cfg["Jwt:RefreshTokenDays"] ?? "7"))
+}};
+await db.RefreshTokens.AddAsync(refreshToken);
+await db.SaveChangesAsync();</code></pre></div>
+<div class="note tip"><b>Tip.</b> SHA-256 is fine for hashing refresh tokens because they are long random values (high entropy). Do <b>not</b> use SHA-256 to hash passwords — use PBKDF2 / bcrypt / Argon2.</div>
+
+<h3>3. Refresh flow with rotation and reuse detection</h3>
+<div class="code"><div class="fname">Services/AuthService.cs — refresh</div><pre><code class="language-csharp">// Services/AuthService.cs (refresh logic)
+public async Task&lt;AuthResult&gt; RefreshAsync(string rawRefreshToken)
+{{
+    string hashed = tokenService.HashToken(rawRefreshToken);
+
+    // Find the token in the DB (active or not — we need it even if revoked for reuse detection)
+    var stored = await db.RefreshTokens
+        .FirstOrDefaultAsync(r =&gt; r.Token == hashed);
+
+    if (stored is null)
+        return AuthResult.Fail("Invalid refresh token");
+
+    if (stored.IsRevoked)
+    {{
+        // Token was already replaced/revoked — REUSE DETECTED
+        // Revoke all tokens in the chain (tokens where ReplacedBy traces back to this user)
+        await RevokeChainAsync(stored.UserId);
+        return AuthResult.Fail("Refresh token reuse detected — all sessions revoked");
+    }}
+
+    if (stored.IsExpired)
+        return AuthResult.Fail("Refresh token expired — please log in again");
+
+    var user  = await userManager.FindByIdAsync(stored.UserId);
+    if (user is null) return AuthResult.Fail("User not found");
+
+    var roles       = await userManager.GetRolesAsync(user);
+    string newAccess = tokenService.CreateAccessToken(user, roles);
+
+    // Rotate: create a new refresh token and link the old one to it
+    string newRaw    = tokenService.CreateRefreshTokenValue();
+    string newHashed = tokenService.HashToken(newRaw);
+
+    stored.RevokedAt  = DateTime.UtcNow;      // mark old token as used/replaced
+    stored.ReplacedBy = newHashed;
+
+    var newToken = new RefreshToken
+    {{
+        UserId    = user.Id,
+        Token     = newHashed,
+        ExpiresAt = stored.ExpiresAt          // keep the same expiry (sliding window is a design choice)
+    }};
+    db.RefreshTokens.Update(stored);
+    await db.RefreshTokens.AddAsync(newToken);
+    await db.SaveChangesAsync();
+
+    return AuthResult.Ok(newAccess, newRaw);   // return the RAW token to the client
+}}
+
+private async Task RevokeChainAsync(string userId)
+{{
+    var allTokens = await db.RefreshTokens
+        .Where(r =&gt; r.UserId == userId &amp;&amp; r.RevokedAt == null)
+        .ToListAsync();
+    foreach (var t in allTokens) t.RevokedAt = DateTime.UtcNow;
+    await db.SaveChangesAsync();
+}}</code></pre></div>
+
+<h3>4. Logout</h3>
+<div class="code"><div class="fname">Controllers/AuthController.cs — logout</div><pre><code class="language-csharp">// POST /api/auth/logout  (requires [Authorize])
+public async Task&lt;IActionResult&gt; Logout([FromBody] string rawRefreshToken)
+{{
+    string hashed = tokenService.HashToken(rawRefreshToken);
+    var stored = await db.RefreshTokens.FirstOrDefaultAsync(r =&gt; r.Token == hashed);
+
+    if (stored is not null &amp;&amp; stored.IsActive)
+    {{
+        stored.RevokedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+    }}
+    // Access token expires naturally (can't revoke without a token blacklist or opaque tokens)
+    return Ok(new {{ message = "Logged out" }});
+}}</code></pre></div>
+
+<h3>5. Password reset with Identity tokens</h3>
+<div class="code"><div class="fname">Controllers/AuthController.cs — reset</div><pre><code class="language-csharp">// POST /api/auth/forgot-password
+public async Task&lt;IActionResult&gt; ForgotPassword([FromBody] ForgotPasswordDto dto)
+{{
+    var user = await userManager.FindByEmailAsync(dto.Email);
+    if (user is null) return Ok(); // don't reveal whether the email is registered
+
+    string token = await userManager.GeneratePasswordResetTokenAsync(user);
+    // token is URL-safe; send in an email link:
+    // https://app.ugaav.in/reset-password?token=&lt;WebUtility.UrlEncode(token)&gt;&amp;email=&lt;email&gt;
+
+    // TODO: send email via IEmailSender (beyond scope today — use a background job in Week 21)
+    return Ok(new {{ message = "If that email exists, a reset link has been sent" }});
+}}
+
+// POST /api/auth/reset-password
+public async Task&lt;IActionResult&gt; ResetPassword([FromBody] ResetPasswordDto dto)
+{{
+    var user = await userManager.FindByEmailAsync(dto.Email);
+    if (user is null) return BadRequest();
+
+    var result = await userManager.ResetPasswordAsync(user, dto.Token, dto.NewPassword);
+    if (!result.Succeeded) return BadRequest(result.Errors);
+
+    // Also revoke all refresh tokens on password reset
+    await RevokeChainAsync(user.Id);
+    return Ok(new {{ message = "Password reset successful" }});
+}}</code></pre></div>
+<div class="tbl"><table><tr><th>Step</th><th>Detail</th></tr><tr><td>Generate token</td><td><code>userManager.GeneratePasswordResetTokenAsync(user)</code> — uses DataProtection, time-limited</td></tr><tr><td>Send email</td><td>Include token (URL-encoded) + email in the reset link</td></tr><tr><td>Validate & apply</td><td><code>userManager.ResetPasswordAsync(user, token, newPassword)</code> — single use; throws if already used</td></tr><tr><td>Revoke refresh tokens</td><td>Invalidate all sessions so stolen sessions can't continue after a password change</td></tr></table></div>
+
+<h3>6. Lockout flow</h3>
+<div class="tbl"><table><tr><th>Event</th><th>Identity behaviour</th></tr><tr><td>Wrong password (attempt 1–4)</td><td>AccessFailedCount++; locked = false</td></tr><tr><td>Wrong password (attempt 5)</td><td>AccessFailedCount = 5 ≥ MaxFailedAccessAttempts; LockoutEnd = now + 10 min</td></tr><tr><td>Login attempt while locked</td><td>SignInResult.IsLockedOut = true; don't reveal remaining time (enumeration risk)</td></tr><tr><td>Correct password after lockout expires</td><td>AccessFailedCount reset to 0; login succeeds</td></tr><tr><td>Correct password before lockout expires</td><td>Still locked — correct password doesn't unlock early</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Storing the raw refresh token value in the database instead of its hash.</li><li>Not detecting token reuse — stolen refresh tokens can be used indefinitely if rotation but no reuse detection.</li><li>Reusing the same expiry on the new token vs resetting it — decide deliberately; both are valid designs.</li><li>Not revoking all sessions on password reset — a stolen refresh token remains valid.</li><li>Revealing whether an email is registered in the forgot-password endpoint — always return 200.</li><li>Calling Identity's ResetPasswordAsync with the same token twice — the second call will fail because Identity marks it used.</li></ul>
+<h3>Exercise (45 min)</h3><ol class="ex"><li>Implement the RefreshToken entity and add it to AppDbContext with an index on the Token column.</li><li>Implement AuthService.RefreshAsync with rotation and reuse detection (as above).</li><li>Test reuse detection: use a refresh token, then try to use the original again — confirm all tokens for the user are revoked.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why store a hash of the refresh token?</summary>If the database is compromised, the attacker gets hashes, not the raw tokens. Without the raw value they can't present a valid token. (This is the same reason passwords are hashed.)</details><details><summary>What is rotation and reuse detection?</summary>Rotation: each use of a refresh token issues a new one and revokes the old. Reuse detection: if the revoked token is used again, it means a copy was stolen — revoke the entire chain to log the attacker out.</details><details><summary>How does password reset differ from a regular token exchange?</summary>Identity generates a DataProtection-backed, time-limited, single-use token and ties it to the user's current password hash. If the password changes, all outstanding reset tokens are automatically invalidated.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a refresh token and why is the access token kept short-lived?</summary><div>A refresh token is a long-lived opaque credential used to obtain new access tokens. Access tokens are kept short-lived (15 min) to limit the damage of theft — they expire quickly. The refresh token allows silent re-auth without re-entering credentials, but it can be revoked from the server.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the minimum you must store for a refresh token in the database?</summary><div>The hashed token value, the user ID it belongs to, and an expiry. You should also store RevokedAt and ReplacedBy to support rotation and reuse detection.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Describe the refresh token rotation and reuse detection algorithm.</summary><div>On every use: (1) look up the hash in the DB. (2) If revoked/replaced → reuse detected → revoke entire chain. (3) If expired → reject. (4) Otherwise: mark old token RevokedAt, create a new token, link old.ReplacedBy = newHash, return new raw token + new access token.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How should you handle logout with JWTs?</summary><div>Revoke the refresh token in the database so it can't be used to mint new access tokens. The current access token cannot be revoked without a blacklist (e.g. Redis), but its short lifetime (15 min) limits the window. For high-security needs, maintain a token blacklist or use opaque tokens.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why should you revoke all sessions when a user resets their password?</summary><div>A password reset usually means the account was compromised. Any active refresh token from before the reset could still be in an attacker's hands. Revoking all tokens forces every device to re-authenticate with the new password.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>Compare stateless JWTs versus stateful opaque tokens for a high-security fintech API.</summary><div>Stateless JWTs: no DB lookup per request, horizontally scalable, but can't be revoked until expiry (unless you add a blacklist). Opaque tokens: validated by the auth server each request (DB lookup or cache), instantly revocable, but adds latency and a centralised component. Hybrid approach: short-lived JWTs for performance + a Redis revocation list for immediate invalidation on logout/compromise.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Authorisation — Roles, Policies and Resource-Based Checks</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Go beyond [Authorize(Roles=...)] with custom requirements, handlers, and resource-based authorisation using IAuthorizationService.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Role-based authorisation</dt><dd>Granting access based on membership in a named role, e.g. <code>[Authorize(Roles = "Admin")]</code>.</dd></div><div class="def"><dt>Policy-based authorisation</dt><dd>A named set of requirements registered in DI; more expressive and testable than raw role checks.</dd></div><div class="def"><dt>IAuthorizationRequirement</dt><dd>A marker interface for a requirement data class, e.g. <code>MinimumAgeRequirement(18)</code>.</dd></div><div class="def"><dt>AuthorizationHandler&lt;T&gt;</dt><dd>Evaluates one requirement: calls <code>context.Succeed(requirement)</code> or leaves it pending.</dd></div><div class="def"><dt>IAuthorizationService</dt><dd>Injected service for imperative / resource-based checks inside controllers or services.</dd></div><div class="def"><dt>Resource-based authorisation</dt><dd>Authorising against a specific resource object (e.g. 'can this user edit THIS blog post?').</dd></div><div class="def"><dt>AuthorizationHandlerContext</dt><dd>Passed to handlers: contains User (ClaimsPrincipal), Requirements, and optional Resource.</dd></div><div class="def"><dt>RequireClaim</dt><dd>Built-in requirement: user must have a specific claim (optionally with a specific value).</dd></div><div class="def"><dt>RequireRole</dt><dd>Built-in requirement inside a policy: equivalent to [Authorize(Roles=...)] but composable.</dd></div><div class="def"><dt>Fallback policy</dt><dd>A policy applied to every endpoint that hasn't set its own. Set with <code>options.FallbackPolicy</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Policies are composable — one policy can require both a role AND a minimum claim value.</li><li>An AuthorizationHandler that doesn't call <code>Succeed</code> or <code>Fail</code> just leaves the requirement pending; other handlers for the same requirement may still succeed it.</li><li>Calling <code>context.Fail()</code> short-circuits — even if another handler would succeed, the check fails.</li><li>Resource-based checks CANNOT use <code>[Authorize]</code> attributes because the resource isn't available at attribute-evaluation time — use <code>IAuthorizationService.AuthorizeAsync</code> in the action.</li><li>Set a fallback policy of <code>AuthorizationPolicies.RequireAuthenticatedUser()</code> to protect every endpoint by default; then use <code>[AllowAnonymous]</code> selectively.</li><li>Roles are just claims — <code>ClaimTypes.Role</code> — so role-based and claim-based auth are the same system.</li></ul></div>
+
+<h3>1. Role-based authorisation (simplest form)</h3>
+<div class="code"><div class="fname">Program.cs — policies</div><pre><code class="language-csharp">// Register policies in Program.cs
+builder.Services.AddAuthorization(opt =&gt;
+{{
+    opt.AddPolicy("AdminOnly",   p =&gt; p.RequireRole("Admin"));
+    opt.AddPolicy("FarmerOrAdmin", p =&gt; p.RequireRole("Farmer", "Admin"));  // OR logic
+
+    // Require that the JWT has a "verified" claim with value "true"
+    opt.AddPolicy("Verified",    p =&gt; p.RequireClaim("verified", "true"));
+
+    // Require both a role AND a claim
+    opt.AddPolicy("VerifiedFarmer", p =&gt;
+        p.RequireRole("Farmer").RequireClaim("verified", "true"));
+
+    // Default policy for all [Authorize] attributes without a named policy
+    opt.DefaultPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+}});</code></pre></div>
+<div class="code"><div class="fname">example usage</div><pre><code class="language-csharp">[Authorize(Policy = "AdminOnly")]
+[HttpGet("admin/users")]
+public IActionResult AdminOnlyEndpoint() =&gt; Ok("admin area");
+
+[Authorize(Policy = "FarmerOrAdmin")]
+[HttpPost("orders")]
+public IActionResult PlaceOrder() =&gt; Ok("order placed");</code></pre></div>
+
+<h3>2. Custom requirement and handler</h3>
+<div class="code"><div class="fname">Auth/MinFarmSizeHandler.cs</div><pre><code class="language-csharp">// Auth/Requirements/MinFarmSizeRequirement.cs
+using Microsoft.AspNetCore.Authorization;
+
+namespace AuthService.Auth;
+
+// 1. Requirement — just data
+public record MinFarmSizeRequirement(int MinAcres) : IAuthorizationRequirement;
+
+// 2. Handler — evaluates the requirement
+public class MinFarmSizeHandler : AuthorizationHandler&lt;MinFarmSizeRequirement&gt;
+{{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        MinFarmSizeRequirement requirement)
+    {{
+        // Read a custom claim set during login: "farm_acres": "50"
+        var acresClaim = context.User.FindFirstValue("farm_acres");
+        if (acresClaim is not null &amp;&amp; int.TryParse(acresClaim, out int acres) &amp;&amp; acres &gt;= requirement.MinAcres)
+            context.Succeed(requirement);
+
+        // Don't call Fail() — let other handlers try if present
+        return Task.CompletedTask;
+    }}
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs — custom policy</div><pre><code class="language-csharp">// Register in Program.cs
+builder.Services.AddSingleton&lt;IAuthorizationHandler, MinFarmSizeHandler&gt;();
+builder.Services.AddAuthorization(opt =&gt;
+{{
+    opt.AddPolicy("LargeFarm", p =&gt; p.Requirements.Add(new MinFarmSizeRequirement(10)));
+    opt.AddPolicy("EnterpriseFarm", p =&gt; p.Requirements.Add(new MinFarmSizeRequirement(100)));
+}});</code></pre></div>
+
+<h3>3. Resource-based authorisation (author or admin)</h3>
+<p>Can a user edit a farm listing? They are allowed if they are the owner of that listing OR an Admin.
+This cannot be checked via <code>[Authorize]</code> because we need the actual DB record.</p>
+<div class="code"><div class="fname">Auth/FarmListingAuthHandler.cs</div><pre><code class="language-csharp">// Auth/Requirements/FarmListingOperations.cs
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+
+namespace AuthService.Auth;
+
+public static class FarmListingOperations
+{{
+    public static OperationAuthorizationRequirement Edit   = new() {{ Name = "Edit" }};
+    public static OperationAuthorizationRequirement Delete = new() {{ Name = "Delete" }};
+}}
+
+// Auth/Handlers/FarmListingAuthHandler.cs
+public class FarmListingAuthHandler
+    : AuthorizationHandler&lt;OperationAuthorizationRequirement, FarmListing&gt;
+{{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        OperationAuthorizationRequirement requirement,
+        FarmListing resource)
+    {{
+        bool isAdmin = context.User.IsInRole("Admin");
+        string? userId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isOwner = resource.OwnerId == userId;
+
+        if (isAdmin || isOwner)
+            context.Succeed(requirement);
+
+        return Task.CompletedTask;
+    }}
+}}</code></pre></div>
+<div class="code"><div class="fname">Controllers/FarmListingsController.cs</div><pre><code class="language-csharp">// In a controller — inject IAuthorizationService
+public class FarmListingsController(
+    IAuthorizationService authService,
+    FarmListingRepository repo) : ControllerBase
+{{
+    [HttpPut("{{id}}")]
+    [Authorize]
+    public async Task&lt;IActionResult&gt; Edit(int id, [FromBody] EditFarmDto dto)
+    {{
+        var listing = await repo.GetByIdAsync(id);
+        if (listing is null) return NotFound();
+
+        // Resource-based check: pass the entity as the resource
+        var authResult = await authService.AuthorizeAsync(User, listing, FarmListingOperations.Edit);
+        if (!authResult.Succeeded) return Forbid();   // 403
+
+        listing.ApplyEdit(dto);
+        await repo.SaveAsync();
+        return Ok(listing);
+    }}
+}}</code></pre></div>
+
+<h3>4. Policies on Minimal API route groups</h3>
+<div class="code"><div class="fname">Program.cs — Minimal API groups</div><pre><code class="language-csharp">var api    = app.MapGroup("/api").RequireAuthorization();
+var admin  = app.MapGroup("/api/admin").RequireAuthorization("AdminOnly");
+var farmer = app.MapGroup("/api/farmer").RequireAuthorization("FarmerOrAdmin");
+
+api.MapGet("/me", (ClaimsPrincipal user) =&gt; user.FindFirstValue(JwtRegisteredClaimNames.Sub));
+admin.MapGet("/users", (UserManager&lt;ApplicationUser&gt; um) =&gt; um.Users.Select(u =&gt; u.Email));
+farmer.MapPost("/listings", (FarmListingDto dto) =&gt; Results.Created("/api/farmer/listings/1", dto));</code></pre></div>
+
+<h3>5. Fallback policy — secure by default</h3>
+<div class="code"><div class="fname">Program.cs — secure by default</div><pre><code class="language-csharp">builder.Services.AddAuthorization(opt =&gt;
+{{
+    // Every endpoint requires authentication UNLESS it has [AllowAnonymous] or .AllowAnonymous()
+    opt.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+}});
+
+// Now explicitly open public endpoints:
+app.MapPost("/api/auth/login",         Login).AllowAnonymous();
+app.MapPost("/api/auth/register",      Register).AllowAnonymous();
+app.MapPost("/api/auth/refresh",       Refresh).AllowAnonymous();
+app.MapPost("/api/auth/forgot-password", ForgotPassword).AllowAnonymous();</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Using <code>[Authorize(Roles = "Admin,Farmer")]</code> — this requires BOTH roles (AND logic). For OR use a policy with <code>RequireRole("Admin", "Farmer")</code>.</li><li>Calling <code>context.Fail()</code> in a handler when you just mean 'I can't decide' — Fail is a veto; leave it pending instead.</li><li>Injecting scoped services (like DbContext) into a singleton AuthorizationHandler — register the handler as scoped instead.</li><li>Forgetting to register the custom handler with <code>AddSingleton&lt;IAuthorizationHandler, MyHandler&gt;()</code>.</li><li>Trying to use [Authorize] for resource-based checks — it evaluates before the action runs and has no access to the resource.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Implement the <code>MinFarmSizeHandler</code>, register it, and add a 'farm_acres' claim during login to test it.</li><li>Add a FarmListing entity, the <code>FarmListingAuthHandler</code>, and test that only the owner and Admin can edit.</li><li>Set a fallback policy and confirm that forgetting [AllowAnonymous] on the login endpoint returns 401.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is the difference between a role and a policy?</summary>A role is a string claim (ClaimTypes.Role) on the user. A policy is a named set of requirements registered in DI; it can require roles, claims, custom logic, or any combination. Policies are more composable and unit-testable.</details><details><summary>When must you use IAuthorizationService instead of [Authorize]?</summary>When the check depends on a specific resource (e.g. 'can this user edit this listing?'). The [Authorize] attribute evaluates before the action body, so the resource object isn't loaded yet.</details><details><summary>What does context.Fail() do in a handler?</summary>It immediately signals failure — no other handler for any requirement can succeed the check. Use it only for explicit denial (e.g. banned user). If you simply can't satisfy the requirement, leave it pending (don't call Succeed or Fail).</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a policy in ASP.NET Core authorization?</summary><div>A named, registered set of requirements. Applied with [Authorize(Policy="Name")] or RequireAuthorization("Name"). You register policies in AddAuthorization and they can combine role checks, claim checks, and custom logic.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you require that a user is in EITHER of two roles?</summary><div>Use a policy: p.RequireRole("Admin", "Farmer") — passing multiple role names to RequireRole means the user must be in at least one. [Authorize(Roles = "Admin,Farmer")] also works (comma = OR for roles).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain the lifecycle of an IAuthorizationRequirement being evaluated.</summary><div>AuthorizationService collects all handlers registered for the requirement type. It calls each handler's HandleRequirementAsync. If any handler calls Succeed and none calls Fail, the requirement passes. If all handlers leave it pending (neither Succeed nor Fail), it fails. A single Fail vetoes all.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is an OperationAuthorizationRequirement?</summary><div>A built-in IAuthorizationRequirement with a Name property (e.g. "Edit", "Delete"). Handlers are written against OperationAuthorizationRequirement and inspect the Name property, allowing one handler class to cover multiple operations on the same resource type.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you unit-test a custom AuthorizationHandler?</summary><div>Create a DefaultAuthorizationHandlerContext with a test ClaimsPrincipal, the requirement, and optionally a resource. Call HandleRequirementAsync directly. Assert context.HasSucceeded or context.HasFailed.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>Describe a defence-in-depth authorisation design for a multi-tenant SaaS API.</summary><div>(1) Authentication: validate JWT, ensure correct issuer/audience. (2) Global fallback policy: require authenticated user. (3) Role policy: CoarseRoute-level (Admin, Tenant, User). (4) Resource policy: row-level check that TenantId on the resource matches the claim in the token. (5) Logging: log every 403 for anomaly detection. This prevents both horizontal (another user's data) and vertical (insufficient role) access.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>AuthService — Full Working Implementation</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build the AuthService micro-project end to end: register, login, refresh (with rotation and reuse detection), logout, /me, admin user list, and change-password, then walk through a complete curl lifecycle.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>AuthService</dt><dd>A standalone ASP.NET Core Web API that owns identity: registration, login, token issuance, refresh, logout.</dd></div><div class="def"><dt>TokenService</dt><dd>Thin service responsible only for JWT creation and refresh-token value generation/hashing.</dd></div><div class="def"><dt>Shared validation</dt><dd>A FluentValidation (or DataAnnotation) validator shared across DTOs to enforce password rules consistently.</dd></div><div class="def"><dt>curl lifecycle</dt><dd>A sequence of curl commands that exercises every auth endpoint end-to-end without a browser.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>AuthService is the Week 20 micro-project — it integrates everything from Mon–Fri.</li><li>Saturday is the full implementation; Sunday adds Blog API security, try-to-break tests and the week checklist.</li><li>All database work requires SQL Server 2022 (Docker) — the sandbox can build but not run migrations.</li><li>You cannot run EF Core migrations offline — ensure Docker is running before Saturday's work.</li></ul></div>
+
+<h3>Project scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash"># Terminal
+dotnet new webapi -n AuthService --use-controllers
+cd AuthService
+dotnet add package Microsoft.AspNetCore.Identity.EntityFrameworkCore --version 8.0.0
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer --version 8.0.0
+dotnet add package Microsoft.EntityFrameworkCore.Design --version 8.0.0
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer --version 8.0.0
+
+# Docker: SQL Server 2022
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+  -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2022-latest
+
+# User secrets
+dotnet user-secrets init
+dotnet user-secrets set "Jwt:Key"      "ugaav-auth-service-secret-key-32bytesminimum!"
+dotnet user-secrets set "Jwt:Issuer"   "ugaav-auth"
+dotnet user-secrets set "Jwt:Audience" "ugaav-api"
+dotnet user-secrets set "Seed:AdminPassword" "Admin@12345"
+dotnet user-secrets set "ConnectionStrings:Default" \
+  "Server=localhost,1433;Database=UgaavAuth;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"</code></pre></div>
+
+<h3>Folder layout</h3>
+<div class="code nofile"><pre><code class="language-text">AuthService/
+├── Controllers/
+│   └── AuthController.cs       ← register, login, refresh, logout, change-password
+│   └── MeController.cs         ← GET /api/me (self info)
+│   └── AdminController.cs      ← GET /api/admin/users
+├── Data/
+│   ├── AppDbContext.cs
+│   └── DbSeeder.cs
+├── Models/
+│   ├── ApplicationUser.cs
+│   └── RefreshToken.cs
+├── Services/
+│   ├── ITokenService.cs
+│   ├── TokenService.cs
+│   └── IAuthService.cs
+│   └── AuthService.cs          ← orchestrates Identity + TokenService
+├── DTOs/
+│   ├── RegisterDto.cs
+│   ├── LoginDto.cs
+│   ├── RefreshDto.cs
+│   ├── ChangePasswordDto.cs
+│   └── AuthResult.cs
+├── Auth/                        ← requirements and handlers (Fri content)
+│   ├── MinFarmSizeHandler.cs
+│   └── FarmListingAuthHandler.cs
+├── appsettings.json
+└── Program.cs</code></pre></div>
+
+<h3>DTOs</h3>
+<div class="code"><div class="fname">DTOs/*.cs</div><pre><code class="language-csharp">// DTOs/RegisterDto.cs
+using System.ComponentModel.DataAnnotations;
+namespace AuthService.DTOs;
+
+public record RegisterDto(
+    [Required, EmailAddress]              string Email,
+    [Required, MinLength(2), MaxLength(100)] string FullName,
+    [Required, MinLength(8)]              string Password
+);
+
+// DTOs/LoginDto.cs
+public record LoginDto(
+    [Required, EmailAddress] string Email,
+    [Required]               string Password
+);
+
+// DTOs/RefreshDto.cs
+public record RefreshDto([Required] string RefreshToken);
+
+// DTOs/ChangePasswordDto.cs
+public record ChangePasswordDto(
+    [Required] string CurrentPassword,
+    [Required, MinLength(8)] string NewPassword
+);
+
+// DTOs/AuthResult.cs
+public record AuthResult(
+    bool   Succeeded,
+    string? AccessToken  = null,
+    string? RefreshToken = null,
+    string? Error        = null
+)
+{{
+    public static AuthResult Ok(string access, string refresh)
+        =&gt; new(true, access, refresh);
+    public static AuthResult Fail(string error)
+        =&gt; new(false, Error: error);
+}}</code></pre></div>
+
+<h3>AuthService.cs — the core orchestrator</h3>
+<div class="code"><div class="fname">Services/AuthService.cs</div><pre><code class="language-csharp">// Services/AuthService.cs
+using AuthService.Data;
+using AuthService.DTOs;
+using AuthService.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace AuthService.Services;
+
+public class UgaavAuthService(
+    UserManager&lt;ApplicationUser&gt; userManager,
+    SignInManager&lt;ApplicationUser&gt; signInManager,
+    ITokenService tokenService,
+    AppDbContext db)
+{
+    public async Task&lt;AuthResult&gt; RegisterAsync(RegisterDto dto)
+    {
+        var user = new ApplicationUser { UserName = dto.Email, Email = dto.Email, FullName = dto.FullName };
+        var result = await userManager.CreateAsync(user, dto.Password);
+        if (!result.Succeeded)
+            return AuthResult.Fail(string.Join("; ", result.Errors.Select(e =&gt; e.Description)));
+
+        await userManager.AddToRoleAsync(user, "Farmer");     // default role
+        return await IssueTokenPairAsync(user);
+    }
+
+    public async Task&lt;AuthResult&gt; LoginAsync(LoginDto dto)
+    {
+        var user = await userManager.FindByEmailAsync(dto.Email);
+        if (user is null) return AuthResult.Fail("Invalid credentials");
+
+        var signIn = await signInManager.CheckPasswordSignInAsync(user, dto.Password, lockoutOnFailure: true);
+        if (signIn.IsLockedOut)  return AuthResult.Fail("Account locked — try again later");
+        if (!signIn.Succeeded)   return AuthResult.Fail("Invalid credentials");
+
+        return await IssueTokenPairAsync(user);
+    }
+
+    public async Task&lt;AuthResult&gt; RefreshAsync(string rawRefreshToken)
+    {
+        string hashed = tokenService.HashToken(rawRefreshToken);
+        var stored    = await db.RefreshTokens.FirstOrDefaultAsync(r =&gt; r.Token == hashed);
+        if (stored is null) return AuthResult.Fail("Invalid token");
+
+        if (stored.IsRevoked)
+        {
+            await RevokeChainAsync(stored.UserId);
+            return AuthResult.Fail("Token reuse detected — all sessions revoked");
+        }
+        if (stored.IsExpired) return AuthResult.Fail("Refresh token expired");
+
+        var user  = await userManager.FindByIdAsync(stored.UserId);
+        if (user is null) return AuthResult.Fail("User not found");
+
+        // Rotate
+        string newRaw    = tokenService.CreateRefreshTokenValue();
+        string newHashed = tokenService.HashToken(newRaw);
+        stored.RevokedAt  = DateTime.UtcNow;
+        stored.ReplacedBy = newHashed;
+        db.RefreshTokens.Update(stored);
+        db.RefreshTokens.Add(new RefreshToken
+        {
+            UserId    = user.Id,
+            Token     = newHashed,
+            ExpiresAt = stored.ExpiresAt
+        });
+        await db.SaveChangesAsync();
+
+        var roles       = await userManager.GetRolesAsync(user);
+        string newAccess = tokenService.CreateAccessToken(user, roles);
+        return AuthResult.Ok(newAccess, newRaw);
+    }
+
+    public async Task RevokeAsync(string rawRefreshToken)
+    {
+        string hashed = tokenService.HashToken(rawRefreshToken);
+        var stored    = await db.RefreshTokens.FirstOrDefaultAsync(r =&gt; r.Token == hashed);
+        if (stored is not null &amp;&amp; stored.IsActive)
+        {
+            stored.RevokedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+    }
+
+    private async Task&lt;AuthResult&gt; IssueTokenPairAsync(ApplicationUser user)
+    {
+        var roles  = await userManager.GetRolesAsync(user);
+        string access  = tokenService.CreateAccessToken(user, roles);
+        string rawRefresh = tokenService.CreateRefreshTokenValue();
+        db.RefreshTokens.Add(new RefreshToken
+        {
+            UserId    = user.Id,
+            Token     = tokenService.HashToken(rawRefresh),
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        });
+        await db.SaveChangesAsync();
+        return AuthResult.Ok(access, rawRefresh);
+    }
+
+    private async Task RevokeChainAsync(string userId)
+    {
+        var active = await db.RefreshTokens
+            .Where(r =&gt; r.UserId == userId &amp;&amp; r.RevokedAt == null)
+            .ToListAsync();
+        foreach (var t in active) t.RevokedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+    }
+}</code></pre></div>
+
+<h3>AuthController.cs</h3>
+<div class="code"><div class="fname">Controllers/AuthController.cs</div><pre><code class="language-csharp">// Controllers/AuthController.cs
+using AuthService.DTOs;
+using AuthService.Models;
+using AuthService.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+
+namespace AuthService.Controllers;
+
+[ApiController]
+[Route("api/auth")]
+public class AuthController(
+    UgaavAuthService authSvc,
+    UserManager&lt;ApplicationUser&gt; userManager) : ControllerBase
+{
+    [HttpPost("register")]
+    public async Task&lt;IActionResult&gt; Register([FromBody] RegisterDto dto)
+    {
+        var result = await authSvc.RegisterAsync(dto);
+        return result.Succeeded ? Ok(result) : BadRequest(new {{ error = result.Error }});
+    }
+
+    [HttpPost("login")]
+    public async Task&lt;IActionResult&gt; Login([FromBody] LoginDto dto)
+    {
+        var result = await authSvc.LoginAsync(dto);
+        return result.Succeeded ? Ok(result) : Unauthorized(new {{ error = result.Error }});
+    }
+
+    [HttpPost("refresh")]
+    public async Task&lt;IActionResult&gt; Refresh([FromBody] RefreshDto dto)
+    {
+        var result = await authSvc.RefreshAsync(dto.RefreshToken);
+        return result.Succeeded ? Ok(result) : Unauthorized(new {{ error = result.Error }});
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task&lt;IActionResult&gt; Logout([FromBody] RefreshDto dto)
+    {
+        await authSvc.RevokeAsync(dto.RefreshToken);
+        return Ok(new {{ message = "Logged out" }});
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task&lt;IActionResult&gt; ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        string userId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)!;
+        var user = await userManager.FindByIdAsync(userId);
+        var result = await userManager.ChangePasswordAsync(user!, dto.CurrentPassword, dto.NewPassword);
+        if (!result.Succeeded) return BadRequest(result.Errors);
+        await authSvc.RevokeChainPublic(userId);   // helper that exposes RevokeChainAsync
+        return Ok(new {{ message = "Password changed — please log in again" }});
+    }
+}</code></pre></div>
+
+<h3>curl lifecycle walkthrough</h3>
+<div class="code"><div class="fname">lifecycle.sh</div><pre><code class="language-bash">BASE=https://localhost:5001
+
+# 1. Register a new farmer (Rahul Verma, Jaipur)
+curl -k -s -X POST $BASE/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{{"email":"rahul.verma@example.in","fullName":"Rahul Verma","password":"Secure@123"}}' | jq .
+# → { "accessToken": "eyJ...", "refreshToken": "abc..." }
+
+ACCESS=$(curl -k -s -X POST $BASE/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{{"email":"rahul.verma@example.in","password":"Secure@123"}}' | jq -r '.accessToken')
+REFRESH=$(curl -k -s -X POST $BASE/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{{"email":"rahul.verma@example.in","password":"Secure@123"}}' | jq -r '.refreshToken')
+
+# 2. Access protected endpoint
+curl -k -s $BASE/api/me -H "Authorization: Bearer $ACCESS" | jq .
+# → { "email": "rahul.verma@example.in", "fullName": "Rahul Verma", "roles": ["Farmer"] }
+
+# 3. Refresh
+NEW=$(curl -k -s -X POST $BASE/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d "{\"refreshToken\":\"$REFRESH\"}" | jq .)
+echo $NEW
+# → { "accessToken": "eyJ... (new)", "refreshToken": "xyz... (new, old is now revoked)" }
+
+# 4. Reuse detection: try the OLD refresh token again
+curl -k -s -X POST $BASE/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d "{\"refreshToken\":\"$REFRESH\"}" | jq .
+# → { "error": "Token reuse detected — all sessions revoked" }
+
+# 5. Admin endpoint (Farmer token → 403)
+curl -k -s -o /dev/null -w "%{{http_code}}" $BASE/api/admin/users \
+  -H "Authorization: Bearer $ACCESS"
+# → 403
+
+# 6. Admin login and admin endpoint
+ADMIN=$(curl -k -s -X POST $BASE/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{{"email":"admin@ugaav.in","password":"Admin@12345"}}' | jq -r '.accessToken')
+curl -k -s $BASE/api/admin/users -H "Authorization: Bearer $ADMIN" | jq .
+# → [ { "email": "rahul.verma@example.in", ... }, { "email": "admin@ugaav.in", ... } ]</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul><li>Add email confirmation: generate token with <code>userManager.GenerateEmailConfirmationTokenAsync</code>, send a link (use a stub IEmailSender), and add a <code>GET /api/auth/confirm-email</code> endpoint.</li><li>Implement mobile OTP registration (Indian context): store a pending registration with the phone number, generate a 6-digit OTP, verify it in a second step, then create the Identity user.</li><li>Add a <code>GET /api/admin/refresh-tokens</code> endpoint that lists active tokens per user (useful for a 'sessions' management page).</li><li>Publish a JWKS endpoint (<code>GET /.well-known/jwks.json</code>) with the public key (switch to RS256) so the Week 19 Blog API can verify tokens without a shared secret.</li></ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does a TokenService do?</summary><div>It owns JWT creation (CreateAccessToken) and refresh token generation/hashing. Separating it from AuthService keeps the cryptographic concerns in one tested class.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why is the AuthController thin in this design?</summary><div>Business logic (Identity calls, token management, chain revocation) lives in UgaavAuthService. The controller only maps HTTP concerns: HTTP verbs, status codes, request/response shapes. This makes the service independently testable.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you scale this AuthService horizontally to three instances?</summary><div>JWT validation is stateless (each instance verifies the signature). The bottleneck is the refresh-token DB row. Use a central SQL Server or Redis for refresh tokens. Avoid storing any session state in memory — the service must be stateless between requests.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you prevent refresh token theft via mobile app transport?</summary><div>(1) HTTPS only (certificate pinning on the mobile client). (2) HttpOnly Secure cookie for the refresh token (web) or OS-level secure storage (iOS Keychain, Android Keystore). (3) Rotate on every use with reuse detection. (4) Short expiry (7 days). (5) Bind to a device fingerprint claim if the security level justifies the UX cost.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Secure the Week 19 Blog API and Try-to-Break Tests</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Wire the AuthService JWT into the Week 19 Blog API, add author-or-admin policy, require login for comments, run a systematic try-to-break table, write the README and push to git.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Shared auth config</dt><dd>A common TokenValidationParameters helper referenced by both AuthService and BlogApi — same issuer, audience and key.</dd></div><div class="def"><dt>Author-or-admin policy</dt><dd>A resource-based policy: edit/delete a post only if you are its author (OwnerId == userId) or an Admin.</dd></div><div class="def"><dt>RequireAuthorization for comments</dt><dd>Comments endpoint uses [Authorize] — a valid JWT is required; role is not checked.</dd></div><div class="def"><dt>Try-to-break table</dt><dd>Systematic adversarial testing: expired token, tampered token, privilege escalation, refresh reuse, lockout.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Both services read Jwt:Key, Jwt:Issuer, Jwt:Audience from configuration — identical values required.</li><li>Resource-based checks in BlogApi use IAuthorizationService.AuthorizeAsync with the Post entity, same as Friday.</li><li>The comment controller only needs [Authorize] — no role, any authenticated user may comment.</li><li>Test expired tokens by setting AccessTokenMins to 1 and waiting, or by manually editing exp in the token (signature will fail).</li></ul></div>
+
+<h3>1. Add JWT auth to Week 19 BlogApi</h3>
+<div class="code nofile"><pre><code class="language-bash">// BlogApi/Program.cs — add the same JWT setup as AuthService
+// (copy the AddAuthentication / AddJwtBearer block; share the same appsettings values)
+
+// User-secrets for BlogApi (must match AuthService)
+dotnet user-secrets set "Jwt:Key"      "ugaav-auth-service-secret-key-32bytesminimum!"
+dotnet user-secrets set "Jwt:Issuer"   "ugaav-auth"
+dotnet user-secrets set "Jwt:Audience" "ugaav-api"</code></pre></div>
+<div class="note tip"><b>Tip.</b> In production, both services read <code>Jwt:Key</code> from the same Azure Key Vault secret or environment variable — they are never stored in source control.</div>
+
+<h3>2. Shared validation helper</h3>
+<div class="code"><div class="fname">Shared/JwtSetup.cs</div><pre><code class="language-csharp">// Shared/JwtValidation.cs (or a NuGet package / shared project in a monorepo)
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+namespace Shared.Auth;
+
+public static class JwtSetup
+{{
+    public static void AddJwtAuth(this IServiceCollection services, IConfiguration cfg)
+    {{
+        var key = cfg["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key not configured");
+        services.AddAuthentication(opt =&gt;
+        {{
+            opt.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            opt.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+        }})
+        .AddJwtBearer(opt =&gt;
+        {{
+            opt.TokenValidationParameters = new TokenValidationParameters
+            {{
+                ValidateIssuer           = true,
+                ValidIssuer              = cfg["Jwt:Issuer"],
+                ValidateAudience         = true,
+                ValidAudience            = cfg["Jwt:Audience"],
+                ValidateLifetime         = true,
+                ClockSkew                = TimeSpan.Zero,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+            }};
+        }});
+    }}
+}}</code></pre></div>
+
+<h3>3. Author-or-admin policy in BlogApi</h3>
+<div class="code"><div class="fname">BlogApi/Auth/PostAuthHandler.cs</div><pre><code class="language-csharp">// BlogApi/Auth/PostAuthHandler.cs
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
+using System.Security.Claims;
+using BlogApi.Models;
+
+public class PostAuthHandler : AuthorizationHandler&lt;OperationAuthorizationRequirement, Post&gt;
+{{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        OperationAuthorizationRequirement requirement,
+        Post post)
+    {{
+        bool isAdmin  = context.User.IsInRole("Admin");
+        string? uid   = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isAuthor = post.AuthorId == uid;
+
+        if (isAdmin || isAuthor) context.Succeed(requirement);
+        return Task.CompletedTask;
+    }}
+}}</code></pre></div>
+<div class="code"><div class="fname">BlogApi/Controllers/PostsController.cs (excerpt)</div><pre><code class="language-csharp">// BlogApi/Controllers/PostsController.cs (excerpt)
+[HttpPut("{{id}}")]
+[Authorize]
+public async Task&lt;IActionResult&gt; Update(int id, [FromBody] UpdatePostDto dto)
+{{
+    var post = await db.Posts.FindAsync(id);
+    if (post is null) return NotFound();
+
+    var auth = await authService.AuthorizeAsync(User, post, PostOperations.Edit);
+    if (!auth.Succeeded) return Forbid();   // 403 — authenticated but not the author/admin
+
+    post.Title   = dto.Title;
+    post.Content = dto.Content;
+    await db.SaveChangesAsync();
+    return Ok(post);
+}}</code></pre></div>
+
+<h3>4. Comments require login</h3>
+<div class="code"><div class="fname">BlogApi/Controllers/CommentsController.cs</div><pre><code class="language-csharp">// BlogApi/Controllers/CommentsController.cs
+[ApiController]
+[Route("api/posts/{{postId}}/comments")]
+[Authorize]                                // any authenticated user may comment
+public class CommentsController(...) : ControllerBase
+{{
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; Add(int postId, [FromBody] AddCommentDto dto)
+    {{
+        string authorId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        // ... save comment with authorId
+    }}
+
+    [HttpDelete("{{id}}")]
+    public async Task&lt;IActionResult&gt; Delete(int postId, int id)
+    {{
+        var comment = await db.Comments.FindAsync(id);
+        if (comment is null) return NotFound();
+
+        // Author or Admin
+        string? uid     = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        bool isAdmin    = User.IsInRole("Admin");
+        bool isAuthor   = comment.AuthorId == uid;
+        if (!isAdmin &amp;&amp; !isAuthor) return Forbid();
+
+        db.Comments.Remove(comment);
+        await db.SaveChangesAsync();
+        return NoContent();
+    }}
+}}</code></pre></div>
+
+<h3>5. Try-to-break table</h3>
+<div class="tbl"><table><tr><th>Attack</th><th>Steps</th><th>Expected result</th></tr><tr><td>Expired access token</td><td>Set AccessTokenMins=1 in secrets; login; wait 65 s; call /api/me</td><td>401 — token_expired</td></tr><tr><td>Tampered payload</td><td>Decode token, change role to Admin in payload, re-encode; call /api/admin/users</td><td>401 — invalid_signature (backend hashes header+payload with key; tampered payload gives different hash)</td></tr><tr><td>Privilege escalation</td><td>Login as Farmer; call DELETE /api/posts/1 (created by Admin)</td><td>403 — Forbidden (author check fails, not Admin)</td></tr><tr><td>Refresh token reuse</td><td>Use refresh token once; use the SAME token again</td><td>401 error; all tokens for user revoked</td></tr><tr><td>Brute-force lockout</td><td>POST /api/auth/login 6 times with wrong password</td><td>5th attempt sets LockoutEnd; 6th returns locked error; correct password also returns locked for 10 min</td></tr><tr><td>No token at all</td><td>Call GET /api/me without Authorization header</td><td>401 Unauthorized</td></tr><tr><td>Stolen token from another user</td><td>Use token issued for user A to call /api/posts (author = user B)</td><td>403 Forbidden on edit/delete; GET is public</td></tr><tr><td>Expired refresh token</td><td>Use DB to set ExpiresAt = now - 1 s; then POST /api/auth/refresh</td><td>401 — Refresh token expired</td></tr></table></div>
+
+<h3>6. README template</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-text"># AuthService — Week 20 Micro-Project
+
+## Overview
+Standalone ASP.NET Core 8 Web API providing JWT-based authentication and
+authorisation for the Ugaav platform. Issues short-lived access tokens (15 min)
+paired with rotated refresh tokens (7 days).
+
+## Endpoints
+| Method | Route                      | Auth        | Description                        |
+|--------|----------------------------|-------------|------------------------------------|
+| POST   | /api/auth/register         | None        | Register; returns token pair       |
+| POST   | /api/auth/login            | None        | Login; returns token pair          |
+| POST   | /api/auth/refresh          | None        | Rotate refresh token               |
+| POST   | /api/auth/logout           | Bearer      | Revoke refresh token               |
+| POST   | /api/auth/change-password  | Bearer      | Change password, revoke sessions   |
+| GET    | /api/me                    | Bearer      | Current user info                  |
+| GET    | /api/admin/users           | Bearer+Admin| List all users                     |
+
+## Setup
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+  -p 1433:1433 --name sqlserver -d mcr.microsoft.com/mssql/server:2022-latest
+dotnet user-secrets set "Jwt:Key" "&lt;min-32-char-secret&gt;"
+dotnet user-secrets set "Seed:AdminPassword" "Admin@12345"
+dotnet ef database update
+dotnet run
+```
+
+## Security notes
+- Refresh tokens stored as SHA-256 hashes; plain values never persisted
+- Rotation with reuse detection: stolen token triggers full chain revocation
+- Lockout: 5 failed attempts → 10-minute lockout</code></pre></div>
+
+<h3>7. Git commands</h3>
+<div class="code nofile"><pre><code class="language-bash">cd AuthService
+git init
+git add .
+git commit -m "Week 20: AuthService — JWT, Identity, refresh token rotation"
+
+# If linking to Week 19 Blog API
+cd ../BlogApi
+git add .
+git commit -m "Week 20: Secure BlogApi — JWT auth, author-or-admin policy, comment auth"</code></pre></div>
+
+<h3>Week 20 checklist</h3>
+<div class="tbl"><table><tr><th>Topic</th><th>Done?</th></tr><tr><td>AuthN vs AuthZ; cookie vs token tradeoffs</td><td>☐</td></tr><tr><td>JWT structure: header / payload / signature</td><td>☐</td></tr><tr><td>HS256 vs RS256 — when to use each</td><td>☐</td></tr><tr><td>XSS vs CSRF — which storage option is affected by which</td><td>☐</td></tr><tr><td>ASP.NET Core Identity: IdentityDbContext, ApplicationUser, tables</td><td>☐</td></tr><tr><td>UserManager / SignInManager / RoleManager responsibilities</td><td>☐</td></tr><tr><td>Password hashing (PBKDF2) — never plain text or MD5</td><td>☐</td></tr><tr><td>Seeding roles and admin on startup (not in migration)</td><td>☐</td></tr><tr><td>JsonWebTokenHandler for token creation; JwtBearer for validation</td><td>☐</td></tr><tr><td>TokenValidationParameters: issuer, audience, lifetime, ClockSkew</td><td>☐</td></tr><tr><td>user-secrets for Jwt:Key in development</td><td>☐</td></tr><tr><td>401 (not authenticated) vs 403 (not authorised)</td><td>☐</td></tr><tr><td>Refresh token rotation + reuse detection</td><td>☐</td></tr><tr><td>Storing refresh token HASH in DB (not raw value)</td><td>☐</td></tr><tr><td>Password reset flow (Identity token, single-use, revoke sessions)</td><td>☐</td></tr><tr><td>Lockout: MaxFailedAccessAttempts, LockoutTimeSpan</td><td>☐</td></tr><tr><td>Role-based vs policy-based authorisation</td><td>☐</td></tr><tr><td>Custom IAuthorizationRequirement + AuthorizationHandler</td><td>☐</td></tr><tr><td>Resource-based auth with IAuthorizationService.AuthorizeAsync</td><td>☐</td></tr><tr><td>AuthService scaffold, curl lifecycle walkthrough</td><td>☐</td></tr><tr><td>BlogApi secured: author-or-admin, comment auth</td><td>☐</td></tr><tr><td>Try-to-break table all rows passing</td><td>☐</td></tr></table></div>
+
+<h3>5-question quiz</h3>
+<details><summary>Q1. What does this response code mean: a valid JWT is present but the user has role Farmer and the endpoint requires Admin?</summary>
+<div class="code nofile"><pre><code class="language-csharp">// Which HTTP status is returned?
+// A) 200   B) 401   C) 403   D) 404</code></pre></div><b>C — 403 Forbidden.</b> The request is authenticated (valid JWT) but not authorised (wrong role). 401 means not authenticated at all.</details>
+
+<details><summary>Q2. What prints / what happens?</summary>
+<div class="code nofile"><pre><code class="language-csharp">// A refresh token was used once (successfully rotated).
+// The same raw token value is presented again to POST /api/auth/refresh.
+// What is the expected behaviour?</code></pre></div><b>All active refresh tokens for that user are revoked.</b> The reuse detection path: the token exists in the DB but is already marked RevokedAt (not null). The system interprets a revoked token being presented as a sign of theft and calls RevokeChainAsync for the user, logging them out everywhere.</details>
+
+<details><summary>Q3. Does this compile and run correctly?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("short"));
+var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);</code></pre></div><b>Compiles but throws at runtime.</b> HS256 requires a key of at least 128 bits (16 bytes for the minimum, 256 bits / 32 bytes recommended). The string "short" is 5 bytes → <code>ArgumentOutOfRangeException: IDX10720: ... key size must be greater than 128 bits</code>.</details>
+
+<details><summary>Q4. What is wrong with this token-storage strategy?</summary>
+<div class="code nofile"><pre><code class="language-csharp">// In a React SPA:
+// 1. POST /api/auth/login  →  store accessToken in localStorage
+// 2. Every fetch: Authorization: Bearer localStorage.getItem('accessToken')</code></pre></div><b>XSS vulnerability.</b> Any injected script on the page can call <code>localStorage.getItem('accessToken')</code> and exfiltrate the token to an attacker's server. Prefer an HttpOnly Secure cookie (not readable by JS) or in-memory storage with a silent refresh mechanism.</details>
+
+<details><summary>Q5. AuthorizationHandler — Succeed, Fail or neither?</summary>
+<div class="code nofile"><pre><code class="language-csharp">protected override Task HandleRequirementAsync(
+    AuthorizationHandlerContext ctx,
+    MinAgeRequirement req)
+{
+    var dob = ctx.User.FindFirstValue("date_of_birth");
+    if (dob is null) return Task.CompletedTask;   // ← what happens here?
+
+    if (DateTime.TryParse(dob, out var birth) &amp;&amp; DateTime.Today.Year - birth.Year &gt;= req.MinAge)
+        ctx.Succeed(req);
+    return Task.CompletedTask;
+}</code></pre></div><b>Leaving the requirement pending (neither Succeed nor Fail).</b> When <code>dob</code> is null the handler returns without calling Succeed or Fail. Other handlers for this requirement may still succeed it. If no handler succeeds, the requirement fails. This is the correct behaviour — only call <code>ctx.Fail()</code> if you want to explicitly deny access regardless of other handlers.</details>
+
+<div class="note tip"><b>Next week:</b> Week 21 — Background jobs and real-time communication. <code>IHostedService</code>, <code>BackgroundService</code>, Hangfire for recurring jobs, and SignalR for push notifications — plus a report-emailer background service and a live chat feature.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How do you share the JWT signing key between AuthService and BlogApi without committing it to source control?</summary><div>In development: dotnet user-secrets on each project, both set to the same value. In production: a shared environment variable (e.g. ASPNETCORE_Jwt__Key) set at deploy time, or a secret manager like Azure Key Vault referenced by both apps.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the minimum you must add to Week 19 BlogApi to accept tokens from AuthService?</summary><div>Add the same AddAuthentication/AddJwtBearer block with matching Jwt:Key, Jwt:Issuer, Jwt:Audience. Call app.UseAuthentication() before app.UseAuthorization(). That's it — no Identity package is needed in the consumer service.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>A user updates their email. What security steps should follow?</summary><div>(1) Re-verify the new email (send a confirmation link). (2) Revoke all refresh tokens — the sub claim in existing JWTs still has the old user ID, but the email claim will be stale. (3) If the JWT contains an email claim, force re-login so a fresh token with the new email is issued.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you implement a 'force logout all devices' feature for an admin?</summary><div>Revoke all refresh tokens for the user (set RevokedAt on every row for that UserId). Access tokens will expire naturally within their lifetime (15 min). For immediate invalidation, increment a user version counter stored in a fast cache (Redis) and include it as a claim; validate on every request.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week20-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

@@ -1,0 +1,1536 @@
+<title>.NET Notes · Week 16</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 16</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">Include &amp; loading</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">N+1 · NoTracking</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Raw SQL</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Concurrency · Tx</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Owned · Filters</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: interceptor</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Revision &amp; quiz</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 2 · Week 16 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">SQL Server 2022</span><span class="chip">~18 hrs</span><span class="chip">Soft delete + audit</span></div>
+  <h1>Week 16 — EF Core in Depth</h1>
+  <p>EF Core is powerful enough to get you into trouble without knowing it. This week you go deep: loading strategies and their SQL, N+1 detection and fixes, raw SQL for when LINQ isn't enough, optimistic concurrency with rowversion, owned types and global filters, and a production-quality soft-delete and audit interceptor as the weekend project.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>Loading related data</h3><p>Include/ThenInclude, filtered Include, explicit, lazy loading, SQL produced.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>N+1, tracking and projections</h3><p>Detecting N+1 with LogTo, AsNoTracking, DTOs, AsSplitQuery.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Raw SQL and bulk operations</h3><p>FromSql, SqlQuery, ExecuteUpdate/Delete, stored procs, compiled queries.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Concurrency and transactions</h3><p>rowversion, DbUpdateConcurrencyException, BeginTransaction, retry strategies.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Owned types, conversions, filters</h3><p>Owned types, value conversions, global filters, shadow props, HasData.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Soft delete + audit interceptor</h3><p>ISoftDeletable/IAuditable, full SaveChangesInterceptor, global filter, migration.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>SQL inspection, checklist and quiz</h3><p>Six SQL blocks, perf checklist, try-to-break, README, git, quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Loading related data: Include, ThenInclude, filtered Include, explicit and lazy loading</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Extend last week's StoreDb with customers and orders, then load related data on purpose — eagerly, explicitly or lazily — and read the SQL each choice produces.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Navigation property</dt><dd>A property that points to related entities: a reference (<code>Order.Customer</code>) or a collection (<code>Customer.Orders</code>).</dd></div><div class="def"><dt>Related data</dt><dd>Rows in other tables reached through foreign keys. EF Core does <b>not</b> load it unless you ask.</dd></div><div class="def"><dt>Eager loading</dt><dd>Loading related data in the same query with <code>Include</code> / <code>ThenInclude</code>.</dd></div><div class="def"><dt>Include</dt><dd>Adds one navigation to the query: <code>Orders.Include(o =&gt; o.Customer)</code>. Translates to a JOIN.</dd></div><div class="def"><dt>ThenInclude</dt><dd>Continues an include path one level deeper: <code>Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Product)</code>.</dd></div><div class="def"><dt>Filtered Include</dt><dd>EF Core 5+: <code>Include(c =&gt; c.Orders.Where(...).OrderBy(...).Take(n))</code> loads only some children. Allowed operators: Where, OrderBy(Descending), ThenBy(Descending), Skip, Take.</dd></div><div class="def"><dt>Explicit loading</dt><dd>Loading a navigation later, on demand, for an entity already in memory: <code>db.Entry(c).Collection(x =&gt; x.Orders).LoadAsync()</code>.</dd></div><div class="def"><dt>Lazy loading</dt><dd>Navigations load automatically the first time code reads them. Needs proxies (<code>Microsoft.EntityFrameworkCore.Proxies</code>) or an injected <code>ILazyLoader</code>.</dd></div><div class="def"><dt>Proxy</dt><dd>A runtime-generated subclass of your entity that overrides <code>virtual</code> navigations to trigger loading.</dd></div><div class="def"><dt>Relationship fix-up</dt><dd>EF Core automatically connects tracked entities to each other via their keys, even if you never included the navigation.</dd></div><div class="def"><dt>IsLoaded</dt><dd><code>db.Entry(e).Collection(...).IsLoaded</code> — whether EF thinks a navigation has been fully loaded.</dd></div><div class="def"><dt>Required vs optional navigation</dt><dd>Required (non-nullable FK) produces <code>INNER JOIN</code>; optional (nullable FK) produces <code>LEFT JOIN</code>.</dd></div><div class="def"><dt>ToQueryString()</dt><dd>EF Core 5+: returns the SQL a LINQ query will run, without running it. Ideal for learning and debugging.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>No Include = navigation stays <code>null</code> (reference) or empty (collection) — unless fix-up or lazy loading fills it.</li><li>Every Include of a collection multiplies rows in a single query. Two collections = rows of A × rows of B (Tuesday).</li><li>Filtered Include filters only the included children, never the parent rows.</li><li>Explicit loading is a deliberate extra query. Lazy loading is a <i>hidden</i> extra query — that's the danger.</li><li>Read the SQL for every new query you write: <code>LogTo</code> or <code>ToQueryString()</code>.</li><li>Prefer async (<code>ToListAsync</code>, <code>LoadAsync</code>) in apps; sync versions exist but block a thread.</li></ul></div>
+
+<h3>1. Extend the StoreDb model: customers, orders, order lines</h3>
+<p>Last week's <code>Store.Core</code> had <code>Category</code> and <code>Product</code>. Add three entities. An order belongs to one customer and has many lines; each line points to one product and stores the <b>price at the time of ordering</b> (today's product price may change later).</p>
+<div class="code"><div class="fname">Store.Core/Entities/Orders.cs</div><pre><code class="language-csharp">namespace Store.Core.Entities;
+
+public class Customer
+{
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public required string Email { get; set; }
+    public string City { get; set; } = "";
+    public List&lt;Order&gt; Orders { get; set; } = [];
+}
+
+public enum OrderStatus { Pending, Paid, Shipped, Delivered, Cancelled }
+
+public class Order
+{
+    public int Id { get; set; }
+    public int CustomerId { get; set; }                 // required FK (non-nullable int)
+    public Customer Customer { get; set; } = null!;     // "null!" = EF fills it when loaded
+    public DateTime OrderDateUtc { get; set; }
+    public OrderStatus Status { get; set; }
+    public List&lt;OrderLine&gt; Lines { get; set; } = [];
+}
+
+public class OrderLine
+{
+    public int Id { get; set; }
+    public int OrderId { get; set; }
+    public Order Order { get; set; } = null!;
+    public int ProductId { get; set; }
+    public Product Product { get; set; } = null!;
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }              // snapshot of Product.Price when ordered
+}</code></pre></div>
+<div class="code"><div class="fname">Store.Data/Configurations/OrderConfigurations.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Store.Core.Entities;
+
+namespace Store.Data.Configurations;
+
+public class CustomerConfiguration : IEntityTypeConfiguration&lt;Customer&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;Customer&gt; b)
+    {
+        b.Property(c =&gt; c.Name).HasMaxLength(100);
+        b.Property(c =&gt; c.Email).HasMaxLength(200);
+        b.HasIndex(c =&gt; c.Email).IsUnique();
+        b.Property(c =&gt; c.City).HasMaxLength(60);
+    }
+}
+
+public class OrderConfiguration : IEntityTypeConfiguration&lt;Order&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;Order&gt; b)
+    {
+        b.HasOne(o =&gt; o.Customer).WithMany(c =&gt; c.Orders)
+         .HasForeignKey(o =&gt; o.CustomerId)
+         .OnDelete(DeleteBehavior.Restrict);           // never lose order history by deleting a customer
+        b.HasMany(o =&gt; o.Lines).WithOne(l =&gt; l.Order)
+         .HasForeignKey(l =&gt; l.OrderId)
+         .OnDelete(DeleteBehavior.Cascade);            // lines live and die with their order
+        b.HasIndex(o =&gt; o.OrderDateUtc);
+    }
+}
+
+public class OrderLineConfiguration : IEntityTypeConfiguration&lt;OrderLine&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;OrderLine&gt; b)
+    {
+        b.Property(l =&gt; l.UnitPrice).HasPrecision(18, 2);
+        b.HasOne(l =&gt; l.Product).WithMany()
+         .HasForeignKey(l =&gt; l.ProductId)
+         .OnDelete(DeleteBehavior.Restrict);
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Store.Data/StoreDbContext.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Store.Core.Entities;
+
+namespace Store.Data;
+
+public class StoreDbContext(DbContextOptions&lt;StoreDbContext&gt; options) : DbContext(options)
+{
+    public DbSet&lt;Category&gt; Categories =&gt; Set&lt;Category&gt;();
+    public DbSet&lt;Product&gt; Products =&gt; Set&lt;Product&gt;();
+    public DbSet&lt;Customer&gt; Customers =&gt; Set&lt;Customer&gt;();
+    public DbSet&lt;Order&gt; Orders =&gt; Set&lt;Order&gt;();
+    public DbSet&lt;OrderLine&gt; OrderLines =&gt; Set&lt;OrderLine&gt;();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+        =&gt; modelBuilder.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly);
+}
+
+// A tiny helper for this week's console experiments
+public static class Db
+{
+    public const string ConnectionString =
+        "Server=localhost,1433;Database=StoreDb;User Id=sa;Password=Dev@Pass123;TrustServerCertificate=True";
+
+    public static StoreDbContext Create(bool logSql = true)
+    {
+        var builder = new DbContextOptionsBuilder&lt;StoreDbContext&gt;().UseSqlServer(ConnectionString);
+        if (logSql)   // print only the SQL commands, not every EF log line
+            builder.LogTo(Console.WriteLine, [DbLoggerCategory.Database.Command.Name], LogLevel.Information);
+        return new StoreDbContext(builder.Options);
+    }
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">dotnet ef migrations add AddCustomersAndOrders -p Store.Data -s Store.App
+dotnet ef database update -p Store.Data -s Store.App</code></pre></div>
+<p>Seed a few rows (Asha Rao from Pune, Ravi Kumar from Chennai, Meena Iyer from Bengaluru, each with 2–3 orders) with a quick script or SQL <code>INSERT</code>s so the queries below return something.</p>
+
+<h3>2. Eager loading: Include and ThenInclude</h3>
+<p>Without Include, EF Core loads only the columns of the entity you queried. Navigations stay empty — this surprises everyone once.</p>
+<div class="code"><div class="fname">LoadingDemo.cs</div><pre><code class="language-csharp">await using var db = Db.Create();
+
+var plain = await db.Orders.FirstAsync(o =&gt; o.Id == 1);
+Console.WriteLine(plain.Customer is null);      // True  — not loaded (no Include, nothing tracked yet)
+Console.WriteLine(plain.Lines.Count);           // 0     — empty list from the initialiser, NOT "no lines"
+
+var order = await db.Orders
+    .Include(o =&gt; o.Customer)                    // reference navigation
+    .Include(o =&gt; o.Lines)                       // collection navigation
+        .ThenInclude(l =&gt; l.Product)             // one level deeper, from each line
+            .ThenInclude(p =&gt; p.Category)        // and deeper again
+    .FirstAsync(o =&gt; o.Id == 1);
+
+Console.WriteLine($"{order.Customer.Name}, {order.Customer.City}");    // Asha Rao, Pune
+foreach (var l in order.Lines)
+    Console.WriteLine($"  {l.Product.Name} ({l.Product.Category.Name}) × {l.Quantity} @ ₹{l.UnitPrice}");
+//   Basmati Rice 5kg (Grocery) × 2 @ ₹649.00
+//   Steel Water Bottle (Home) × 1 @ ₹399.00</code></pre></div>
+<p>Note: by the time we run the second query, order 1 is already tracked from the first query, and EF <i>reuses that same instance</i> — Include fills in its navigations. That is relationship fix-up at work.</p>
+<p>To include two separate paths from the same collection, repeat the <code>Include</code>:</p>
+<div class="code nofile"><pre><code class="language-csharp">var orders = await db.Orders
+    .Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Product)
+    .Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Order)       // second path, starts again at Lines
+    .ToListAsync();
+
+// String-based include works too (handy when building paths dynamically):
+var same = await db.Orders.Include("Lines.Product").ToListAsync();</code></pre></div>
+<h4>The SQL it produces</h4>
+<p>Print it without running anything using <code>ToQueryString()</code>:</p>
+<div class="code nofile"><pre><code class="language-csharp">var query = db.Orders
+    .Include(o =&gt; o.Customer)
+    .Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Product)
+    .Where(o =&gt; o.Id == 1);
+Console.WriteLine(query.ToQueryString());</code></pre></div>
+<div class="code"><div class="fname">Generated SQL (example)</div><pre><code class="language-sql">-- Example output (EF Core 8, formatted; aliases can differ slightly by version)
+DECLARE @__p_0 int = 1;   -- not emitted: EF inlines the constant 1 here; shown for a parameterised version
+
+SELECT [o].[Id], [o].[CustomerId], [o].[OrderDateUtc], [o].[Status],
+       [c].[Id], [c].[City], [c].[Email], [c].[Name],
+       [s].[Id], [s].[OrderId], [s].[ProductId], [s].[Quantity], [s].[UnitPrice],
+       [s].[Id0], [s].[CategoryId], [s].[Name], [s].[Price], [s].[Sku], [s].[Stock]
+FROM [Orders] AS [o]
+INNER JOIN [Customers] AS [c] ON [o].[CustomerId] = [c].[Id]           -- required reference → INNER JOIN
+LEFT JOIN (
+    SELECT [l].[Id], [l].[OrderId], [l].[ProductId], [l].[Quantity], [l].[UnitPrice],
+           [p].[Id] AS [Id0], [p].[CategoryId], [p].[Name], [p].[Price], [p].[Sku], [p].[Stock]
+    FROM [OrderLines] AS [l]
+    INNER JOIN [Products] AS [p] ON [l].[ProductId] = [p].[Id]
+) AS [s] ON [o].[Id] = [s].[OrderId]                                    -- collection → LEFT JOIN
+WHERE [o].[Id] = 1
+ORDER BY [o].[Id], [c].[Id], [s].[Id]                                   -- keys, so EF can stitch rows back</code></pre></div>
+<div class="tbl"><table><tr><th>What you wrote</th><th>What SQL Server sees</th></tr><tr><td><code>Include</code> of a required reference</td><td><code>INNER JOIN</code></td></tr><tr><td><code>Include</code> of an optional reference</td><td><code>LEFT JOIN</code></td></tr><tr><td><code>Include</code> of a collection</td><td><code>LEFT JOIN</code> (orders with no lines must still appear) + <code>ORDER BY</code> keys</td></tr><tr><td><code>ThenInclude</code> inside a collection</td><td>A subquery joined in, as above</td></tr><tr><td>Several collection Includes</td><td>Several LEFT JOINs → row multiplication (Tuesday: split queries)</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> The trailing <code>ORDER BY</code> on keys is how EF Core turns one flat, repeated result set back into an object graph: it reads rows in key order and starts a new Order object whenever <code>o.Id</code> changes.</div>
+
+<h3>3. Filtered Include (EF Core 5+)</h3>
+<p>Load customers with only their <b>last three paid orders</b>, newest first:</p>
+<div class="code nofile"><pre><code class="language-csharp">var customers = await db.Customers
+    .Where(c =&gt; c.City == "Pune")
+    .Include(c =&gt; c.Orders
+        .Where(o =&gt; o.Status == OrderStatus.Paid)
+        .OrderByDescending(o =&gt; o.OrderDateUtc)
+        .Take(3))
+    .ToListAsync();
+
+foreach (var c in customers)
+    Console.WriteLine($"{c.Name}: {c.Orders.Count} recent paid orders");
+// Asha Rao: 3 recent paid orders
+// Kiran Patil: 1 recent paid orders     ← customers with no matching orders are still returned</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Filtered Include filters the <i>children</i>, never the parents — customers without paid orders still come back with an empty list. To filter parents, add a normal <code>Where(c =&gt; c.Orders.Any(...))</code>.</div>
+<div class="note warn"><b>Gotcha.</b> With a <b>tracking</b> query, fix-up can add children you filtered out: if an earlier query in the same context already loaded Asha's cancelled orders, they appear in <code>c.Orders</code> too. Use a fresh context or <code>AsNoTracking()</code> when the filtered collection must be exact. You also can't apply two <i>different</i> filters to the same navigation in one query.</div>
+
+<h3>4. Explicit loading</h3>
+<p>Load the entity first, decide later whether you need its relations. Useful when the decision depends on the data (e.g. only load lines for high-value orders), or for a single entity in a detail screen.</p>
+<div class="code"><div class="fname">ExplicitLoading.cs</div><pre><code class="language-csharp">var customer = await db.Customers.SingleAsync(c =&gt; c.Email == "ravi.kumar@example.in");
+
+// Collection navigation
+await db.Entry(customer).Collection(c =&gt; c.Orders).LoadAsync();
+Console.WriteLine(customer.Orders.Count);                                   // 3
+
+// Reference navigation
+var anOrder = customer.Orders[0];
+await db.Entry(anOrder).Reference(o =&gt; o.Customer).LoadAsync();              // already loaded → no SQL sent?
+Console.WriteLine(db.Entry(anOrder).Reference(o =&gt; o.Customer).IsLoaded);    // True
+
+// Query() lets you filter or aggregate WITHOUT loading the whole collection
+int pending = await db.Entry(customer)
+    .Collection(c =&gt; c.Orders)
+    .Query()                                                    // IQueryable&lt;Order&gt; for this customer only
+    .CountAsync(o =&gt; o.Status == OrderStatus.Pending);
+Console.WriteLine($"Pending: {pending}");                       // Pending: 1  → SELECT COUNT(*) ... WHERE CustomerId = @p
+
+// Load only some children into the navigation
+await db.Entry(customer).Collection(c =&gt; c.Orders).Query()
+    .Where(o =&gt; o.OrderDateUtc &gt;= new DateTime(2026, 1, 1))
+    .Include(o =&gt; o.Lines)
+    .LoadAsync();</code></pre></div>
+<p>About the reference line: <code>anOrder.Customer</code> was already connected by fix-up when we loaded the orders, so <code>IsLoaded</code> is true. <code>Load</code> on a navigation that's already marked loaded does nothing; on one that isn't, it always sends SQL.</p>
+
+<h3>5. Lazy loading — and why most teams turn it off</h3>
+<p>With lazy-loading proxies, reading a navigation triggers a query automatically. Setup:</p>
+<div class="code nofile"><pre><code class="language-bash">dotnet add Store.Data package Microsoft.EntityFrameworkCore.Proxies</code></pre></div>
+<div class="code"><div class="fname">Lazy loading setup (fragment)</div><pre><code class="language-csharp">// 1) Turn it on
+var options = new DbContextOptionsBuilder&lt;StoreDbContext&gt;()
+    .UseLazyLoadingProxies()
+    .UseSqlServer(Db.ConnectionString)
+    .Options;
+
+// 2) Every navigation must be virtual, and entity classes public and NOT sealed
+public class Customer
+{
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public required string Email { get; set; }
+    public string City { get; set; } = "";
+    public virtual List&lt;Order&gt; Orders { get; set; } = [];
+}
+
+public class Order
+{
+    public int Id { get; set; }
+    public int CustomerId { get; set; }
+    public virtual Customer Customer { get; set; } = null!;
+    public virtual List&lt;OrderLine&gt; Lines { get; set; } = [];
+    // ...
+}</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+var customers = await db.Customers.ToListAsync();        // 1 query
+
+foreach (var c in customers)
+{
+    // Each access to c.Orders silently runs: SELECT ... FROM Orders WHERE CustomerId = @p
+    Console.WriteLine($"{c.Name}: {c.Orders.Count} orders");
+}
+// 50 customers → 1 + 50 = 51 round trips. This is the N+1 problem (Tuesday).</code></pre></div>
+<div class="tbl"><table><tr><th>Risk</th><th>What happens</th></tr><tr><td>Hidden N+1 queries</td><td>Loops over entities fire one query per item; fine on 5 dev rows, painful on 5,000 production rows.</td></tr><tr><td>Disposed context</td><td>Touching a navigation after the DbContext is disposed: EF can't load it. By default this is reported as an error (an <code>InvalidOperationException</code> from the <code>LazyLoadOnDisposedContextWarning</code>).</td></tr><tr><td>Serialization storms</td><td>Returning entities from a Web API: the JSON serializer walks every navigation → loads the whole graph, or loops on cycles.</td></tr><tr><td>Sync I/O</td><td>Lazy loads are synchronous database calls, even inside async methods.</td></tr><tr><td>Design constraints</td><td>Every navigation <code>virtual</code>, classes unsealed; proxies are a different runtime type (<code>Castle.Proxies.CustomerProxy</code>).</td></tr></table></div>
+<p>Without proxies, an entity can take an <code>ILazyLoader</code> in its constructor and call <code>loader.Load(this, ref _orders)</code> in the getter — same behaviour, more plumbing, and your domain class now references EF Core. Rarely worth it.</p>
+
+<h3>6. Choosing a strategy</h3>
+<div class="tbl"><table><tr><th>Strategy</th><th>Queries</th><th>Best for</th><th>Watch out for</th></tr><tr><td>Eager (<code>Include</code>)</td><td>1 (or 1 per collection with split queries)</td><td>You know up front what the screen/endpoint needs</td><td>Too many collection includes → cartesian explosion</td></tr><tr><td>Filtered Include</td><td>1</td><td>"Top N children per parent"</td><td>Fix-up adding extra children in tracking queries</td></tr><tr><td>Explicit (<code>Entry().Load</code>)</td><td>1 extra per call, visible in code</td><td>Conditional or one-off loads; counting via <code>Query()</code></td><td>Calling it inside a loop = N+1 you wrote yourself</td></tr><tr><td>Lazy (proxies)</td><td>1 extra per navigation touched, invisible</td><td>Quick prototypes, desktop apps with long-lived contexts</td><td>N+1, disposed-context errors, serializers</td></tr><tr><td>Projection (<code>Select</code>)</td><td>1, only needed columns</td><td>Read-only APIs and reports (Tuesday)</td><td>Not tracked — can't be updated and saved</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Expecting <code>order.Customer</code> to be filled without an Include — then "fixing" the NullReferenceException with lazy loading.</li><li>Reading <code>order.Lines.Count == 0</code> as "no lines" when the collection was simply never loaded.</li><li>Including whole graphs "just in case" — every Include adds JOINs and columns.</li><li>Assuming filtered Include filters the parent rows.</li><li>Turning on lazy loading in a Web API and returning entities directly from controllers.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Add Customer, Order and OrderLine to your StoreDb, create the migration and seed 3 customers with 2–3 orders each (Indian names, cities, ₹ prices).</li><li>Write three queries for "order 1 with its customer and products": Include/ThenInclude, explicit loading, and lazy loading. Log the SQL for each with <code>LogTo</code> and count the round trips.</li><li>Using a filtered Include, list each Pune customer with their two most recent orders; then use <code>Entry(...).Collection(...).Query().SumAsync(...)</code> to print each customer's lifetime spend without loading their orders.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why might <code>order.Lines</code> be empty even though the order has lines in the database?</summary>EF Core doesn't load navigations unless asked. Without Include, explicit or lazy loading (or fix-up from earlier queries in the same context), the collection is just the empty list from the property initialiser.</details><details><summary>What does filtered Include filter?</summary>Only the included child collection. The parent rows are unaffected; use a separate Where on the parent query to filter parents.</details><details><summary>What two things does lazy loading with proxies require on your entity classes?</summary>Navigation properties must be <code>virtual</code> and the classes must be public and not sealed, so Castle can generate a subclass that overrides them. You also need the Proxies package and <code>UseLazyLoadingProxies()</code>.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What are the three ways to load related data in EF Core?</summary><div>Eager loading with Include/ThenInclude in the same query; explicit loading with <code>context.Entry(e).Collection(...)/Reference(...).Load()</code> later on demand; and lazy loading, where reading a navigation triggers a query automatically via proxies or ILazyLoader. A fourth common option is projecting with Select, which pulls related columns without loading entities.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What SQL does Include produce?</summary><div>A JOIN in the same statement: INNER JOIN for a required reference, LEFT JOIN for optional references and collections. For collections EF also adds ORDER BY on the keys so it can rebuild the object graph from the flat rows.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is filtered Include and what are its limitations?</summary><div>Since EF Core 5 you can write <code>Include(c =&gt; c.Orders.Where(...).OrderBy(...).Take(n))</code>. Only Where, OrderBy/ThenBy (and Descending), Skip and Take are allowed. It filters children, not parents; the same navigation can't be included with two different filters; and in tracking queries, fix-up can add already-tracked children that don't match the filter.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why do many teams disable lazy loading?</summary><div>It hides database calls behind property access, so loops cause N+1 queries, it fails after the context is disposed, serializers trigger loading of entire graphs, and the loads are synchronous. Eager loading or projections make the data access explicit and reviewable.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is relationship fix-up?</summary><div>When entities are tracked by the same DbContext, EF Core connects their navigations automatically using foreign keys. If you load orders and, separately, their customers, each <code>order.Customer</code> gets set even though you never included it. It's useful, but it can also make navigations look 'loaded' unexpectedly.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you count a customer's pending orders without loading all their orders?</summary><div>Explicit loading's <code>Query()</code>: <code>db.Entry(customer).Collection(c =&gt; c.Orders).Query().CountAsync(o =&gt; o.Status == OrderStatus.Pending)</code>, which sends a single <code>SELECT COUNT(*) ... WHERE CustomerId = @p AND Status = ...</code>. Or simply <code>db.Orders.CountAsync(o =&gt; o.CustomerId == id &amp;&amp; ...)</code>.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>N+1, AsNoTracking, projections to DTOs, AsSplitQuery vs single query</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Spot and fix N+1 queries, reduce memory with no-tracking reads, project only the columns you need, and decide when to split a multi-collection query.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>N+1 problem</dt><dd>A query that returns N rows, then fires one more query per row to load a navigation — 1 + N round trips instead of 1.</dd></div><div class="def"><dt>LogTo</dt><dd><code>DbContextOptionsBuilder.LogTo(Console.WriteLine, ...)</code> routes EF's log to the console so you can count SQL statements.</dd></div><div class="def"><dt>AsNoTracking</dt><dd>Instructs EF Core not to add entities to the change tracker. Faster and uses less memory for read-only queries.</dd></div><div class="def"><dt>AsNoTrackingWithIdentityResolution</dt><dd>Like AsNoTracking but still de-duplicates objects: the same Customer row in multiple Order rows becomes one C# object.</dd></div><div class="def"><dt>Identity resolution</dt><dd>EF's guarantee that one database row maps to exactly one object instance in a tracking query.</dd></div><div class="def"><dt>Projection</dt><dd>A <code>Select(x =&gt; new Dto { ... })</code> that asks the database for only the columns you name, skipping navigation loading entirely.</dd></div><div class="def"><dt>DTO (Data Transfer Object)</dt><dd>A plain class or record carrying only the data needed by a caller — no navigations, no change tracker.</dd></div><div class="def"><dt>AsSplitQuery</dt><dd>EF Core 5+: Tells EF to run one SELECT per included collection instead of one big JOIN, avoiding cartesian explosion.</dd></div><div class="def"><dt>Cartesian explosion</dt><dd>When a query joins two or more collections and the row count multiplies: an order with 5 lines and 5 tags yields 25 rows per order.</dd></div><div class="def"><dt>UseQueryTrackingBehavior</dt><dd>A context-level default for tracking; override per-query with AsTracking() or AsNoTracking().</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Run every new query through LogTo and count the SQL statements — the number should not surprise you.</li><li><code>AsNoTracking</code> skips snapshot creation; benchmarks typically show 2–5× less memory and 10–30% faster reads for read-only paths.</li><li>Projection to a DTO usually beats Include: it generates a narrower SELECT and returns no tracked objects to dispose.</li><li><code>AsSplitQuery</code> fixes cartesian explosion but adds round trips — still better than millions of duplicate rows.</li><li>The global default for <code>AsSplitQuery</code> can be set in <code>OnConfiguring</code>; override per-query with <code>AsSingleQuery()</code>.</li></ul></div>
+
+<h3>1. Spotting N+1 with LogTo</h3>
+<p>The pattern is easy to miss because each query looks innocent:</p>
+<div class="code"><div class="fname">N+1Demo.cs</div><pre><code class="language-csharp">await using var db = Db.Create(logSql: true);   // LogTo is active
+
+var customers = await db.Customers.ToListAsync();     // 1 query: SELECT * FROM Customers
+foreach (var c in customers)
+{
+    // ❌ Each iteration fires: SELECT * FROM Orders WHERE CustomerId = @p
+    Console.WriteLine($"{c.Name} has {c.Orders.Count} orders");
+}
+// With 50 customers → 1 + 50 = 51 queries. Console shows them all.</code></pre></div>
+<div class="note tip"><b>Tip.</b> Turn on <code>LogTo</code> during development. The right number of SQL statements for a list page is almost always 1 (or 2 with <code>AsSplitQuery</code>).</div>
+<h4>Fix: Include</h4>
+<div class="code nofile"><pre><code class="language-csharp">var customers = await db.Customers
+    .Include(c =&gt; c.Orders)
+    .ToListAsync();
+// 1 query. EF joins Orders in and populates c.Orders from the result set.</code></pre></div>
+<h4>Fix: projection (often better)</h4>
+<div class="code nofile"><pre><code class="language-csharp">var summaries = await db.Customers
+    .Select(c =&gt; new {{ c.Name, c.City, OrderCount = c.Orders.Count }})
+    .ToListAsync();
+// 1 query:
+// SELECT c.Name, c.City, (SELECT COUNT(*) FROM Orders WHERE CustomerId = c.Id) AS OrderCount
+// FROM Customers AS c
+// No navigation loaded at all.</code></pre></div>
+
+<h3>2. AsNoTracking — faster read-only queries</h3>
+<div class="code"><div class="fname">NoTracking.cs</div><pre><code class="language-csharp">await using var db = Db.Create(logSql: false);
+
+// ✓ No tracking: entities are not added to the ChangeTracker snapshot
+var orders = await db.Orders
+    .AsNoTracking()
+    .Include(o =&gt; o.Customer)
+    .Where(o =&gt; o.Status == OrderStatus.Paid)
+    .ToListAsync();
+
+// If two Orders share Customer id=1 and tracking is off, two DIFFERENT Customer objects
+// are created (identity resolution is skipped).
+Console.WriteLine(orders[0].Customer == orders[1].Customer);   // possibly False
+
+// AsNoTrackingWithIdentityResolution: de-duplication without change tracking
+var withId = await db.Orders
+    .AsNoTrackingWithIdentityResolution()
+    .Include(o =&gt; o.Customer)
+    .Where(o =&gt; o.Status == OrderStatus.Paid)
+    .ToListAsync();
+// Now orders[0].Customer == orders[1].Customer if they share the same CustomerId ✓</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>Default (tracking)</th><th>AsNoTracking</th><th>AsNoTrackingWithIdentityResolution</th></tr><tr><td>Change tracker snapshot</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>SaveChanges picks up changes</td><td>Yes</td><td>No</td><td>No</td></tr><tr><td>Identity resolution</td><td>Yes</td><td>No</td><td>Yes</td></tr><tr><td>Memory</td><td>Highest</td><td>Lowest</td><td>Medium</td></tr><tr><td>Use when</td><td>Mutations needed</td><td>Read-only list/report</td><td>Read-only but want shared objects</td></tr></table></div>
+
+<h3>3. Projections to DTOs</h3>
+<p>Project in the <code>Select</code> — the SQL goes to the database; no entities come back to track.</p>
+<div class="code"><div class="fname">OrderSummaryDto.cs</div><pre><code class="language-csharp">// A lightweight record for an order summary page
+public record OrderSummaryDto(
+    int OrderId,
+    string CustomerName,
+    string City,
+    DateTime OrderDateUtc,
+    decimal Total,
+    int ItemCount);</code></pre></div>
+<div class="code"><div class="fname">OrderQueries.cs</div><pre><code class="language-csharp">var summaries = await db.Orders
+    .Where(o =&gt; o.Status != OrderStatus.Cancelled)
+    .Select(o =&gt; new OrderSummaryDto(
+        o.Id,
+        o.Customer.Name,                                // EF translates the navigation
+        o.Customer.City,
+        o.OrderDateUtc,
+        o.Lines.Sum(l =&gt; l.Quantity * l.UnitPrice),     // aggregate in the SELECT
+        o.Lines.Count))
+    .OrderByDescending(d =&gt; d.OrderDateUtc)
+    .Take(20)
+    .ToListAsync();</code></pre></div>
+<div class="code"><div class="fname">Generated SQL (example)</div><pre><code class="language-sql">-- Generated SQL (illustrative):
+SELECT TOP(20) [o].[Id],
+    [c].[Name], [c].[City],
+    [o].[OrderDateUtc],
+    COALESCE((SELECT SUM([l].[Quantity] * [l].[UnitPrice]) FROM [OrderLines] AS [l]
+              WHERE [o].[Id] = [l].[OrderId]), 0.0),
+    (SELECT COUNT(*) FROM [OrderLines] AS [l] WHERE [o].[Id] = [l].[OrderId])
+FROM [Orders] AS [o]
+INNER JOIN [Customers] AS [c] ON [o].[CustomerId] = [c].[Id]
+WHERE [o].[Status] &lt;&gt; 4
+ORDER BY [o].[OrderDateUtc] DESC</code></pre></div>
+<div class="note tip"><b>Tip.</b> No entity, no tracking overhead, no risk of serialising lazy navigations. For list/report endpoints prefer projections over Include.</div>
+
+<h3>4. Cartesian explosion and AsSplitQuery</h3>
+<p>When you Include two or more collections on the same entity, EF joins them all in one SELECT. The result set has one row for <b>every combination</b> of children:</p>
+<div class="code nofile"><pre><code class="language-csharp">// Suppose an Order has 5 Lines and 5 Tags.
+// A single query returns 5 × 5 = 25 rows per order — the data is repeated 5× each.
+// With 100 orders: 2,500 rows on the wire, most of them duplicates.
+var orders = await db.Orders
+    .Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Product)
+    .Include(o =&gt; o.Tags)                              // second collection → explosion
+    .ToListAsync();</code></pre></div>
+<h4>Fix: AsSplitQuery</h4>
+<div class="code"><div class="fname">SplitQuery.cs</div><pre><code class="language-csharp">var orders = await db.Orders
+    .Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Product)
+    .Include(o =&gt; o.Tags)
+    .AsSplitQuery()          // EF runs: 1 SELECT for Orders+Lines+Products, 1 for Tags
+    .ToListAsync();
+// 2 round trips, but far fewer bytes and no duplicate data.
+
+// Apply globally in OnConfiguring:
+// builder.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+// Override back per query with:
+// .AsSingleQuery()</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>Single query</th><th>Split query</th></tr><tr><td>Round trips</td><td>1</td><td>1 + (N collections included)</td></tr><tr><td>Row duplication</td><td>Yes — cartesian product</td><td>No</td></tr><tr><td>Consistency</td><td>Always a snapshot of one instant</td><td>Technically two transactions; a concurrent write can make them inconsistent</td></tr><tr><td>Best when</td><td>Few or no collection Includes</td><td>Multiple collection Includes with large data</td></tr></table></div>
+<div class="note warn"><b>Tradeoff.</b> Use <code>AsSplitQuery</code> when you Include multiple collections and the data is large. Keep <code>AsSingleQuery</code> (the default) when you need a single consistent read across tables.</div>
+
+<h3>5. Combining tools: a customer dashboard query</h3>
+<div class="code nofile"><pre><code class="language-csharp">// A single-query projection: no tracking, no cartesian explosion, only needed columns
+public record CustomerDashboardDto(
+    int Id, string Name, string City,
+    int TotalOrders, decimal LifetimeSpend, DateTime? LastOrderDate);
+
+var dashboard = await db.Customers
+    .AsNoTracking()
+    .Select(c =&gt; new CustomerDashboardDto(
+        c.Id, c.Name, c.City,
+        c.Orders.Count,
+        c.Orders.SelectMany(o =&gt; o.Lines).Sum(l =&gt; l.Quantity * l.UnitPrice),
+        c.Orders.OrderByDescending(o =&gt; o.OrderDateUtc).Select(o =&gt; (DateTime?)o.OrderDateUtc).FirstOrDefault()))
+    .OrderByDescending(d =&gt; d.LifetimeSpend)
+    .ToListAsync();
+
+foreach (var d in dashboard)
+    Console.WriteLine($"{d.Name,-20} {d.City,-12} {d.TotalOrders,3} orders  ₹{{d.LifetimeSpend,10:N2}}");
+// Asha Rao             Pune          5 orders  ₹12,450.00
+// Ravi Kumar           Chennai       3 orders  ₹6,200.00</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Calling <code>db.Customers.ToList()</code> then accessing <code>c.Orders</code> in a loop — the classic N+1.</li><li>Using Include for read-only list endpoints when a projection would be leaner.</li><li>Forgetting that AsNoTracking breaks identity resolution — two rows for the same customer create two objects.</li><li>Including multiple collections and hitting cartesian explosion without noticing (check row count in LogTo).</li><li>Setting AsSplitQuery globally and then needing one consistent snapshot — override with AsSingleQuery.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Enable <code>LogTo</code> and reproduce the N+1; then fix it three ways: Include, AsNoTracking + Include, and projection. Count SQL statements for each.</li><li>Write a projection DTO for the top 10 customers by lifetime spend (single query, no tracking, only needed columns).</li><li>Add a second collection (e.g. <code>Tags</code> as a simple list of strings on Order, or use <code>OrderLine</code> + products) and demonstrate cartesian explosion with LogTo, then fix with <code>AsSplitQuery</code>.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is the N+1 problem in EF Core?</summary>Loading a list of entities and then accessing a navigation property in a loop, causing one additional SELECT per row instead of a single JOIN.</details><details><summary>When does AsNoTracking break identity resolution?</summary>Always — by default it creates a new object for each row. Use AsNoTrackingWithIdentityResolution if you need a single C# object per database row but don't need change tracking.</details><details><summary>When should you use AsSplitQuery?</summary>When you Include two or more collections and the cross-product row count is large. The cost is an extra round trip and a small inconsistency window.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is N+1 and how do you detect it in EF Core?</summary><div>N+1 happens when a query returns N entities and then each entity causes one more database round trip (usually via a navigation property in a loop). Detect it by enabling <code>LogTo</code> and counting SQL statements, or by watching for repeated <code>SELECT ... WHERE ForeignKeyId = @p</code> patterns.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When should you use AsNoTracking?</summary><div>For any query that is read-only: list pages, reports, API responses. It skips creating change-tracker snapshots — roughly 10–30% faster reads and significantly lower memory, especially with large result sets.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is cartesian explosion and how does AsSplitQuery help?</summary><div>When you Include two collections EF joins them in one SELECT; the result set rows equal the product of the collection sizes per parent. AsSplitQuery runs one SELECT per included collection instead, eliminating the duplicate data at the cost of an extra round trip.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Projection vs Include — when do you choose each?</summary><div>Projection (Select to a DTO) generates a narrower SQL query with only the columns you name, requires no tracking, and avoids loading full entities. Include loads full entities with navigations. Use Include when the caller needs to mutate entities and call SaveChanges; use projection for read-only endpoints and reports.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does AsNoTrackingWithIdentityResolution do?</summary><div>It de-duplicates objects — the same row ID maps to one C# instance — without maintaining a change-tracker snapshot. Useful when multiple parents share the same child and you want reference equality without the memory cost of tracking.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you set AsSplitQuery globally?</summary><div>In <code>OnConfiguring</code>: <code>options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)</code>. Per-query: append <code>.AsSplitQuery()</code>. Override back with <code>.AsSingleQuery()</code>.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Raw SQL: FromSql, SqlQuery, ExecuteUpdate/Delete, stored procedures, compiled queries</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Drop below LINQ when you need control: parameterised raw SQL, bulk mutations without loading entities, stored procedures, and compiled queries for hot paths.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>FromSql</dt><dd><code>db.Products.FromSql($"...")</code> — executes raw SQL that returns entity columns; maps the results to tracked entities. The <code>$</code> interpolated string is automatically parameterised.</dd></div><div class="def"><dt>FromSqlRaw</dt><dd><code>db.Products.FromSqlRaw("...{0}", value)</code> — raw SQL with explicit positional parameters. Use when the SQL is not a C# interpolated string.</dd></div><div class="def"><dt>SqlQuery</dt><dd><code>db.Database.SqlQuery&lt;T&gt;()</code> (EF Core 7+) — returns arbitrary scalar/DTO types from raw SQL, not entity types.</dd></div><div class="def"><dt>ExecuteUpdate</dt><dd><code>db.Products.Where(...).ExecuteUpdate(s =&gt; s.SetProperty(p =&gt; p.Stock, 0))</code> — bulk UPDATE without loading or tracking entities (EF Core 7+).</dd></div><div class="def"><dt>ExecuteDelete</dt><dd><code>db.Products.Where(...).ExecuteDelete()</code> — bulk DELETE without loading entities (EF Core 7+).</dd></div><div class="def"><dt>Stored procedure</dt><dd>Pre-compiled SQL stored in the database, executed with <code>FromSql</code> or <code>Database.ExecuteSqlRaw</code>.</dd></div><div class="def"><dt>Output parameter</dt><dd>A SqlParameter with Direction = Output; used to get scalar values back from a stored proc.</dd></div><div class="def"><dt>Compiled query</dt><dd><code>EF.CompileAsyncQuery(...)</code> — caches query translation so the LINQ→SQL translation step is skipped on every call. Only for very hot paths.</dd></div><div class="def"><dt>SQL injection</dt><dd>Inserting malicious SQL via user input. Never concatenate user strings into SQL; always parameterise.</dd></div><div class="def"><dt>FormattableString</dt><dd>C#'s type for interpolated strings: <code>$"...{value}"</code>. EF's <code>FromSql</code> accepts it and uses the holes as parameters, not string concatenation.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li><code>FromSql</code> with an interpolated string is safe — EF parameterises the holes. <code>FromSqlRaw</code> with string concatenation is not.</li><li><code>FromSql</code> must SELECT all entity columns (or at least the ones mapped); you can compose further LINQ on top.</li><li><code>ExecuteUpdate</code> / <code>ExecuteDelete</code> bypass the change tracker and do not trigger interceptors or SaveChanges.</li><li>Compiled queries pay off only on very high-frequency paths (thousands per second); measure first.</li><li>Stored procedures that return a result set map nicely to FromSql; those that don't return rows use <code>ExecuteSqlRaw</code>.</li></ul></div>
+
+<h3>1. FromSql — raw SELECT mapped to entities</h3>
+<div class="code"><div class="fname">FromSqlDemo.cs</div><pre><code class="language-csharp">await using var db = Db.Create();
+
+// ✓ Interpolated string — EF makes this @p0 automatically
+string city = "Pune";
+var puneCusts = await db.Customers
+    .FromSql($"SELECT * FROM Customers WHERE City = {{city}}")   // {{ }} in f-string prose, plain {{}} inside C
+    .OrderBy(c =&gt; c.Name)
+    .ToListAsync();
+
+// You can compose LINQ on top of FromSql
+var puneWithOrders = await db.Customers
+    .FromSql($"SELECT * FROM Customers WHERE City = {{city}}")
+    .Include(c =&gt; c.Orders)                 // EF wraps the raw SQL in a subquery and JOINs
+    .Where(c =&gt; c.Orders.Any())
+    .ToListAsync();</code></pre></div>
+<div class="note warn"><b>Security.</b> Never do <code>FromSqlRaw($"SELECT * FROM Customers WHERE City = '{city}'")</code> — that's string concatenation, not parameterisation, and it's wide open to SQL injection.</div>
+<div class="code nofile"><pre><code class="language-csharp">// FromSqlRaw with explicit parameters — safe
+var city2 = "Chennai";
+var chCusts = await db.Customers
+    .FromSqlRaw("SELECT * FROM Customers WHERE City = {0}", city2)
+    .ToListAsync();
+
+// Also accepts SqlParameter objects (useful for stored procs with named params)
+using var param = new Microsoft.Data.SqlClient.SqlParameter("@city", city2);
+var chCusts2 = await db.Customers
+    .FromSqlRaw("SELECT * FROM Customers WHERE City = @city", param)
+    .ToListAsync();</code></pre></div>
+
+<h3>2. SqlQuery — arbitrary result types (EF Core 7+)</h3>
+<p>When the query doesn't map to an entity — aggregates, custom projections, stored proc scalars:</p>
+<div class="code"><div class="fname">SqlQueryDemo.cs</div><pre><code class="language-csharp">// A simple DTO not in the DbContext
+public record CitySalesDto(string City, int OrderCount, decimal Revenue);
+
+var citySales = await db.Database
+    .SqlQuery&lt;CitySalesDto&gt;($@"
+        SELECT c.City,
+               COUNT(DISTINCT o.Id) AS OrderCount,
+               COALESCE(SUM(l.Quantity * l.UnitPrice), 0) AS Revenue
+        FROM Customers c
+        JOIN Orders o ON o.CustomerId = c.Id
+        JOIN OrderLines l ON l.OrderId = o.Id
+        WHERE o.Status = 2    -- Paid
+        GROUP BY c.City
+        ORDER BY Revenue DESC")
+    .ToListAsync();
+
+foreach (var r in citySales)
+    Console.WriteLine($"{r.City,-12} {r.OrderCount,3} orders  ₹{r.Revenue:N2}");
+
+// SqlQuery also works for scalars with KeylessEntity or a wrapper record:
+var total = await db.Database.SqlQuery&lt;decimal&gt;($"SELECT CAST(SUM(UnitPrice * Quantity) AS decimal(18,2)) FROM OrderLines").FirstAsync();
+Console.WriteLine($"Grand total: ₹{total:N2}");</code></pre></div>
+
+<h3>3. ExecuteUpdate and ExecuteDelete (EF Core 7+)</h3>
+<p>Bulk mutations that run one SQL statement on the server without loading entities first:</p>
+<div class="code"><div class="fname">BulkMutations.cs</div><pre><code class="language-csharp">await using var db = Db.Create();
+
+// Bulk UPDATE: raise all Grocery prices by 5%
+int rows = await db.Products
+    .Where(p =&gt; p.Category.Name == "Grocery")
+    .ExecuteUpdateAsync(s =&gt; s
+        .SetProperty(p =&gt; p.Price, p =&gt; p.Price * 1.05m)
+        .SetProperty(p =&gt; p.Stock, p =&gt; p.Stock));          // unchanged column — often omitted; shown for clarity
+Console.WriteLine($"Updated {rows} rows");
+
+// Generated SQL:
+// UPDATE [Products] SET [Price] = [Price] * 1.05
+// FROM [Products] AS [p]
+// INNER JOIN [Categories] AS [c] ON [p].[CategoryId] = [c].[Id]
+// WHERE [c].[Name] = N'Grocery'
+
+// Bulk DELETE: remove cancelled orders older than 1 year
+var cutoff = DateTime.UtcNow.AddYears(-1);
+int deleted = await db.Orders
+    .Where(o =&gt; o.Status == OrderStatus.Cancelled &amp;&amp; o.OrderDateUtc &lt; cutoff)
+    .ExecuteDeleteAsync();
+Console.WriteLine($"Deleted {deleted} old cancelled orders");</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> <code>ExecuteUpdate/Delete</code> bypass interceptors, navigation fix-up, and <code>SaveChanges</code>. If your context has tracked copies of the affected rows, they won't reflect the change — refresh or discard them.</div>
+
+<h3>4. Stored procedures</h3>
+<div class="code"><div class="fname">usp_TopCustomers.sql</div><pre><code class="language-sql">-- Create in SQL Server first
+CREATE OR ALTER PROCEDURE usp_TopCustomers
+    @MinSpend   decimal(18,2),
+    @TopN       int
+AS
+    SELECT TOP (@TopN)
+           c.Id, c.Name, c.Email, c.City,
+           SUM(l.Quantity * l.UnitPrice) AS LifetimeSpend
+    FROM Customers c
+    JOIN Orders  o ON o.CustomerId = c.Id
+    JOIN OrderLines l ON l.OrderId = o.Id
+    GROUP BY c.Id, c.Name, c.Email, c.City
+    HAVING SUM(l.Quantity * l.UnitPrice) &gt;= @MinSpend
+    ORDER BY LifetimeSpend DESC</code></pre></div>
+<div class="code"><div class="fname">StoredProcDemo.cs</div><pre><code class="language-csharp">// A DTO to receive the proc's result set
+public record TopCustomerDto(int Id, string Name, string Email, string City, decimal LifetimeSpend);
+
+var top = await db.Database
+    .SqlQuery&lt;TopCustomerDto&gt;($"EXEC usp_TopCustomers @MinSpend = {{5000m}}, @TopN = {{5}}")
+    .ToListAsync();
+
+// Alternative: execute with explicit SqlParameters (needed for OUTPUT params)
+using var spendParam = new Microsoft.Data.SqlClient.SqlParameter("@MinSpend", 5000m);
+using var topNParam  = new Microsoft.Data.SqlClient.SqlParameter("@TopN", 5);
+var top2 = await db.Database
+    .SqlQueryRaw&lt;TopCustomerDto&gt;("EXEC usp_TopCustomers @MinSpend, @TopN", spendParam, topNParam)
+    .ToListAsync();
+
+// ExecuteSqlRaw for a proc that doesn't return rows (e.g. archive job)
+await db.Database.ExecuteSqlRawAsync("EXEC usp_ArchiveOldOrders @CutoffDate",
+    new Microsoft.Data.SqlClient.SqlParameter("@CutoffDate", DateTime.UtcNow.AddYears(-1)));</code></pre></div>
+
+<h3>5. Compiled queries (EF Core 2+)</h3>
+<p>LINQ-to-SQL translation is cached, but it still takes CPU on each call. For extremely hot paths compile the query once at startup:</p>
+<div class="code"><div class="fname">CompiledQuery.cs</div><pre><code class="language-csharp">// Declare at app startup or in a static class
+private static readonly Func&lt;StoreDbContext, int, Task&lt;Customer?&gt;&gt; _getCustomerById =
+    EF.CompileAsyncQuery((StoreDbContext db, int id) =&gt;
+        db.Customers
+          .AsNoTracking()
+          .Include(c =&gt; c.Orders)
+          .SingleOrDefault(c =&gt; c.Id == id));
+
+// Use anywhere — the LINQ→SQL translation step is skipped completely
+Customer? c = await _getCustomerById(db, 42);
+
+// Compiled queries have restrictions: no dynamic LINQ, no optional includes.
+// All parameters must be primitive values captured by the lambda (no IEnumerable args).</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>Regular LINQ query</th><th>Compiled query</th></tr><tr><td>First call</td><td>Translate LINQ → SQL, cache, execute</td><td>Translate LINQ → SQL, cache, execute</td></tr><tr><td>Subsequent calls</td><td>Retrieve from cache, execute</td><td>Execute — translation step fully skipped</td></tr><tr><td>Benefit</td><td>Near-zero in most apps</td><td>~5–15% faster on very high-frequency queries</td></tr><tr><td>Restrictions</td><td>None</td><td>No dynamic expressions; parameters must be primitives</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> Profile before introducing compiled queries. For most apps <code>AsNoTracking</code> + projections give 90% of the gains with none of the complexity.</div>
+
+<h3>Common mistakes</h3><ul><li>Using <code>FromSqlRaw</code> with string interpolation instead of <code>FromSql</code> with an interpolated FormattableString.</li><li>Forgetting that <code>ExecuteUpdate/Delete</code> doesn't sync tracked entities — stale data in the context.</li><li>Calling <code>FromSql</code> with a SELECT that doesn't return all entity columns (EF throws at materialisation time).</li><li>Using <code>SqlQuery&lt;T&gt;</code> with a type EF can't construct (needs a parameterless constructor or positional record).</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Execute a parameterised <code>FromSql</code> to list products by category name, then compose a LINQ <code>Where</code> and <code>OrderBy</code> on top.</li><li>Write an <code>ExecuteUpdate</code> to apply a 10% discount on all products with stock &gt; 100, then verify with a <code>SqlQuery&lt;T&gt;</code> to retrieve the totals.</li><li>Create stored proc <code>usp_MonthlyRevenue(@Year int, @Month int)</code> returning total revenue; call it from EF and print the result.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is the difference between FromSql and FromSqlRaw?</summary><code>FromSql</code> takes an interpolated string (<code>FormattableString</code>) and automatically converts the holes to parameters — safe against injection. <code>FromSqlRaw</code> takes a plain string with <code>{0}</code> placeholders or named SqlParameters — also safe as long as you don't concatenate user input into the string.</details><details><summary>Can you use LINQ after FromSql?</summary>Yes. EF wraps the raw SQL in a subquery (<code>SELECT ... FROM (...) AS [t]</code>) and applies your LINQ predicates on top. The combined query executes as one round trip.</details><details><summary>When would you use ExecuteDelete instead of removing entities and calling SaveChanges?</summary>When you need to delete many rows at once without loading them: bulk deletes of old records, cleanup jobs, etc. It runs a single SQL DELETE on the server and is far faster than load → track → delete → save per entity.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why must you parameterise raw SQL queries?</summary><div>To prevent SQL injection — an attacker can terminate your SQL and append malicious statements. EF's FromSql interpolation and FromSqlRaw with placeholders both send values as parameters; the SQL engine treats them as data, not code.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does ExecuteUpdate do differently from updating tracked entities?</summary><div>It issues a single bulk UPDATE directly on the database server without loading any entities. No change-tracker snapshots, no interceptors, and no calls to SaveChanges — faster and lower memory, but tracked copies in the same context won't reflect the change.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you choose SqlQuery over FromSql?</summary><div>When the result doesn't map to an entity type registered in the DbContext: aggregate results, stored procedure outputs that mix columns, or completely custom projections. SqlQuery materialises into any class or record EF can construct.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What restrictions apply to EF compiled queries?</summary><div>All query parameters must be primitives (int, string, bool, etc.) captured by the lambda. No dynamic LINQ building, no IQueryable arguments, no optional navigation includes. The benefit is skipping LINQ-to-SQL translation on every call; it's only measurable on very hot paths (thousands of calls per second).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you call a stored procedure that returns no rows?</summary><div><code>db.Database.ExecuteSqlRaw("EXEC ...", params)</code> or <code>ExecuteSqlRawAsync</code>. For scalar OUTPUT parameters, pass a <code>SqlParameter</code> with Direction set to Output and read its Value after the call.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>What is the risk of using ExecuteUpdate/Delete with interceptors?</summary><div>ExecuteUpdate/Delete bypass SaveInterceptors and SaveChanges hooks entirely. If you have audit logging, soft-delete logic, or domain events wired into SaveChangesAsync, they won't fire. Use them only when you're sure no interceptor work is needed, or add your own logic explicitly.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Optimistic concurrency, transactions and execution strategies</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Handle concurrent edits with rowversion, recover from DbUpdateConcurrencyException, and manage transactions — including how execution strategies interact with explicit transactions.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Optimistic concurrency</dt><dd>Assumes conflicts are rare: let two users read the same row, but detect and reject a second save if the first already changed it.</dd></div><div class="def"><dt>rowversion</dt><dd>A SQL Server 8-byte binary column (<code>ROWVERSION</code> / <code>TIMESTAMP</code>) auto-incremented by the engine on every UPDATE. EF Core maps it with <code>[Timestamp]</code>.</dd></div><div class="def"><dt>ConcurrencyToken</dt><dd>Any column marked <code>[ConcurrencyCheck]</code> or via Fluent API <code>IsConcurrencyToken()</code>; EF adds its current value to the WHERE clause of every UPDATE/DELETE.</dd></div><div class="def"><dt>DbUpdateConcurrencyException</dt><dd>Thrown when no row was affected by an UPDATE/DELETE because another writer changed the row first. Its <code>Entries</code> property gives the conflicting entities.</dd></div><div class="def"><dt>Reload strategy</dt><dd>Discard your changes and reload from the database — "last writer wins, but you're the loser".</dd></div><div class="def"><dt>Client-wins strategy</dt><dd>Keep your proposed values and overwrite the database — use only when you're certain this is correct.</dd></div><div class="def"><dt>Merge strategy</dt><dd>Read the current DB values and re-apply your changes where there's no overlap — most sophisticated.</dd></div><div class="def"><dt>Implicit transaction</dt><dd>Every <code>SaveChanges</code> call runs inside its own transaction automatically.</dd></div><div class="def"><dt>BeginTransaction</dt><dd><code>db.Database.BeginTransactionAsync()</code> opens an explicit transaction for multiple SaveChanges calls.</dd></div><div class="def"><dt>Execution strategy</dt><dd>A retry policy (<code>EnableRetryOnFailure</code>) that re-runs the whole operation on transient errors — connection drops, SQL Server restart, Azure SQL throttling.</dd></div><div class="def"><dt>Idempotent operation</dt><dd>An operation that can run multiple times and produce the same result — required when execution strategies retry.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Every UPDATE/DELETE with a rowversion adds <code>WHERE RowVersion = @orig</code>; 0 rows affected = exception.</li><li><code>Entries[0].GetDatabaseValues()</code> costs one extra round trip — do it only when you need to merge.</li><li>Always catch <code>DbUpdateConcurrencyException</code> in a retry loop, not just once; two users may both fail and retry.</li><li>Implicit transactions wrap a single SaveChanges; for "all or nothing" across two SaveChanges calls, use an explicit transaction.</li><li>You can't use <code>db.Database.BeginTransaction()</code> inside an execution strategy — wrap the whole retry in <code>strategy.ExecuteAsync</code>.</li></ul></div>
+
+<h3>1. Add rowversion to Order</h3>
+<div class="code"><div class="fname">Order.cs (rowversion added)</div><pre><code class="language-csharp">public class Order
+{{
+    public int Id {{ get; set; }}
+    public int CustomerId {{ get; set; }}
+    public Customer Customer {{ get; set; }} = null!;
+    public DateTime OrderDateUtc {{ get; set; }}
+    public OrderStatus Status {{ get; set; }}
+    public List&lt;OrderLine&gt; Lines {{ get; set; }} = [];
+
+    // Auto-incremented by SQL Server on every UPDATE
+    [System.ComponentModel.DataAnnotations.Timestamp]
+    public byte[] RowVersion {{ get; set; }} = [];
+}}</code></pre></div>
+<div class="code"><div class="fname">OrderConfiguration.cs (fragment)</div><pre><code class="language-csharp">// Or via Fluent API in OrderConfiguration:
+b.Property(o =&gt; o.RowVersion)
+ .IsRowVersion()          // equivalent to [Timestamp] — maps to ROWVERSION column
+ .IsConcurrencyToken();   // implied by IsRowVersion(), but explicit makes the intent clear</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">dotnet ef migrations add AddRowVersionToOrder -p Store.Data -s Store.App
+dotnet ef database update -p Store.Data -s Store.App</code></pre></div>
+
+<h3>2. Detecting and handling the conflict</h3>
+<div class="code"><div class="fname">ConcurrencyDemo.cs</div><pre><code class="language-csharp">// Two users both load order 1 at the same time
+await using var db1 = Db.Create(logSql: false);
+await using var db2 = Db.Create(logSql: false);
+
+var order1 = await db1.Orders.SingleAsync(o =&gt; o.Id == 1);
+var order2 = await db2.Orders.SingleAsync(o =&gt; o.Id == 1);
+
+// User 1 ships the order and saves
+order1.Status = OrderStatus.Shipped;
+await db1.SaveChangesAsync();      // succeeds; RowVersion bumped by SQL Server
+
+// User 2 (db2) now tries to cancel — but the row changed
+order2.Status = OrderStatus.Cancelled;
+try
+{
+    await db2.SaveChangesAsync();   // ❌ DbUpdateConcurrencyException: 0 rows affected
+}
+catch (DbUpdateConcurrencyException ex)
+{
+    var entry = ex.Entries.Single();
+    var dbValues = await entry.GetDatabaseValuesAsync();   // 1 extra round trip
+    if (dbValues is null)
+    {
+        Console.WriteLine("Order was deleted by another user.");
+        return;
+    }
+
+    var dbStatus = (OrderStatus)dbValues[nameof(Order.Status)]!;
+    Console.WriteLine($"Conflict: DB has Status={dbStatus}, you wanted Cancelled");
+
+    // ---- Strategy 1: Reload (discard local changes) ----
+    // entry.OriginalValues.SetValues(dbValues);   // update original so EF no longer sees a conflict
+    // entry.CurrentValues.SetValues(dbValues);    // discard local changes
+
+    // ---- Strategy 2: Client wins (force your values over the DB) ----
+    // entry.OriginalValues.SetValues(dbValues);   // update rowversion so the next save succeeds
+
+    // ---- Strategy 3: Merge (combine non-conflicting fields) ----
+    var currentValues = entry.CurrentValues;
+    foreach (var prop in dbValues.Properties)
+    {{
+        var dbVal     = dbValues[prop];
+        var clientVal = currentValues[prop];
+        var origVal   = entry.OriginalValues[prop];
+        // Keep client value only if neither we nor the other writer changed it
+        currentValues[prop] = Equals(clientVal, origVal) ? dbVal : clientVal;
+    }}
+    entry.OriginalValues.SetValues(dbValues);   // accept new rowversion
+
+    await db2.SaveChangesAsync();               // retry
+}</code></pre></div>
+
+<h3>3. Transactions — implicit and explicit</h3>
+<p>Every <code>SaveChanges</code> is automatically wrapped in a transaction. Use explicit transactions when you need atomicity across two calls or want to mix EF with raw SQL:</p>
+<div class="code"><div class="fname">ExplicitTransaction.cs</div><pre><code class="language-csharp">await using var db = Db.Create();
+await using var tx = await db.Database.BeginTransactionAsync();
+try
+{{
+    // All work inside the same context and transaction
+    var order = await db.Orders.Include(o =&gt; o.Lines).SingleAsync(o =&gt; o.Id == 2);
+
+    // 1) Update order status
+    order.Status = OrderStatus.Shipped;
+    await db.SaveChangesAsync();         // still inside the tx, not committed
+
+    // 2) Insert a shipping audit record (raw SQL)
+    await db.Database.ExecuteSqlRawAsync(
+        "INSERT INTO ShippingAudit (OrderId, ShippedUtc, ShippedBy) VALUES ({0}, GETUTCDATE(), {1})",
+        order.Id, "SystemJob");
+
+    await tx.CommitAsync();              // commit both changes together
+    Console.WriteLine("Order shipped and audit record written.");
+}}
+catch
+{{
+    await tx.RollbackAsync();
+    throw;
+}}</code></pre></div>
+
+<h3>4. Execution strategies and EnableRetryOnFailure</h3>
+<p>Cloud databases (Azure SQL, SQL Server in Docker) return transient errors. Configure a retry policy:</p>
+<div class="code"><div class="fname">RetrySetup.cs (fragment)</div><pre><code class="language-csharp">var builder = new DbContextOptionsBuilder&lt;StoreDbContext&gt;()
+    .UseSqlServer(Db.ConnectionString, opts =&gt;
+        opts.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null));       // null = use EF's default transient error list
+
+// The strategy handles: connection drops, deadlocks (1205), login throttle (18056), etc.</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> <code>BeginTransaction</code> is <b>incompatible</b> with execution strategies — the strategy can't retry if it doesn't control the transaction boundary. Solution: wrap the whole unit of work in <code>strategy.ExecuteAsync</code>:</div>
+<div class="code"><div class="fname">StrategyWithTransaction.cs</div><pre><code class="language-csharp">var strategy = db.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =&gt;
+{{
+    await using var tx = await db.Database.BeginTransactionAsync();
+    try
+    {{
+        // ... all work here, same as above ...
+        await tx.CommitAsync();
+    }}
+    catch
+    {{
+        await tx.RollbackAsync();
+        throw;
+    }}
+}});
+// The strategy wraps the entire lambda. If a transient error occurs, the whole lambda
+// (including the transaction) reruns from the top → must be idempotent.</code></pre></div>
+<div class="tbl"><table><tr><th>Scenario</th><th>Approach</th></tr><tr><td>Single SaveChanges, no retries needed</td><td>Let EF use the implicit transaction</td></tr><tr><td>Multiple SaveChanges that must all succeed or fail</td><td><code>BeginTransaction / Commit / Rollback</code></td></tr><tr><td>Cloud database with transient faults, single SaveChanges</td><td><code>EnableRetryOnFailure</code> in <code>UseSqlServer</code></td></tr><tr><td>Cloud database + explicit transaction</td><td><code>strategy.ExecuteAsync(async () =&gt; {{ ... tx ... }})</code></td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Adding <code>[Timestamp]</code> but forgetting to migrate — the column doesn't exist and all concurrency checks are skipped.</li><li>Catching the exception once; a second concurrent conflict will re-throw and bubble up uncaught.</li><li>Using <code>db.Database.BeginTransaction()</code> without wrapping in <code>strategy.ExecuteAsync</code> when retries are on.</li><li>Calling <code>GetDatabaseValues()</code> inside a tight retry loop — it adds a round trip each time.</li><li>Assuming the implicit transaction covers two separate <code>SaveChanges</code> calls — it doesn't.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Add a <code>[Timestamp] RowVersion</code> to Order, migrate, then write a demo where two contexts update the same order and handle the conflict with the merge strategy.</li><li>Write an explicit transaction that ships an order AND inserts a shipping log row (raw SQL); verify both are rolled back if the second step throws.</li><li>Configure <code>EnableRetryOnFailure(5, 30s)</code>; simulate a transient error by temporarily renaming the database, observe EF retrying, then rename it back.</li></ol>
+<h3>Self-check questions</h3><details><summary>What column type does [Timestamp] map to in SQL Server?</summary>ROWVERSION (historically called TIMESTAMP). It's an 8-byte binary value incremented by the engine on every row update — not a date/time column.</details><details><summary>Why can't you use BeginTransaction inside an execution strategy?</summary>An execution strategy replays the entire operation lambda on a transient error. If you open a transaction outside its control, the strategy can't roll it back and retry cleanly — EF throws an InvalidOperationException telling you to wrap the tx in strategy.ExecuteAsync.</details><details><summary>How does EF Core use the rowversion in a WHERE clause?</summary>Every UPDATE and DELETE adds <code>WHERE RowVersion = @originalValue</code>. If another writer already updated the row, its rowversion changed, 0 rows are affected, and EF throws DbUpdateConcurrencyException.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is optimistic concurrency and how does EF Core implement it?</summary><div>Optimistic concurrency assumes conflicts are rare. EF Core adds the original value of a concurrency token (e.g. RowVersion) to the WHERE clause of UPDATE/DELETE. If another writer already changed the row, the WHERE matches 0 rows and EF throws DbUpdateConcurrencyException.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between an implicit and an explicit transaction in EF Core?</summary><div>Implicit: every SaveChanges call is automatically wrapped in one transaction; if anything fails, all changes in that call roll back. Explicit: you call BeginTransaction and Commit yourself, so multiple SaveChanges calls or mixed EF + raw SQL can be part of the same atomic unit.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Describe the three strategies for handling DbUpdateConcurrencyException.</summary><div>Reload (discard local changes): copy database values to both OriginalValues and CurrentValues — lose your edits. Client wins (force write): copy database values to OriginalValues only — your edits overwrite whatever the other writer did. Merge: compare each property; keep the client value only where the client actually changed it, otherwise take the database value. Then retry SaveChanges.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is EnableRetryOnFailure and what errors does it handle?</summary><div>A SQL Server-specific execution strategy that re-runs the operation lambda on transient errors — network drops, login throttling, deadlocks. It retries up to <code>maxRetryCount</code> times with exponential back-off.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What must an operation wrapped in an execution strategy be?</summary><div>Idempotent — running it multiple times must produce the same result. If the strategy retries after a transient failure, the entire lambda reruns including any side effects (emails sent, messages published). Factor those side effects out or use an outbox pattern.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>How would you implement an "audit log" that records every concurrent conflict?</summary><div>Catch DbUpdateConcurrencyException, log the entry's EntityType, the original values and the database values, then decide the resolution strategy (reload/merge/client-wins) and retry. For a durable audit: write the conflict record to an AuditConflict table inside the same transaction as the retry, so either both succeed or neither does.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Owned types, value conversions, global query filters, shadow properties, HasData seeding</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Model fine-grained domain concepts without extra tables, store non-primitive values in the database, filter stale rows automatically, and seed reference data cleanly.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Owned type</dt><dd>An entity whose identity is defined by its owner. It maps to the same table by default (<code>OwnsOne/OwnsMany</code>). It has no <code>DbSet</code> of its own.</dd></div><div class="def"><dt>OwnsOne</dt><dd>Maps one owned object into columns in the owner's table: <code>b.OwnsOne(c =&gt; c.Address)</code>.</dd></div><div class="def"><dt>OwnsMany</dt><dd>Maps a collection of owned objects to a separate table linked by the owner's key.</dd></div><div class="def"><dt>Value conversion</dt><dd>A pair of functions that translate a CLR type to a column type and back: e.g. <code>enum</code> → <code>nvarchar</code>.</dd></div><div class="def"><dt>ValueConverter&lt;TModel, TProvider&gt;</dt><dd>The base class. EF has built-in converters for common patterns; pass a lambda to <code>HasConversion</code> for custom ones.</dd></div><div class="def"><dt>Global query filter</dt><dd>A <code>Where</code> applied automatically to every query on a type: <code>modelBuilder.Entity&lt;T&gt;().HasQueryFilter(x =&gt; !x.IsDeleted)</code>.</dd></div><div class="def"><dt>IgnoreQueryFilters</dt><dd>Appending <code>.IgnoreQueryFilters()</code> to a query bypasses all global filters for that query.</dd></div><div class="def"><dt>Shadow property</dt><dd>A property that exists in the EF model and the database column but not in the C# class. Accessed via <code>EF.Property&lt;T&gt;(entity, "Name")</code>.</dd></div><div class="def"><dt>HasData</dt><dd>Seeds constant reference data inside a migration; <code>HasData</code> entities must have all required properties and no navigations set.</dd></div><div class="def"><dt>Custom seeding</dt><dd>Running data inserts in a startup method (e.g. <code>dbContext.Database.MigrateAsync</code> then checking <code>Any()</code>); works for data that changes or depends on runtime state.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Owned types are great for Address, Money, GeoPoint — value objects that shouldn't have their own table.</li><li>Value conversions run <i>in memory</i> after EF retrieves the data — LINQ operators that use the converted type may not translate to SQL. Keep conversions simple.</li><li>Global query filters apply to navigations loaded with Include too — no extra code needed.</li><li>Shadow properties are useful for audit columns (<code>CreatedBy</code>, <code>UpdatedAt</code>) you don't want on every entity class.</li><li>HasData requires you to supply PK values explicitly and doesn't support navigation properties.</li></ul></div>
+
+<h3>1. Owned types — value objects without extra tables</h3>
+<div class="code"><div class="fname">Customer.cs (owned type)</div><pre><code class="language-csharp">// Address is a value object: no Id, no DbSet, lives inside Customer's table
+public class Address
+{{
+    public string Street  {{ get; set; }} = "";
+    public string City    {{ get; set; }} = "";
+    public string State   {{ get; set; }} = "";
+    public string PinCode {{ get; set; }} = "";  // e.g. "411001" Pune, "400001" Mumbai
+}}
+
+public class Customer
+{{
+    public int Id {{ get; set; }}
+    public required string Name  {{ get; set; }}
+    public required string Email {{ get; set; }}
+    public Address ShippingAddress {{ get; set; }} = new();
+    public List&lt;Order&gt; Orders {{ get; set; }} = [];
+}}</code></pre></div>
+<div class="code"><div class="fname">CustomerConfiguration.cs (fragment)</div><pre><code class="language-csharp">// In CustomerConfiguration:
+b.OwnsOne(c =&gt; c.ShippingAddress, a =&gt;
+{{
+    a.Property(x =&gt; x.Street).HasMaxLength(200).HasColumnName("ShipStreet");
+    a.Property(x =&gt; x.City).HasMaxLength(60).HasColumnName("ShipCity");
+    a.Property(x =&gt; x.State).HasMaxLength(60).HasColumnName("ShipState");
+    a.Property(x =&gt; x.PinCode).HasMaxLength(10).HasColumnName("ShipPinCode")
+     .IsRequired(false);                // allow customers without an address yet
+}});
+// Columns are added to the Customers table — no join needed.</code></pre></div>
+<div class="code nofile"><pre><code class="language-csharp">// Creating and querying
+var cust = new Customer
+{{
+    Name = "Meena Iyer", Email = "meena@example.in",
+    ShippingAddress = new Address {{ City = "Bengaluru", PinCode = "560001", State = "Karnataka", Street = "MG Road" }}
+}};
+db.Customers.Add(cust);
+await db.SaveChangesAsync();
+
+var c = await db.Customers.FirstAsync(x =&gt; x.ShippingAddress.City == "Bengaluru");
+Console.WriteLine(c.ShippingAddress.PinCode);   // 560001</code></pre></div>
+<h4>OwnsMany — collection of owned objects</h4>
+<div class="code nofile"><pre><code class="language-csharp">// A list of phone numbers owned by Customer, stored in a separate table
+public class PhoneNumber
+{{
+    public string Type   {{ get; set; }} = "Mobile";   // "Mobile", "Work"
+    public string Number {{ get; set; }} = "";
+}}
+
+public class Customer
+{{
+    // ...
+    public List&lt;PhoneNumber&gt; PhoneNumbers {{ get; set; }} = [];
+}}
+
+// In configuration:
+b.OwnsMany(c =&gt; c.PhoneNumbers, p =&gt;
+{{
+    p.ToTable("CustomerPhones");
+    p.Property(x =&gt; x.Number).HasMaxLength(20);
+}});</code></pre></div>
+
+<h3>2. Value conversions</h3>
+<p>Store enums as strings (readable migrations, tolerant of reordering), or store a custom type like Money as a column:</p>
+<div class="code"><div class="fname">ValueConversions.cs (fragment)</div><pre><code class="language-csharp">// In OrderConfiguration — store Status as a readable string, not an int
+b.Property(o =&gt; o.Status)
+ .HasConversion&lt;string&gt;()           // built-in: enum → its Name string
+ .HasMaxLength(20);
+// Column: "Pending", "Paid", "Shipped", etc. instead of 0, 1, 2 …
+
+// Custom converter: a Money value object → decimal column
+public record Money(decimal Amount, string Currency = "INR")
+{{
+    public override string ToString() =&gt; $"₹{{Amount:N2}}";
+}}
+
+// In a hypothetical InvoiceConfiguration:
+b.Property(i =&gt; i.TotalAmount)
+ .HasConversion(
+     m =&gt; m.Amount,                   // TModel → TProvider (C# → DB column)
+     v =&gt; new Money(v));              // TProvider → TModel (DB column → C#)</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> Value conversions happen in memory. If you filter with <code>.Where(o =&gt; o.Status == OrderStatus.Paid)</code> and Status is stored as a string, EF Core 8 handles the round-trip correctly — but complex custom converters may prevent translation. Test with <code>ToQueryString()</code>.</div>
+
+<h3>3. Global query filters</h3>
+<p>Add a <code>IsActive</code> flag to Category, then never forget to filter it:</p>
+<div class="code"><div class="fname">GlobalFilter.cs (fragment)</div><pre><code class="language-csharp">public class Category
+{{
+    public int Id {{ get; set; }}
+    public required string Name {{ get; set; }}
+    public bool IsActive {{ get; set; }} = true;
+    public List&lt;Product&gt; Products {{ get; set; }} = [];
+}}
+
+// In StoreDbContext.OnModelCreating or CategoryConfiguration:
+modelBuilder.Entity&lt;Category&gt;().HasQueryFilter(c =&gt; c.IsActive);
+// Now: db.Categories.ToList() generates WHERE IsActive = 1 automatically.
+// Even: db.Products.Include(p =&gt; p.Category).ToList() — inactive categories are excluded.</code></pre></div>
+<div class="code"><div class="fname">IgnoreFilters.cs (fragment)</div><pre><code class="language-csharp">// Bypass for admin screens or seeding checks
+var all = await db.Categories.IgnoreQueryFilters().ToListAsync();
+Console.WriteLine(all.Count);           // includes inactive categories</code></pre></div>
+<div class="note tip"><b>Tip.</b> Global filters apply to navigations loaded with Include. If you Include a navigation whose entity has a filter, only matching children appear — the parent still loads.</div>
+
+<h3>4. Shadow properties — audit columns without cluttering the entity</h3>
+<div class="code"><div class="fname">ShadowProperties.cs (fragment)</div><pre><code class="language-csharp">// In StoreDbContext.OnModelCreating, add shadow properties to every entity:
+foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+             .Where(e =&gt; !e.IsOwned()))
+{{
+    modelBuilder.Entity(entityType.Name).Property&lt;DateTime&gt;("CreatedAt");
+    modelBuilder.Entity(entityType.Name).Property&lt;DateTime&gt;("UpdatedAt");
+    modelBuilder.Entity(entityType.Name).Property&lt;string?&gt;("CreatedBy").HasMaxLength(100);
+}}
+
+// Set them in a SaveChanges override:
+public override int SaveChanges()
+{{
+    var now = DateTime.UtcNow;
+    foreach (var entry in ChangeTracker.Entries()
+                 .Where(e =&gt; e.State is EntityState.Added or EntityState.Modified))
+    {{
+        entry.Property("UpdatedAt").CurrentValue = now;
+        if (entry.State == EntityState.Added)
+            entry.Property("CreatedAt").CurrentValue = now;
+    }}
+    return base.SaveChanges();
+}}
+
+// Querying a shadow property:
+var recentOrders = await db.Orders
+    .Where(o =&gt; EF.Property&lt;DateTime&gt;(o, "CreatedAt") &gt;= DateTime.UtcNow.AddDays(-7))
+    .ToListAsync();</code></pre></div>
+
+<h3>5. HasData vs custom seeding</h3>
+<div class="code"><div class="fname">HasData.cs (fragment)</div><pre><code class="language-csharp">// HasData — good for reference data (categories, states, roles) that ships with the app
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{{
+    modelBuilder.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly);
+
+    modelBuilder.Entity&lt;Category&gt;().HasData(
+        new Category {{ Id = 1, Name = "Grocery",     IsActive = true }},
+        new Category {{ Id = 2, Name = "Electronics", IsActive = true }},
+        new Category {{ Id = 3, Name = "Home",        IsActive = true }},
+        new Category {{ Id = 4, Name = "Clothing",    IsActive = true }}
+    );
+}}
+// A new migration adds INSERT INTO statements for these rows.
+// If you change them, the next migration adds UPDATE or DELETE accordingly.</code></pre></div>
+<div class="code"><div class="fname">CustomSeed.cs</div><pre><code class="language-csharp">// Custom seeding — for data that changes, is large, or depends on runtime configuration
+public static async Task SeedDemoDataAsync(StoreDbContext db)
+{{
+    if (await db.Customers.AnyAsync()) return;   // idempotent: skip if already seeded
+
+    db.Customers.AddRange(
+        new Customer {{ Name = "Asha Rao",    Email = "asha@example.in",  ShippingAddress = new Address {{ City = "Pune" }} }},
+        new Customer {{ Name = "Ravi Kumar",  Email = "ravi@example.in",  ShippingAddress = new Address {{ City = "Chennai" }} }},
+        new Customer {{ Name = "Meena Iyer",  Email = "meena@example.in", ShippingAddress = new Address {{ City = "Bengaluru" }} }}
+    );
+    await db.SaveChangesAsync();
+}}
+
+// Call at startup, after MigrateAsync:
+// await db.Database.MigrateAsync();
+// await SeedDemoDataAsync(db);</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>HasData</th><th>Custom seeding</th></tr><tr><td>Lives in</td><td>Migration (SQL INSERTs)</td><td>Application startup code</td></tr><tr><td>Good for</td><td>Stable reference data</td><td>Dynamic or large data sets</td></tr><tr><td>Requires explicit PK</td><td>Yes</td><td>No</td></tr><tr><td>Supports navigation properties</td><td>No</td><td>Yes</td></tr><tr><td>Idempotent</td><td>Yes (migration tracks it)</td><td>Must implement yourself (e.g. Any() check)</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Trying to query through an owned type's navigation with standard LINQ — owned types are queried through their owner.</li><li>Applying a value conversion for a type EF can't translate in a Where clause — test with ToQueryString() first.</li><li>Forgetting IgnoreQueryFilters in an admin or seeding context, causing incomplete data.</li><li>Supplying a navigation property in HasData — EF throws at migration generation time.</li><li>Shadow property names with typos (they're strings) silently default or throw at runtime.</li></ul>
+<h3>Exercise (35 min)</h3><ol class="ex"><li>Add an owned <code>Address</code> type to Customer, migrate, seed three customers with Indian addresses, and query by PinCode.</li><li>Apply a global query filter for <code>IsActive</code> on Product (new column, default true). Write queries that use it and bypass it with <code>IgnoreQueryFilters</code>.</li><li>Add <code>CreatedAt</code> and <code>UpdatedAt</code> shadow properties to Order via a <code>SaveChanges</code> override and confirm they're set by querying with <code>EF.Property&lt;DateTime&gt;</code>.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is an owned type and when would you use it?</summary>An entity whose identity depends on its owner — it has no DbSet, no primary key of its own, and maps to the owner's table (OwnsOne) or a dependent table (OwnsMany). Use it for value objects: Address, Money, GeoCoordinate.</details><details><summary>What does IgnoreQueryFilters do?</summary>It tells EF to skip all global HasQueryFilter predicates for that specific query — useful for admin screens, includes of soft-deleted children, or seeding checks.</details><details><summary>Why can't you set navigation properties in HasData?</summary>HasData works at the migration level where EF serialises property values into SQL INSERTs. Navigation properties are EF runtime concepts, not column values, so they can't be represented.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a global query filter and how is it applied to Include?</summary><div>A predicate added with HasQueryFilter that EF appends automatically to every query on that entity type. When a filtered type is loaded via Include, the filter applies to the children too — only children matching the filter are included.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Owned type vs a separate entity — when would you choose each?</summary><div>Owned type: no independent identity, always accessed through the owner, conceptually part of the owner (Address, Money). Separate entity: has its own identity and can be queried, shared between owners, or deleted independently.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do shadow properties work and what are they useful for?</summary><div>Shadow properties exist in the EF model and map to a database column, but have no corresponding C# property on the class. Useful for cross-cutting columns (CreatedAt, UpdatedAt, TenantId, IsDeleted) that you don't want on every entity class. Set them in a SaveChanges override and query them with EF.Property&lt;T&gt;.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are the limitations of value conversions?</summary><div>Conversions run in memory, not in the database. If EF can't translate a LINQ expression that uses the unconverted type, the query falls back to client-side evaluation or throws. Keep converters simple; test complex ones with ToQueryString() to verify they translate correctly.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>HasData vs custom seeding — when is each appropriate?</summary><div>HasData is best for stable reference data (categories, roles, country codes) that ships with the app and changes rarely; it's tracked in migrations, so changes generate UPDATE/DELETE SQL. Custom seeding is better for large data sets, data with relationships, or anything that changes between environments — seed it at startup with an idempotent check.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does the enum-to-string value conversion affect migrations?</summary><div>The column type changes from int to nvarchar(N). Migration 'down' scripts need to handle the reverse. With enum-to-string the column is human-readable and survives reordering of enum members; with int storage, inserting a new member before existing ones breaks all existing rows.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Soft delete + audit fields: ISoftDeletable, IAuditable, SaveChangesInterceptor</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a production-ready cross-cutting concern: entities that are never hard-deleted, automatically timestamped, and always filtered — all wired through a single SaveChangesInterceptor.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>ISoftDeletable</dt><dd>An interface marking entities that must not be physically deleted: <code>bool IsDeleted</code> + <code>DateTime? DeletedAt</code>.</dd></div><div class="def"><dt>IAuditable</dt><dd>An interface for timestamp/author fields: <code>DateTime CreatedAt</code>, <code>DateTime UpdatedAt</code>, <code>string CreatedBy</code>, <code>string? UpdatedBy</code>.</dd></div><div class="def"><dt>SaveChangesInterceptor</dt><dd>An EF Core hook whose <code>SavingChanges</code> / <code>SavingChangesAsync</code> method runs just before every SaveChanges, letting you mutate entries.</dd></div><div class="def"><dt>IDbCommandInterceptor</dt><dd>Intercepts individual SQL commands — useful for logging, hinting or rewriting SQL.</dd></div><div class="def"><dt>SoftDeleteInterceptor</dt><dd>A SaveChangesInterceptor that turns any <code>EntityState.Deleted</code> entry for an ISoftDeletable into an Update that sets <code>IsDeleted = true</code>.</dd></div><div class="def"><dt>AuditInterceptor</dt><dd>A SaveChangesInterceptor that stamps <code>CreatedAt/UpdatedAt/CreatedBy/UpdatedBy</code> on Added/Modified entries.</dd></div><div class="def"><dt>ICurrentUserService</dt><dd>A service that returns the logged-in user's name or id — injected into the interceptor.</dd></div><div class="def"><dt>IgnoreQueryFilters</dt><dd>Used for admin restore screens to query soft-deleted rows.</dd></div><div class="def"><dt>dbContext.Entry(e).State</dt><dd>The EntityState: Detached, Unchanged, Added, Modified, Deleted.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li><code>SaveChangesInterceptor</code> runs inside the implicit transaction — if SaveChanges fails, the interceptor changes roll back too.</li><li>Change <code>EntityState.Deleted</code> to <code>EntityState.Modified</code> inside the interceptor so EF issues UPDATE, not DELETE.</li><li>The global query filter for <code>IsDeleted</code> must be applied to every soft-deletable entity — iterate <code>modelBuilder.Model.GetEntityTypes()</code>.</li><li>Test the interceptor with IgnoreQueryFilters to confirm soft-deleted rows exist in the database.</li><li>Keep interceptors focused: one for soft delete, one for audit. Chaining two separate interceptors is cleaner than one big one.</li></ul></div>
+
+<h3>Scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash">mkdir SoftDeleteAuditDemo &amp;&amp; cd SoftDeleteAuditDemo
+dotnet new sln
+dotnet new classlib -n Core
+dotnet new classlib -n Data
+dotnet new console -n App
+dotnet sln add Core Data App
+dotnet add Data reference Core
+dotnet add App reference Data
+cd Data
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+cd ..</code></pre></div>
+
+<h3>Step 1 — Interfaces</h3>
+<div class="code"><div class="fname">Core/Interfaces/Interfaces.cs</div><pre><code class="language-csharp">namespace Core.Interfaces;
+
+public interface ISoftDeletable
+{{
+    bool IsDeleted {{ get; set; }}
+    DateTime? DeletedAt {{ get; set; }}
+    string? DeletedBy {{ get; set; }}
+}}
+
+public interface IAuditable
+{{
+    DateTime CreatedAt  {{ get; set; }}
+    DateTime UpdatedAt  {{ get; set; }}
+    string   CreatedBy  {{ get; set; }}
+    string?  UpdatedBy  {{ get; set; }}
+}}
+
+// Optional: convenience service to get the current user
+public interface ICurrentUserService
+{{
+    string UserName {{ get; }}
+}}</code></pre></div>
+
+<h3>Step 2 — Entities</h3>
+<div class="code"><div class="fname">Core/Entities/Product.cs</div><pre><code class="language-csharp">using Core.Interfaces;
+
+namespace Core.Entities;
+
+public class Product : ISoftDeletable, IAuditable
+{{
+    public int     Id       {{ get; set; }}
+    public required string Name  {{ get; set; }}
+    public string  Sku      {{ get; set; }} = "";
+    public decimal Price    {{ get; set; }}
+    public int     Stock    {{ get; set; }}
+
+    // ISoftDeletable
+    public bool      IsDeleted  {{ get; set; }}
+    public DateTime? DeletedAt  {{ get; set; }}
+    public string?   DeletedBy  {{ get; set; }}
+
+    // IAuditable
+    public DateTime CreatedAt {{ get; set; }}
+    public DateTime UpdatedAt {{ get; set; }}
+    public string   CreatedBy {{ get; set; }} = "";
+    public string?  UpdatedBy {{ get; set; }}
+}}</code></pre></div>
+
+<h3>Step 3 — Interceptor (full code)</h3>
+<div class="code"><div class="fname">Data/Interceptors/AuditAndSoftDeleteInterceptor.cs</div><pre><code class="language-csharp">using Core.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+
+namespace Data.Interceptors;
+
+public sealed class AuditAndSoftDeleteInterceptor(ICurrentUserService currentUser) : SaveChangesInterceptor
+{{
+    // Called synchronously
+    public override InterceptionResult&lt;int&gt; SavingChanges(
+        DbContextEventData eventData, InterceptionResult&lt;int&gt; result)
+    {{
+        Intercept(eventData.Context);
+        return base.SavingChanges(eventData, result);
+    }}
+
+    // Called by SaveChangesAsync
+    public override ValueTask&lt;InterceptionResult&lt;int&gt;&gt; SavingChangesAsync(
+        DbContextEventData eventData, InterceptionResult&lt;int&gt; result,
+        CancellationToken cancellationToken = default)
+    {{
+        Intercept(eventData.Context);
+        return base.SavingChangesAsync(eventData, result, cancellationToken);
+    }}
+
+    private void Intercept(DbContext? context)
+    {{
+        if (context is null) return;
+        var now  = DateTime.UtcNow;
+        var user = currentUser.UserName;
+
+        foreach (var entry in context.ChangeTracker.Entries())
+        {{
+            // ── Soft delete ──────────────────────────────────────────────
+            if (entry.State == EntityState.Deleted &amp;&amp; entry.Entity is ISoftDeletable sd)
+            {{
+                entry.State = EntityState.Modified;    // turn DELETE into UPDATE
+                sd.IsDeleted  = true;
+                sd.DeletedAt  = now;
+                sd.DeletedBy  = user;
+
+                // Don't stamp audit fields for a soft delete — treat it as the final update
+                continue;
+            }}
+
+            // ── Audit fields ─────────────────────────────────────────────
+            if (entry.Entity is IAuditable auditable)
+            {{
+                auditable.UpdatedAt = now;
+                auditable.UpdatedBy = user;
+                if (entry.State == EntityState.Added)
+                {{
+                    auditable.CreatedAt = now;
+                    auditable.CreatedBy = user;
+                }}
+            }}
+        }}
+    }}
+}}</code></pre></div>
+
+<h3>Step 4 — DbContext with global filter</h3>
+<div class="code"><div class="fname">Data/AppDbContext.cs</div><pre><code class="language-csharp">using Data.Interceptors;
+using Core.Entities;
+using Core.Interfaces;
+using Microsoft.EntityFrameworkCore;
+
+namespace Data;
+
+public class AppDbContext : DbContext
+{{
+    public DbSet&lt;Product&gt; Products =&gt; Set&lt;Product&gt;();
+
+    private readonly AuditAndSoftDeleteInterceptor _interceptor;
+
+    public AppDbContext(DbContextOptions&lt;AppDbContext&gt; options,
+                        AuditAndSoftDeleteInterceptor interceptor) : base(options)
+    {{
+        _interceptor = interceptor;
+    }}
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {{
+        options.AddInterceptors(_interceptor);
+    }}
+
+    protected override void OnModelCreating(ModelBuilder model)
+    {{
+        // Apply soft-delete filter to every ISoftDeletable entity
+        foreach (var entityType in model.Model.GetEntityTypes())
+        {{
+            if (typeof(ISoftDeletable).IsAssignableFrom(entityType.ClrType))
+                model.Entity(entityType.ClrType)
+                     .HasQueryFilter(BuildIsDeletedFilter(entityType.ClrType));
+        }}
+    }}
+
+    private static System.Linq.Expressions.LambdaExpression BuildIsDeletedFilter(Type type)
+    {{
+        var param = System.Linq.Expressions.Expression.Parameter(type, "e");
+        var prop  = System.Linq.Expressions.Expression.Property(param, nameof(ISoftDeletable.IsDeleted));
+        var body  = System.Linq.Expressions.Expression.Not(prop);
+        return System.Linq.Expressions.Expression.Lambda(body, param);
+    }}
+}}</code></pre></div>
+
+<h3>Step 5 — ICurrentUserService stub and wiring</h3>
+<div class="code"><div class="fname">App/Services/ConsoleUserService.cs</div><pre><code class="language-csharp">using Core.Interfaces;
+
+namespace App.Services;
+
+// In a real ASP.NET Core app this reads IHttpContextAccessor → User.Identity.Name
+public class ConsoleUserService : ICurrentUserService
+{{
+    public string UserName =&gt; "system";   // stand-in for the logged-in user
+}}</code></pre></div>
+<div class="code"><div class="fname">App/Program.cs</div><pre><code class="language-csharp">using Core.Entities;
+using Core.Interfaces;
+using Data;
+using Data.Interceptors;
+using App.Services;
+using Microsoft.EntityFrameworkCore;
+
+var userSvc = new ConsoleUserService();
+var interceptor = new AuditAndSoftDeleteInterceptor(userSvc);
+
+var options = new DbContextOptionsBuilder&lt;AppDbContext&gt;()
+    .UseSqlServer("Server=localhost,1433;Database=SoftDeleteDemo;User Id=sa;Password=Dev@Pass123;TrustServerCertificate=True")
+    .Options;
+
+await using var db = new AppDbContext(options, interceptor);
+await db.Database.MigrateAsync();
+
+// Add a product
+db.Products.Add(new Product {{ Name = "Basmati Rice 5kg", Sku = "GR-001", Price = 649m, Stock = 200 }});
+await db.SaveChangesAsync();
+
+// Soft delete
+var product = await db.Products.FirstAsync();
+db.Products.Remove(product);              // EntityState.Deleted → interceptor changes to Modified
+await db.SaveChangesAsync();
+
+Console.WriteLine($"Soft-deleted. Count (with filter): {{await db.Products.CountAsync()}}");                 // 0
+Console.WriteLine($"Count (without filter): {{await db.Products.IgnoreQueryFilters().CountAsync()}}");       // 1
+
+// Confirm audit fields
+var deleted = await db.Products.IgnoreQueryFilters().FirstAsync();
+Console.WriteLine($"CreatedBy: {{deleted.CreatedBy}}, IsDeleted: {{deleted.IsDeleted}}, DeletedBy: {{deleted.DeletedBy}}");
+// CreatedBy: system, IsDeleted: True, DeletedBy: system</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">dotnet ef migrations add InitialCreate -p Data -s App
+dotnet ef database update -p Data -s App
+dotnet run --project App</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">-- Expected output (after MigrateAsync):
+-- Soft-deleted. Count (with filter): 0
+-- Count (without filter): 1
+-- CreatedBy: system, IsDeleted: True, DeletedBy: system</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul><li>Add a <code>Category</code> entity that also implements both interfaces; verify the global filter and audit both work.</li><li>Add a <code>RestoreAsync(int id)</code> method that sets <code>IsDeleted = false</code> using <code>IgnoreQueryFilters + ExecuteUpdate</code>.</li><li>Replace the <code>ConsoleUserService</code> stub with one that reads an environment variable — simulating a CI pipeline identity.</li><li>Add an <code>AuditLog</code> table and a second interceptor that appends a row on every Add/Modify/Delete.</li></ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the purpose of a SaveChangesInterceptor?</summary><div>It runs code just before SaveChanges flushes to the database, letting you inspect and modify tracked entries — set audit timestamps, turn deletes into soft-deletes, validate business rules, or raise domain events.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why convert EntityState.Deleted to EntityState.Modified in a soft-delete interceptor?</summary><div>Leaving it as Deleted tells EF to issue a SQL DELETE, physically removing the row. Changing it to Modified causes EF to issue an UPDATE setting IsDeleted = true, keeping the row for history and audit.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you apply a global query filter dynamically to all entities that implement an interface?</summary><div>Iterate modelBuilder.Model.GetEntityTypes(), check if each entity's ClrType implements the interface, and call modelBuilder.Entity(clrType).HasQueryFilter(lambdaExpression). The lambda is built at runtime with Expression.Lambda to match the entity's type.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the relationship between the interceptor and the implicit transaction?</summary><div>The interceptor runs before EF flushes to the database, inside the implicit transaction. If SaveChanges fails (e.g. a constraint violation) the transaction rolls back, undoing the interceptor's mutations as well — there is no partial state.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>SQL inspection, EF performance checklist, try-to-break, README and quiz</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Inspect the SQL behind six real queries, run a performance audit of the week's code, deliberately break concurrency and filter logic, write the README, commit, and test yourself.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>ToQueryString()</dt><dd>Returns the SQL string without executing the query. Available on IQueryable.</dd></div><div class="def"><dt>LogTo</dt><dd>Context option that routes EF logs to a delegate — use <code>LogLevel.Information</code> for SQL, <code>LogLevel.Debug</code> for all events.</dd></div><div class="def"><dt>QuerySingleOrDefaultAsync</dt><dd>Throws if more than one row is returned — use over <code>FirstOrDefault</code> when "more than one" is a bug.</dd></div><div class="def"><dt>No-tracking default</dt><dd><code>UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)</code> flips the default for the whole context; individual queries can re-enable with <code>AsTracking()</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Paste the generated SQL into SSMS or the MSSQL extension and check the execution plan — an index scan on a large table is usually a missing index.</li><li>Three red flags in EF logs: SELECT *, N+1, and <code>SELECT ... FROM (... subquery) AS t</code> applied to a large table without a sargable WHERE.</li><li>Include only what you use; every unused column is bytes on the wire and memory in .NET.</li><li>The best EF performance feature is often not EF at all — a covering index or a view in SQL Server.</li></ul></div>
+
+<h3>1. Six queries and their SQL</h3>
+<p>Run each query and paste the <code>LogTo</code> output here as a study exercise. Expected forms are shown below.</p>
+
+<h4>Q1 — Eager load with two levels</h4>
+<div class="code"><div class="fname">Query1.cs</div><pre><code class="language-csharp">var order = await db.Orders
+    .Include(o =&gt; o.Customer)
+    .Include(o =&gt; o.Lines).ThenInclude(l =&gt; l.Product)
+    .AsNoTracking()
+    .FirstOrDefaultAsync(o =&gt; o.Id == 1);</code></pre></div>
+<div class="code"><div class="fname">Q1 SQL (example)</div><pre><code class="language-sql">SELECT TOP(1) [o].[Id], [o].[CustomerId], [o].[OrderDateUtc], [o].[Status], [o].[RowVersion],
+       [c].[Id], [c].[City], [c].[Email], [c].[Name],
+       [s].[Id], [s].[OrderId], [s].[ProductId], [s].[Quantity], [s].[UnitPrice],
+       [s].[Id0], [s].[CategoryId], [s].[Name0], [s].[Price], [s].[Sku], [s].[Stock]
+FROM [Orders] AS [o]
+INNER JOIN [Customers] AS [c] ON [o].[CustomerId] = [c].[Id]
+LEFT JOIN (
+    SELECT [l].[Id], [l].[OrderId], [l].[ProductId], [l].[Quantity], [l].[UnitPrice],
+           [p].[Id] AS [Id0], [p].[CategoryId], [p].[Name] AS [Name0], [p].[Price], [p].[Sku], [p].[Stock]
+    FROM [OrderLines] AS [l]
+    INNER JOIN [Products] AS [p] ON [l].[ProductId] = [p].[Id]
+) AS [s] ON [o].[Id] = [s].[Id]
+WHERE [o].[Id] = 1
+ORDER BY [o].[Id], [c].[Id], [s].[Id]</code></pre></div>
+
+<h4>Q2 — Projection to DTO (no entities loaded)</h4>
+<div class="code"><div class="fname">Query2.cs</div><pre><code class="language-csharp">var summaries = await db.Orders
+    .AsNoTracking()
+    .Select(o =&gt; new {{ o.Id, CustomerName = o.Customer.Name,
+                        Total = o.Lines.Sum(l =&gt; l.Quantity * l.UnitPrice) }})
+    .ToListAsync();</code></pre></div>
+<div class="code"><div class="fname">Q2 SQL (example)</div><pre><code class="language-sql">SELECT [o].[Id], [c].[Name] AS [CustomerName],
+       COALESCE((SELECT SUM([l].[Quantity] * [l].[UnitPrice])
+                 FROM [OrderLines] AS [l] WHERE [o].[Id] = [l].[OrderId]), 0.0) AS [Total]
+FROM [Orders] AS [o]
+INNER JOIN [Customers] AS [c] ON [o].[CustomerId] = [c].[Id]
+-- No ORDER BY: projection with no collection include → no key ordering needed</code></pre></div>
+
+<h4>Q3 — ExecuteUpdate (no rows loaded)</h4>
+<div class="code"><div class="fname">Query3.cs</div><pre><code class="language-csharp">await db.Products.Where(p =&gt; p.Stock == 0).ExecuteUpdateAsync(s =&gt;
+    s.SetProperty(p =&gt; p.IsDeleted, true)
+     .SetProperty(p =&gt; p.DeletedAt, DateTime.UtcNow));</code></pre></div>
+<div class="code"><div class="fname">Q3 SQL (example)</div><pre><code class="language-sql">UPDATE [p]
+SET [p].[IsDeleted] = CAST(1 AS bit),
+    [p].[DeletedAt] = @__UtcNow_0
+FROM [Products] AS [p]
+WHERE [p].[Stock] = 0 AND [p].[IsDeleted] = 0   -- global filter still applies</code></pre></div>
+
+<h4>Q4 — Global filter visible in SQL</h4>
+<div class="code"><div class="fname">Query4.cs</div><pre><code class="language-csharp">var active = await db.Products.CountAsync();
+var all    = await db.Products.IgnoreQueryFilters().CountAsync();
+Console.WriteLine($"Active: {{active}}, All: {{all}}");</code></pre></div>
+<div class="code"><div class="fname">Q4 SQL (example)</div><pre><code class="language-sql">-- Query 4a (with filter):
+SELECT COUNT(*)  FROM [Products] AS [p]  WHERE [p].[IsDeleted] = 0
+
+-- Query 4b (IgnoreQueryFilters):
+SELECT COUNT(*)  FROM [Products] AS [p]</code></pre></div>
+
+<h4>Q5 — Concurrency: the UPDATE WHERE clause</h4>
+<div class="code"><div class="fname">Query5.cs</div><pre><code class="language-csharp">var order = await db.Orders.FirstAsync(o =&gt; o.Id == 1);
+order.Status = OrderStatus.Shipped;
+await db.SaveChangesAsync();   // prints the SQL below</code></pre></div>
+<div class="code"><div class="fname">Q5 SQL (example)</div><pre><code class="language-sql">UPDATE [Orders]
+SET [Status] = @p0
+WHERE [Id] = @p1 AND [RowVersion] = @p2;    -- rowversion in the WHERE
+SELECT [RowVersion]                          -- read back the new value
+FROM [Orders]
+WHERE @@ROWCOUNT = 1 AND [Id] = @p1;</code></pre></div>
+
+<h4>Q6 — Split query (two round trips)</h4>
+<div class="code"><div class="fname">Query6.cs</div><pre><code class="language-csharp">var orders = await db.Orders
+    .Include(o =&gt; o.Lines)
+    .Include(o =&gt; o.Customer)
+    .AsSplitQuery()
+    .Take(10)
+    .ToListAsync();</code></pre></div>
+<div class="code"><div class="fname">Q6 SQL (example)</div><pre><code class="language-sql">-- Round trip 1: Orders + Customers
+SELECT TOP(10) [o].[Id], [o].[CustomerId], [o].[OrderDateUtc], [o].[Status], [o].[RowVersion],
+       [c].[Id], [c].[City], [c].[Email], [c].[Name]
+FROM [Orders] AS [o]
+INNER JOIN [Customers] AS [c] ON [o].[CustomerId] = [c].[Id]
+ORDER BY [o].[Id]
+
+-- Round trip 2: Lines for the same 10 orders
+SELECT [l].[Id], [l].[OrderId], [l].[ProductId], [l].[Quantity], [l].[UnitPrice], [o0].[Id]
+FROM [Orders] AS [o0]
+INNER JOIN [OrderLines] AS [l] ON [o0].[Id] = [l].[OrderId]
+WHERE [o0].[Id] IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+ORDER BY [o0].[Id]</code></pre></div>
+
+<h3>2. EF performance checklist</h3>
+<div class="tbl"><table><tr><th>Check</th><th>How to verify</th></tr><tr><td>No N+1: list queries use Include or projection</td><td>Count SQL statements in LogTo</td></tr><tr><td>Read-only queries use AsNoTracking</td><td>Grep for AsNoTracking in controller/service layer</td></tr><tr><td>Projections pull only needed columns</td><td>Read Q2 SQL: no SELECT *</td></tr><tr><td>Collections with cartesian risk use AsSplitQuery</td><td>Search for double Include of collections</td></tr><tr><td>ExecuteUpdate/Delete for bulk ops</td><td>No ToList() + foreach + SaveChanges for bulk changes</td></tr><tr><td>Indexes on FK columns and common WHERE fields</td><td>Run sp_helpindex or check SSMS missing index suggestions</td></tr><tr><td>global query filters are correct</td><td>Query with and without IgnoreQueryFilters; compare counts</td></tr><tr><td>No lazy loading in production</td><td>grep for UseLazyLoadingProxies in startup</td></tr><tr><td>Compiled queries for &gt;1k calls/sec hot path</td><td>Profiler + load test</td></tr></table></div>
+
+<h3>3. Try to break it</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected behaviour</th><th>Why</th></tr><tr><td>Two contexts update same Order simultaneously</td><td><code>DbUpdateConcurrencyException</code> on second save</td><td>RowVersion mismatch — 0 rows affected</td></tr><tr><td>Call <code>db.Products.Remove(p)</code> on a soft-deletable</td><td>UPDATE IsDeleted = 1, row still in DB</td><td>Interceptor flips EntityState.Deleted → Modified</td></tr><tr><td>Query Products without IgnoreQueryFilters after soft delete</td><td>Returns 0 rows</td><td>Global filter adds WHERE IsDeleted = 0</td></tr><tr><td>Call <code>SaveChanges</code> inside an execution strategy's lambda that uses <code>BeginTransaction</code></td><td>Works correctly — strategy wraps the lambda</td><td>ExecuteAsync controls the retry boundary</td></tr><tr><td><code>Include</code> two collections without AsSplitQuery with 10+ rows each</td><td>Row count = product of child counts per order</td><td>Cartesian explosion — observe in LogTo</td></tr><tr><td>Change enum HasConversion from int to string on existing DB</td><td>Migration fails unless you migrate data first</td><td>Column type change is breaking</td></tr></table></div>
+
+<h3>4. README template</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-text"># Week 16 — EF Core in Depth
+
+## What was built
+- Extended StoreDb with Customers / Orders / OrderLines (Week 15 continuation)
+- SoftDeleteAuditDemo console project: ISoftDeletable + IAuditable + interceptor
+
+## Key techniques practised
+- Eager / explicit / lazy loading; filtered Include
+- N+1 detection with LogTo; AsNoTracking + projections
+- Raw SQL: FromSql, SqlQuery, ExecuteUpdate/Delete, stored procs
+- Optimistic concurrency with rowversion; explicit transactions; execution strategies
+- Owned types, value conversions, global query filters, shadow properties, HasData
+
+## Run instructions
+```bash
+# Start SQL Server 2022
+docker run -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD=Dev@Pass123 \
+  -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+
+# StoreDb (loading / concurrency / raw SQL demos)
+cd StoreDb
+dotnet ef database update -p Store.Data -s Store.App
+dotnet run --project Store.App
+
+# SoftDeleteAuditDemo
+cd ../SoftDeleteAuditDemo
+dotnet ef database update -p Data -s App
+dotnet run --project App
+```</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash">cd week16
+git add .
+git commit -m "Week 16: EF Core in depth — loading, raw SQL, concurrency, interceptors"
+git push</code></pre></div>
+
+<h3>5. Week revision checklist</h3>
+<ul>
+<li>Include / ThenInclude — which navigation triggers INNER vs LEFT JOIN?</li>
+<li>Filtered Include limitations — fix-up gotcha, tracking vs no-tracking</li>
+<li>N+1 — how to detect (LogTo) and fix (Include or projection)</li>
+<li>AsNoTracking vs AsNoTrackingWithIdentityResolution</li>
+<li>AsSplitQuery — when and why (cartesian explosion)</li>
+<li>FromSql vs FromSqlRaw — which is safer with interpolated strings?</li>
+<li>ExecuteUpdate / ExecuteDelete — bypasses what?</li>
+<li>Stored procs — SqlQuery vs ExecuteSqlRaw</li>
+<li>[Timestamp] / rowversion — what SQL is added to UPDATE/DELETE?</li>
+<li>DbUpdateConcurrencyException — three resolution strategies</li>
+<li>BeginTransaction + execution strategy — why they can't be nested directly</li>
+<li>Owned types — same table, no DbSet, can have OwnsMany</li>
+<li>Value conversions — where do they execute? Can LINQ filter them?</li>
+<li>Global query filters — apply to Includes? How to bypass?</li>
+<li>Shadow properties — how to set, how to query</li>
+<li>HasData vs custom seeding — which requires explicit PKs?</li>
+<li>SaveChangesInterceptor — SavingChanges vs SavingChangesAsync overrides</li>
+<li>Soft delete interceptor — EntityState.Deleted → EntityState.Modified</li>
+</ul>
+
+<h3>6. Quiz — predict the output / does it compile?</h3>
+<details><summary>Q1. How many SQL statements does this code send?</summary>
+<div class="code nofile"><pre><code class="language-csharp">await using var db = Db.Create(logSql: false);
+var customers = await db.Customers.ToListAsync();
+int total = 0;
+foreach (var c in customers)
+    total += c.Orders.Count;
+Console.WriteLine(total);</code></pre></div>
+<b>1 + N (where N = number of customers).</b> <code>c.Orders</code> is not loaded; each access returns the empty list (0), so total is always 0 — but only because tracking is on and the Orders property was never loaded. If lazy loading were enabled it would fire N queries. Fix: <code>Include(c =&gt; c.Orders)</code> or project to a count DTO.
+</details>
+<details><summary>Q2. Does this compile and what does it do?</summary>
+<div class="code nofile"><pre><code class="language-csharp">await db.Products.Where(p =&gt; p.Name.StartsWith("B"))
+                 .ExecuteUpdateAsync(s =&gt;
+                     s.SetProperty(p =&gt; p.Stock, p =&gt; p.Stock - 1));</code></pre></div>
+<b>Yes, compiles and runs.</b> Sends one SQL: <code>UPDATE Products SET Stock = Stock - 1 WHERE Name LIKE 'B%' AND IsDeleted = 0</code>. No entities are loaded. The global query filter still applies (adds the IsDeleted check).
+</details>
+<details><summary>Q3. What exception type is thrown and why?</summary>
+<div class="code nofile"><pre><code class="language-csharp">await using var db1 = Db.Create();
+await using var db2 = Db.Create();
+var o1 = await db1.Orders.FindAsync(1);
+var o2 = await db2.Orders.FindAsync(1);
+o1!.Status = OrderStatus.Shipped;
+o2!.Status = OrderStatus.Cancelled;
+await db1.SaveChangesAsync();
+await db2.SaveChangesAsync();   // ?</code></pre></div>
+<b>DbUpdateConcurrencyException.</b> db1's save bumps the rowversion. db2's UPDATE WHERE RowVersion = @orig finds 0 rows; EF detects this and throws.
+</details>
+<details><summary>Q4. What does the global filter add to this query?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var products = await db.Products
+    .Where(p =&gt; p.Price &gt; 500)
+    .OrderBy(p =&gt; p.Name)
+    .ToListAsync();</code></pre></div>
+<b>WHERE Price &gt; 500 AND IsDeleted = 0</b> (or whatever the filter predicate is). EF ANDs the global filter onto every query automatically.
+</details>
+<details><summary>Q5. Does this compile? What happens at runtime?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var order = await db.Orders.AsNoTracking().FirstAsync();
+order.Status = OrderStatus.Shipped;
+await db.SaveChangesAsync();</code></pre></div>
+<b>Compiles. SaveChanges sends 0 SQL statements and returns 0.</b> The entity is untracked; EF has no record of it and nothing to flush. No exception is thrown. This is a common silent bug.
+</details>
+
+<div class="note tip"><b>Tip.</b> Next week: ASP.NET Core fundamentals — Minimal APIs, middleware pipeline, dependency injection, configuration, and your first to-do API backed by this week's EF setup.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does ToQueryString() return?</summary><div>The SQL string the LINQ query will execute, without actually running it. Available on IQueryable. Great for learning and debugging — paste the output into SSMS to see the execution plan.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Name three signs of an EF performance problem in the logs.</summary><div>(1) Multiple SELECT ... WHERE ForeignKeyId = @p statements in a loop — N+1. (2) SELECT with no WHERE on a large table — full table scan. (3) Very large result set with many duplicate columns — cartesian explosion from multiple collection Includes.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why does SaveChanges return 0 for an AsNoTracking entity?</summary><div>AsNoTracking entities are not registered in the ChangeTracker. SaveChanges only flushes tracked entries in Added, Modified or Deleted state. An untracked entity has no state, so SaveChanges has nothing to do — silent no-op.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does the soft-delete interceptor interact with ExecuteDelete?</summary><div>SaveChangesInterceptor only fires for changes tracked by the ChangeTracker (entries going through SaveChanges). ExecuteDelete bypasses the ChangeTracker and runs a SQL DELETE directly — the interceptor is never called. Use ExecuteUpdate to soft-delete in bulk: set IsDeleted = true, DeletedAt = now explicitly.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week16-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

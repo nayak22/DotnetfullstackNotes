@@ -1,0 +1,1292 @@
+import sys; sys.path.insert(0, "/home/claude/build")
+from lib import *
+
+# ================= DAY 1 — MON =================
+d1 = day(1, "MON", "Storage Internals: Pages, Heaps and B+-Trees",
+"Understand how SQL Server physically stores rows so that every index and query-plan decision you make for the rest of the phase is grounded in what the engine actually does.",
+[("Page","The 8 KB unit of I/O in SQL Server. All data, indexes and allocations are measured in pages."),
+("Extent","Eight contiguous 8 KB pages (64 KB). Mixed extents serve multiple objects; uniform extents serve one."),
+("Heap","A table with no clustered index. Rows are stored in insertion order across pages with no guaranteed sequence."),
+("IAM page","Index Allocation Map: a page that tracks which extents belong to a table or index."),
+("Clustered index","Organises the table rows themselves in B+-tree order on the clustered key. The leaf level IS the data."),
+("B+-tree","Balanced tree where only leaf nodes hold data; internal nodes hold key values to route searches. Height rarely exceeds 4."),
+("Root → intermediate → leaf","The three levels of a B+-tree; a seek walks from root to the matching leaf page."),
+("Page split","When an INSERT targets a full page, SQL Server allocates a new page and moves roughly half the rows there, writing both pages."),
+("Fill factor","The percentage of a leaf page left full at index creation/rebuild, leaving room for future inserts to avoid splits."),
+("RID","Row IDentifier: (file:page:slot) used in a heap to reference a row from a nonclustered index."),
+("Row locator","What a nonclustered index stores to point back to the base row: RID for heaps, clustered key value for clustered tables."),
+("Forwarding pointer","When a heap row grows and can't fit on its original page, a 9-byte stub remains pointing to the new location.")],
+["An 8 KB page holds roughly 300–500 average order rows — plan tables around this, not individual rows.",
+"Heaps are fast for bulk inserts but slow for range scans and suffer forwarding pointers after UPDATEs.",
+"A clustered index physically orders rows; there can be only one per table.",
+"Page splits happen during INSERT/UPDATE; fill factor pre-allocates free space to absorb them.",
+"Wide or nullable clustered keys carry overhead into every nonclustered index — keep them narrow.",
+"SQL Server reads and writes pages, not rows; a 'logical read' in STATISTICS IO means one page read from the buffer pool."],
+f'''
+<h3>1. The 8 KB page — anatomy of storage</h3>
+<p>Every piece of data SQL Server manages lives in a page. The layout from top to bottom:</p>
+{table(["Region","Size","Content"],[
+["Page header","96 bytes","Page id, type, free-space offset, row count, LSN"],
+["Row data","variable","Fixed-length columns, variable-length columns, NULL bitmap"],
+["Row offset array","2 bytes × row count","Slot array at the end of the page; each slot = offset of a row"]])}
+{C(r"""
+-- How many pages does each table occupy? (run after the 1M-row Saturday load)
+SELECT
+    OBJECT_NAME(i.object_id)                AS table_name,
+    i.name                                  AS index_name,
+    i.type_desc,
+    p.rows,
+    au.total_pages,
+    au.used_pages,
+    au.data_pages,
+    CAST(au.data_pages * 8.0 / 1024 AS decimal(10,2)) AS data_mb
+FROM sys.indexes i
+JOIN sys.partitions p
+    ON  i.object_id = p.object_id
+    AND i.index_id  = p.index_id
+JOIN sys.allocation_units au
+    ON  p.partition_id = au.container_id
+WHERE OBJECT_NAME(i.object_id) IN ('orders','order_lines','customers','products')
+ORDER BY table_name, i.index_id;
+""", "page_usage.sql", lang="sql")}
+
+<h3>2. Heaps vs clustered tables</h3>
+<p>A <strong>heap</strong> has no inherent order; SQL Server finds its rows through IAM pages.
+A <strong>clustered table</strong> stores rows in the B+-tree leaf pages ordered by the clustered key.</p>
+{table(["","Heap","Clustered Index"],[
+["INSERT","Fast (append anywhere)","Must maintain order; possible split"],
+["Point lookup","IAM + full scan or NC index → RID lookup","B+-tree seek — typically 2–4 I/Os"],
+["Range scan","Always full scan","Ordered range scan along leaf pages"],
+["UPDATE bloat","Forwarding pointers accumulate","In-place or organised split"],
+["Nonclustered index points to","RID (file:page:slot) — brittle to moves","Clustered key — stable"]])}
+{C(r"""
+-- Create a heap explicitly (no CREATE CLUSTERED INDEX)
+CREATE TABLE sales.import_staging (
+    order_id   INT,
+    product_id INT,
+    qty        INT,
+    unit_price DECIMAL(10,2)
+);    -- no PRIMARY KEY → heap; good for fast bulk-insert staging
+
+-- Check if a table is a heap
+SELECT OBJECT_NAME(object_id) AS tbl, type_desc
+FROM sys.indexes
+WHERE object_id = OBJECT_ID('sales.import_staging')
+  AND index_id = 0;   -- index_id 0 = heap; 1 = clustered
+""", "heap_check.sql", lang="sql")}
+
+<h3>3. B+-tree structure</h3>
+<p>A clustered index on <code>orders.order_id</code> with 1 M rows at ~200 bytes/row occupies about
+200 MB ≈ 25,000 pages. With a branching factor of ~400 keys per 8 KB internal page,
+the tree is only 3 levels: root → 1 intermediate level → ~25,000 leaf pages.
+Finding one row takes exactly 3 page reads regardless of table size.</p>
+{C(r"""
+-- Inspect the B+-tree levels SQL Server built
+SELECT
+    index_level,
+    page_count,
+    record_count,
+    avg_record_size_in_bytes
+FROM sys.dm_db_index_physical_stats(
+    DB_ID(), OBJECT_ID('sales.orders'), 1 /*clustered*/, NULL, 'DETAILED')
+ORDER BY index_level DESC;
+-- index_level 2 = root, 1 = intermediate, 0 = leaf
+""", "btree_levels.sql", lang="sql")}
+
+<h3>4. Page splits and fill factor</h3>
+<p>When an INSERT targets a page that is 100 % full, SQL Server splits it:</p>
+<ol>
+<li>Allocates a new page (possibly on a different extent — physical fragmentation).</li>
+<li>Moves roughly half the rows to the new page.</li>
+<li>Writes both dirty pages to disk.</li>
+<li>Updates the index tree above them.</li>
+</ol>
+<p>Splits add log records, dirty cache pages and disk I/O.
+<strong>Fill factor</strong> pre-emptively leaves free space on each leaf page at rebuild time.</p>
+{C(r"""
+-- Rebuild the clustered index with 80 % fill factor
+-- Leaves 20 % free on every leaf page for future inserts
+ALTER INDEX PK_orders ON sales.orders
+    REBUILD WITH (FILLFACTOR = 80, ONLINE = ON);  -- ONLINE = ON requires Enterprise/Developer
+
+-- Check fragmentation (avg_fragmentation_in_percent > 30 → REBUILD; 5–30 → REORGANIZE)
+SELECT
+    index_id,
+    avg_fragmentation_in_percent,
+    page_count
+FROM sys.dm_db_index_physical_stats(
+    DB_ID(), OBJECT_ID('sales.orders'), NULL, NULL, 'LIMITED')
+WHERE page_count > 1000;
+""", "fill_factor.sql", lang="sql")}
+{tip("Fill factor is a one-time setting applied at REBUILD. It has no effect until the next reorganise or rebuild. Set it lower (70–80 %) on tables with heavy random inserts; leave it at the default 0 (= 100 %) on append-only tables like log tables.")}
+
+<h3>5. Choosing a good clustered key</h3>
+{table(["Criterion","Why it matters","Example"],[
+["Narrow","Stored in every NC index row; wider key = bigger NC indexes","<code>INT</code> (4 B) beats <code>UNIQUEIDENTIFIER</code> (16 B)"],
+["Static","Updates to the clustered key move the row; every NC index must be updated too","<code>order_id</code> never changes; <code>email</code> does"],
+["Ever-increasing","New rows append to the right of the B+-tree — no mid-tree splits","<code>IDENTITY</code>, <code>SEQUENCE</code>, <code>NEWSEQUENTIALID()</code>"],
+["Unique","Non-unique CIs add a hidden 4-byte uniquifier, widening the key","Primary key is usually the right choice"],
+["Covers range queries","ORDER BY / GROUP BY matching the CI avoids a sort","<code>order_date</code> CI for a reporting table scanned by date range"]])}
+{C(r"""
+-- Good: narrow, static, ever-increasing
+CREATE TABLE sales.orders (
+    order_id   INT           NOT NULL IDENTITY(1,1),
+    customer_id INT          NOT NULL,
+    order_date  DATE         NOT NULL,
+    -- ...
+    CONSTRAINT PK_orders PRIMARY KEY CLUSTERED (order_id)
+);
+
+-- Problematic: GUID clustered key causes random page splits
+CREATE TABLE sales.orders_bad (
+    order_id   UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),   -- random → splits everywhere
+    -- ...
+    CONSTRAINT PK_orders_bad PRIMARY KEY CLUSTERED (order_id)
+);
+-- Fix: DEFAULT NEWSEQUENTIALID() generates ascending GUIDs within one server
+""", "clustered_key_choice.sql", lang="sql")}
+{warn("Using <code>NEWID()</code> as a clustered key on a high-insert table causes near-100 % page fragmentation within hours. Use <code>NEWSEQUENTIALID()</code> or switch to an INT/BIGINT identity.", "Classic mistake")}
+''',
+["Using <code>NEWID()</code> as a clustered key — random GUIDs split pages on every INSERT.",
+"Creating a clustered index on a wide or composite key — it inflates every nonclustered index.",
+"Forgetting that there is no clustered index (heap) on a table that gets many point lookups.",
+"Setting fill factor to 50 on an append-only log table — wastes half the storage for no benefit.",
+"Assuming a 3-level B+-tree means 3 disk reads — the root and hot intermediate pages are usually cached."],
+("35 min", [
+"Run the page-usage query above against your Week 13 sales database. Record how many pages each table uses.",
+"Inspect the B+-tree levels for the clustered index on <code>orders</code> using <code>dm_db_index_physical_stats</code>.",
+"Insert 10,000 rows with a random GUID clustered key vs 10,000 with an IDENTITY; compare fragmentation after."
+]),
+[("What is a page split?", "A page split occurs when SQL Server needs to insert a row into a full page. It allocates a new page, moves roughly half the existing rows there, then inserts the new row. This produces fragmentation and extra I/O."),
+("What is fill factor?", "Fill factor is the percentage of a leaf-level page that is left full when an index is built or rebuilt. The remaining space is reserved for future inserts, reducing page splits. It is applied at rebuild time only."),
+("Why prefer an IDENTITY over a GUID as a clustered key?", "IDENTITY generates ever-increasing integers that always append to the rightmost leaf page of the B+-tree, avoiding mid-tree page splits. Random GUIDs cause near-random inserts across all pages, leading to continuous splits and high fragmentation.")],
+[("Basic","What is an 8 KB page in SQL Server?","The fundamental unit of storage and I/O. All data, indexes, and system metadata live in 8 KB pages. When SQL Server reads or writes data it always moves whole pages, never individual rows. STATISTICS IO counts logical reads in pages."),
+("Basic","What is a heap and when would you use one?","A table with no clustered index. Rows are stored wherever space exists, referenced by RID (file:page:slot). Heaps work well for staging tables used in bulk-insert-then-swap patterns, but are poor for OLTP tables that need frequent point lookups."),
+("Basic","What is a B+-tree and how does it help seek performance?","A balanced tree in which internal nodes hold only key values to route searches, and leaf nodes hold the actual data (for clustered indexes) or key + row-locator (for nonclustered). Because the tree stays balanced the height rarely exceeds 4, so a seek from root to leaf never takes more than 4 page reads regardless of table size."),
+("Intermediate","Why does a wide clustered key hurt nonclustered indexes?","Nonclustered leaf pages store the clustered key value as the row locator. A 16-byte GUID as the CI key means every nonclustered index row is 12 bytes wider than it would be with a 4-byte INT. On a table with five NCI indexes and a million rows the extra storage can exceed 60 MB and slow every NCI range scan."),
+("Intermediate","What fragmentation percentage warrants a REBUILD vs REORGANIZE?","Below 5 %: ignore. 5–30 %: REORGANIZE (online, page-level defragment, low impact). Above 30 %: REBUILD (re-creates the index from scratch, optionally online on Enterprise). Check with sys.dm_db_index_physical_stats."),
+("Intermediate","What is a forwarding pointer in a heap and why is it harmful?","When an UPDATE increases a heap row's size beyond the current page's free space, SQL Server moves the row to a new page and leaves a 9-byte forwarding pointer stub. Subsequent reads must follow the pointer — two page reads instead of one. Forwarding pointers accumulate silently; rebuild the heap with ALTER TABLE … REBUILD to remove them.")])
+
+# ================= DAY 2 — TUE =================
+d2 = day(2, "TUE", "Nonclustered Indexes: Covering, Filtered and Composite",
+"Design nonclustered indexes that eliminate key lookups, avoid write overhead, and answer the queries your application actually runs.",
+[("Nonclustered index (NCI)","A separate B+-tree ordered by the indexed key; leaf nodes point back to the base row via the clustered key (or RID for a heap)."),
+("Key lookup","When a nonclustered index seek cannot supply all columns the query needs, SQL Server follows the row locator back to the clustered index — one extra I/O per row."),
+("INCLUDE columns","Non-key columns added to the NCI leaf level only; they satisfy column projections without widening the B+-tree key, eliminating key lookups."),
+("Covering index","An NCI that provides every column a query needs (key + INCLUDE) so no key lookup is required."),
+("Filtered index","An NCI with a WHERE clause, indexing only the rows that match the predicate, reducing size and improving precision."),
+("Composite index","An NCI with two or more key columns; column order determines which queries it supports for seeks and range scans."),
+("Index selectivity","The fraction of rows that match a predicate; high selectivity (few rows) makes an NCI worth using."),
+("Write overhead","Every DML (INSERT/UPDATE/DELETE) must maintain all nonclustered indexes on the table — more indexes → slower writes."),
+("Unique NCI","Enforces uniqueness on the indexed column(s), also improves the optimizer's cardinality estimates."),
+("Missing index DMVs","<code>sys.dm_db_missing_index_details</code> and related views record columns the optimizer wished were indexed.")],
+["Lead with equality columns in composite keys, then range/ORDER BY columns, then cover with INCLUDE.",
+"Always index foreign-key columns on the child table to avoid table scans during JOIN and CASCADE operations.",
+"A filtered index on a sparse flag column (e.g. <code>status = 'Pending'</code>) can be much smaller than a full NCI.",
+"Keep the number of indexes to what queries actually need — each one costs writes on every DML.",
+"INCLUDE adds columns only to leaf level; they cannot be seeked on and must not be large (avoid LOB columns).",
+"Never add an index just because a DMV suggests it without checking its impact on write workloads."],
+f'''
+<h3>1. How a nonclustered index works</h3>
+<p>The NCI is a separate B+-tree. Its leaf nodes store the indexed key plus the <em>row locator</em> (the clustered key value, or RID for a heap). To answer a query that needs columns not in the NCI, the engine follows each row locator back to the clustered index — a <strong>key lookup</strong>.</p>
+{C(r"""
+-- NCI on orders.customer_id — supports seeks for a given customer
+CREATE NONCLUSTERED INDEX IX_orders_customer
+    ON sales.orders (customer_id);
+
+-- Finding customer 42's orders: NCI seek → key lookup for each row
+-- Execution plan shows: Index Seek + Key Lookup (Nested Loops)
+SELECT order_id, order_date, total_amount
+FROM sales.orders
+WHERE customer_id = 42;
+""", "nci_basic.sql", lang="sql")}
+
+<h3>2. Covering indexes with INCLUDE</h3>
+<p>Add every column the SELECT list needs to INCLUDE, eliminating the key lookup entirely.</p>
+{C(r"""
+-- Covering: seek finds customer's rows AND supplies order_date and total_amount
+CREATE NONCLUSTERED INDEX IX_orders_customer_covering
+    ON sales.orders (customer_id)
+    INCLUDE (order_date, total_amount);
+
+-- Now the plan shows only: Index Seek (no Key Lookup)
+SELECT order_id, order_date, total_amount
+FROM sales.orders
+WHERE customer_id = 42
+ORDER BY order_date DESC;
+
+-- The rule: key columns → WHERE / JOIN / ORDER BY; INCLUDE → SELECT list only
+""", "covering_index.sql", lang="sql")}
+{tip("SSMS and Azure Data Studio can generate covering-index suggestions right from an execution plan. Right-click the green 'Missing Index' banner text in the plan XML.")}
+
+<h3>3. Composite key column order</h3>
+<p>The first key column defines the sort of the entire NCI. Only predicates that match a <em>leftmost prefix</em> of the key can be seeked; the rest are scanned.</p>
+{table(["Index key","Query predicate","Access type"],[
+["(customer_id, order_date)","WHERE customer_id = 42","Seek — matches prefix"],
+["(customer_id, order_date)","WHERE customer_id = 42 AND order_date >= '2026-01-01'","Seek both columns"],
+["(customer_id, order_date)","WHERE order_date >= '2026-01-01'","Scan — no leading column"],
+["(order_date, customer_id)","WHERE order_date >= '2026-01-01'","Seek on order_date"],
+["(order_date, customer_id)","WHERE customer_id = 42","Scan — skips leading"]])}
+{C(r"""
+-- Supporting "orders for customer X in date range"
+CREATE NONCLUSTERED INDEX IX_orders_cust_date
+    ON sales.orders (customer_id, order_date)
+    INCLUDE (total_amount, status);
+
+-- Seek: customer_id = equality (high selectivity), order_date = range
+SELECT order_id, order_date, total_amount
+FROM sales.orders
+WHERE customer_id = 105
+  AND order_date BETWEEN '2026-01-01' AND '2026-06-30'
+ORDER BY order_date;
+""", "composite_index.sql", lang="sql")}
+
+<h3>4. Filtered indexes</h3>
+<p>A filtered index is an NCI with a WHERE clause. It indexes only the qualifying rows, so it is smaller and faster when the matching rows are a small fraction of the table.</p>
+{C(r"""
+-- Only pending orders (say 2 % of the table) need fast lookup for the dispatcher
+CREATE NONCLUSTERED INDEX IX_orders_pending
+    ON sales.orders (order_date, customer_id)
+    INCLUDE (total_amount)
+WHERE status = 'Pending';
+
+-- Only active products
+CREATE NONCLUSTERED INDEX IX_products_active_name
+    ON sales.products (product_name)
+WHERE is_active = 1;
+
+-- SQL Server uses a filtered index automatically when the query predicate is compatible
+SELECT order_id, customer_id, order_date, total_amount
+FROM sales.orders
+WHERE status = 'Pending'
+  AND order_date >= CAST(GETDATE() AS DATE);
+""", "filtered_index.sql", lang="sql")}
+{warn("Filtered indexes are only usable when the query's predicate is compatible with the filter. Parameterised queries need to have the matching literal or the index is skipped. Always verify with an actual execution plan.")}
+
+<h3>5. Indexing foreign keys</h3>
+<p>SQL Server does not automatically create indexes on foreign-key columns. Without them every referential integrity check and JOIN to the parent table scans the child table.</p>
+{C(r"""
+-- After defining FKs, add NCI on each FK column
+CREATE NONCLUSTERED INDEX IX_orders_customer_id
+    ON sales.orders (customer_id);
+
+CREATE NONCLUSTERED INDEX IX_order_lines_order_id
+    ON sales.order_lines (order_id);
+
+CREATE NONCLUSTERED INDEX IX_order_lines_product_id
+    ON sales.order_lines (product_id);
+
+-- Without IX_order_lines_order_id, deleting a customer cascades with a table scan
+-- on order_lines for every deleted order — catastrophic at 1 M rows
+""", "fk_indexes.sql", lang="sql")}
+
+<h3>6. Write overhead and index count</h3>
+<p>Every INSERT, UPDATE, or DELETE on the base table must maintain each nonclustered index on it.
+An UPDATE that changes an indexed column rewrites the NCI entry: delete old key, insert new key.</p>
+{table(["DML operation","Cost per NCI"],[
+["INSERT","Insert one row into every NCI (may cause NCI page split)"],
+["DELETE","Delete one row from every NCI"],
+["UPDATE indexed column","Delete old key + insert new key in affected NCIs"],
+["UPDATE non-indexed column","No NCI change (but INCLUDE columns must be updated)"]])}
+{C(r"""
+-- View all indexes on orders with their fragmentation and usage
+SELECT
+    i.name,
+    i.type_desc,
+    ius.user_seeks,
+    ius.user_scans,
+    ius.user_lookups,
+    ius.user_updates,       -- how many times this index was written
+    ps.avg_fragmentation_in_percent
+FROM sys.indexes i
+LEFT JOIN sys.dm_db_index_usage_stats ius
+    ON  ius.object_id = i.object_id
+    AND ius.index_id  = i.index_id
+    AND ius.database_id = DB_ID()
+LEFT JOIN sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID('sales.orders'),
+    NULL, NULL, 'LIMITED') ps
+    ON  ps.object_id = i.object_id
+    AND ps.index_id  = i.index_id
+WHERE i.object_id = OBJECT_ID('sales.orders');
+-- user_updates >> user_seeks → the index costs more than it helps → consider dropping
+""", "index_usage.sql", lang="sql")}
+''',
+["Adding too many indexes — a table with 15 NCIs can be slower on INSERT than a table with 3.",
+"Leading with a low-selectivity column (e.g. <code>status</code> with only 3 values) — consider a filtered index instead.",
+"Using INCLUDE for key columns that need to be seeked — INCLUDE columns cannot be used in seek predicates.",
+"Not indexing FK columns — a DELETE on the parent table will scan every child table.",
+"Dropping an index immediately when a DMV suggests it is unused — usage stats reset on service restart."],
+("40 min", [
+"On the sales schema: add a covering index for the query 'all order lines for a given order, with product_name and qty'. Verify no key lookup in the plan.",
+"Create a filtered index for <code>orders</code> where <code>status = 'Cancelled'</code>. Confirm it is used by a compatible query.",
+"Check <code>sys.dm_db_index_usage_stats</code> for <code>order_lines</code> and identify any indexes with high writes but zero seeks."
+]),
+[("What is a key lookup?", "When a nonclustered index seek finds matching rows but the query needs columns not in the NCI, SQL Server follows each row's row-locator back to the clustered index (or heap) for the missing columns. Each lookup is an extra random I/O."),
+("What columns go in INCLUDE?", "Columns that appear only in the SELECT list but not in WHERE, JOIN, or ORDER BY. INCLUDE columns are stored only at the NCI leaf level, so they cannot be seeked but can satisfy column projections without widening the B+-tree."),
+("Why index foreign-key columns?", "SQL Server's referential integrity checks scan the child table on every INSERT/DELETE on the parent if there is no index on the FK column. Without an index, DELETE from customers causes a full scan of orders for each deleted row.")],
+[("Basic","What is a covering index?","A nonclustered index that contains all the columns a specific query needs — indexed key column(s) for the seek and additional columns in INCLUDE for the SELECT list — so the query engine never needs to follow a row locator back to the clustered index. Result: no key lookup, fewer I/Os."),
+("Basic","What is the difference between a key column and an INCLUDE column in an NCI?","Key columns form the B+-tree key: they determine the index order and can be used in seek predicates, range scans, and ORDER BY. INCLUDE columns are stored only at the leaf level: they satisfy SELECT-list column needs but cannot be seeked on and don't affect the index sort."),
+("Intermediate","How do you pick the column order in a composite NCI?","Equality predicates first (highest selectivity first within equality), then range predicates, then ORDER BY columns. This maximises the number of queries that can seek the entire prefix before scanning the range portion."),
+("Intermediate","When is a filtered index better than a full NCI?","When the queries that need the index always filter on a small, well-defined subset of rows (e.g. status = 'Pending' covering 1 % of the table). The filtered NCI is smaller, cheaper to maintain, and more selective than a full index on the same column."),
+("Intermediate","How does the optimizer decide when to use an NCI vs a clustered index scan?","It compares the estimated cost: for a selective predicate the NCI seek + key lookup is cheaper than a scan; for low-selectivity predicates the scan is cheaper (tipping point is roughly > 1 % of rows for random I/O storage). It also considers statistics, parallelism and covering."),
+("Advanced","Explain the write amplification problem with many nonclustered indexes.","Every DML on the base table is replicated into each NCI: an INSERT generates N index-row inserts, an UPDATE to M indexed columns causes M delete+insert pairs across the NCIs. On a table with 10 NCIs, one base-table INSERT writes 11 B+-tree rows. This is called write amplification. Measure it with user_updates vs user_seeks in sys.dm_db_index_usage_stats.")])
+
+# ================= DAY 3 — WED =================
+d3 = day(3, "WED", "Reading Execution Plans and I/O Statistics",
+"Interpret estimated and actual execution plans, decode the key operators, read SET STATISTICS IO/TIME output, and diagnose the classic key-lookup pattern.",
+[("Estimated plan","A query plan generated from statistics without executing the query. Useful for quick analysis; may differ from reality if statistics are stale."),
+("Actual plan","The plan captured after the query runs, with actual row counts and execution times per operator. The definitive diagnostic tool."),
+("Table Scan","Reads every page in a heap. Appears as a warning in plans — almost always signals a missing index."),
+("Clustered Index Scan","Reads all leaf pages of the clustered index from left to right. Acceptable for large-range queries; a warning for OLTP point lookups."),
+("Index Seek","Navigates the B+-tree to find only the qualifying rows. The goal for selective OLTP queries."),
+("Key Lookup","A per-row trip from an NCI leaf back to the clustered index to fetch non-covered columns. High cost when row count is large."),
+("Nested Loops Join","For each row of the outer input, seeks the inner input. Efficient when outer is small."),
+("Hash Match Join","Builds a hash table from the smaller input, probes with the larger. Handles large unsorted inputs."),
+("Merge Join","Advances two pre-sorted inputs in parallel. Very fast when both sides are ordered; requires a sort if they're not."),
+("Sort operator","Spills to tempdb when memory is insufficient. Watch for a warning icon on this operator."),
+("Logical reads","Pages read from the buffer pool (cache), reported by SET STATISTICS IO. The primary I/O cost metric."),
+("Physical reads","Pages read from disk because they were not in the buffer pool. Only present on a cold cache.")],
+["Cost percentages in estimated plans are estimates — always use actual plans for diagnosis.",
+"Thick arrows between operators = many rows flowing. Fat arrows after a seek usually mean the predicate is non-SARGable.",
+"A key lookup in Nested Loops with thousands of rows is the clearest indicator that an INCLUDE column is missing.",
+"SET STATISTICS IO ON measures logical reads per table, which is consistent regardless of cache state.",
+"Physical reads vanish after the first run; logical reads are the repeatable, meaningful metric.",
+"The Sort operator in a plan often means you're missing an ordered index — or ORDER BY is avoidable."],
+f'''
+<h3>1. Estimated vs actual plan — when to use each</h3>
+{C(r"""
+-- Estimated plan: press Ctrl+L in SSMS or click Display Estimated Execution Plan
+-- (The query does NOT run; statistics are used to estimate row counts)
+
+-- Actual plan: press Ctrl+M then run the query, or add this hint
+SET STATISTICS PROFILE ON;
+
+-- Always look at the actual plan for:
+-- 1. Actual vs estimated rows — large differences mean stale statistics
+-- 2. Number of executions of a Nested Loops inner side
+-- 3. Memory grants (over- or under-estimated)
+SET STATISTICS PROFILE OFF;
+""", "plan_switches.sql", lang="sql")}
+
+<h3>2. Reading operators — icons and costs</h3>
+{table(["Operator","Icon meaning","Good sign?","Common cause"],[
+["Table Scan","Book with no key","No","Heap with no suitable NCI"],
+["Clustered Index Scan","Book with key","Depends","Missing NCI or intentional full read"],
+["Index Seek","Book with lightning","Yes (selective)","Good NCI in use"],
+["Key Lookup","Two books + arrow","No (if many rows)","NCI missing INCLUDE columns"],
+["Nested Loops","Two circles, N:1","Yes (small outer)","Good for OLTP joins"],
+["Hash Match","Hash symbol","OK (large sets)","Large unsorted joins, no order"],
+["Merge Join","Merge arrows","Yes (sorted)","Both sides arrive ordered"],
+["Sort","Funnel","Warning if spills","Missing ordered index"]])}
+
+<h3>3. SET STATISTICS IO and TIME</h3>
+{C(r"""
+SET STATISTICS IO  ON;
+SET STATISTICS TIME ON;
+
+SELECT c.customer_name, o.order_date, SUM(ol.qty * ol.unit_price) AS order_total
+FROM sales.orders o
+JOIN sales.customers  c  ON c.customer_id  = o.customer_id
+JOIN sales.order_lines ol ON ol.order_id    = o.order_id
+WHERE o.order_date >= '2026-01-01'
+GROUP BY c.customer_name, o.order_date
+ORDER BY o.order_date;
+
+SET STATISTICS TIME OFF;
+SET STATISTICS IO  OFF;
+""", "stats_io.sql", lang="sql")}
+{C(r"""
+-- Example output (Messages tab in SSMS)
+Table 'order_lines'. Scan count 9, logical reads 48312, physical reads 0, ...
+Table 'orders'.      Scan count 1, logical reads 1204,  physical reads 0, ...
+Table 'customers'.   Scan count 0, logical reads 3,     physical reads 0, ...
+
+ SQL Server Execution Times:
+   CPU time = 312 ms,  elapsed time = 487 ms.
+""", "stats_io_output.txt", lang="text")}
+<p>The <code>order_lines</code> read of <strong>48,312 logical pages</strong> (≈ 378 MB!) is the target for optimisation today.
+<code>Scan count 9</code> means the inner side of a Nested Loops join was executed 9 times — once per distinct order.</p>
+
+<h3>4. The key-lookup story</h3>
+<p>This is the most common plan improvement in OLTP workloads. Follow this three-step diagnosis:</p>
+{C(r"""
+-- STEP 1: Run with actual plan. Spot: Index Seek on IX_orders_customer → Key Lookup (Nested Loops)
+-- The plan tooltip shows: "Output list" of the Key Lookup — these are the missing INCLUDE columns
+
+-- STEP 2: Note which columns the Key Lookup fetches (order_date, total_amount, status in this example)
+
+-- STEP 3: Add them to INCLUDE and re-run
+
+-- BEFORE (Key Lookup present)
+CREATE NONCLUSTERED INDEX IX_orders_customer
+    ON sales.orders (customer_id);
+
+-- AFTER (covering — Key Lookup eliminated)
+DROP INDEX IX_orders_customer ON sales.orders;
+CREATE NONCLUSTERED INDEX IX_orders_customer_covering
+    ON sales.orders (customer_id)
+    INCLUDE (order_date, total_amount, status);
+""", "key_lookup_fix.sql", lang="sql")}
+{C(r"""
+-- BEFORE stats
+Table 'orders'. Scan count 1, logical reads 4821, ...   -- key lookup scanned entire CI for many rows
+
+-- AFTER stats
+Table 'orders'. Scan count 1, logical reads 47, ...     -- seek only, no lookup
+-- 4821 → 47 logical reads: ~100× improvement
+""", "before_after_io.txt", lang="text")}
+
+<h3>5. Interpreting row count estimates</h3>
+{C(r"""
+-- When actual rows >> estimated rows, statistics are stale
+-- Check the last statistics update:
+SELECT
+    s.name   AS stat_name,
+    sp.last_updated,
+    sp.rows,
+    sp.rows_sampled,
+    sp.modification_counter
+FROM sys.stats s
+CROSS APPLY sys.dm_db_stats_properties(s.object_id, s.stats_id) sp
+WHERE s.object_id = OBJECT_ID('sales.orders')
+ORDER BY sp.last_updated DESC;
+
+-- Manually update when you've loaded bulk data:
+UPDATE STATISTICS sales.orders WITH FULLSCAN;
+UPDATE STATISTICS sales.order_lines WITH FULLSCAN;
+""", "stats_freshness.sql", lang="sql")}
+{tip("After loading 1 M rows on Saturday, always run <code>UPDATE STATISTICS … WITH FULLSCAN</code> before benchmarking. Stale stats produce misleading estimated plans and may cause the optimizer to choose a scan over a seek.")}
+
+<h3>6. Useful plan-reading DMVs</h3>
+{C(r"""
+-- Last executed plan for a query (cached)
+SELECT TOP 10
+    qs.execution_count,
+    qs.total_logical_reads / qs.execution_count   AS avg_logical_reads,
+    qs.total_elapsed_time  / qs.execution_count   AS avg_elapsed_us,
+    SUBSTRING(st.text, (qs.statement_start_offset/2)+1,
+        ((CASE qs.statement_end_offset
+            WHEN -1 THEN DATALENGTH(st.text)
+            ELSE qs.statement_end_offset END
+          - qs.statement_start_offset)/2)+1)       AS query_text
+FROM sys.dm_exec_query_stats qs
+CROSS APPLY sys.dm_exec_sql_text(qs.sql_handle) st
+ORDER BY avg_logical_reads DESC;
+""", "plan_cache_top.sql", lang="sql")}
+''',
+["Reading only the estimated plan and not running the query — actual row counts reveal statistics problems.",
+"Ignoring thick arrows: a fat arrow into a Hash Match usually means a missing index inflated the row count.",
+"Fixing a Key Lookup by adding the missing column to the NCI key instead of to INCLUDE — widens the B+-tree unnecessarily.",
+"Running STATISTICS IO and looking only at physical reads — logical reads are the consistent metric.",
+"Dropping an index as 'unused' based on the plan cache when the cache was just cleared."],
+("40 min", [
+"Run the multi-table JOIN query above with STATISTICS IO. Record logical reads per table.",
+"Open the actual execution plan. Find the operator with the highest cost %. Hover to read its tooltip.",
+"Identify a Key Lookup in the plan. Add the missing INCLUDE columns and re-run. Record the before/after logical reads."
+]),
+[("What is the difference between logical and physical reads?", "Logical reads are pages read from the buffer pool (in-memory cache). Physical reads are page reads from disk because the page was not cached. Logical reads are the repeatable performance metric; physical reads vanish after the first run as pages warm in cache."),
+("How do you spot a stale statistics problem in an execution plan?", "Compare Estimated Rows vs Actual Rows on each operator. A large discrepancy (10× or more) means the optimizer worked from outdated histogram data, potentially choosing a suboptimal join or access method."),
+("What does Scan count mean in STATISTICS IO?", "The number of times the scan or seek was initiated on that table. A Scan count greater than 1 usually means the table was accessed multiple times as the inner side of a Nested Loops join — once per row of the outer input.")],
+[("Basic","How do you display an actual execution plan in SSMS?","Press Ctrl+M (Include Actual Execution Plan) before running the query, or run the query and click the Execution Plan tab. The plan shows actual row counts, actual CPU and I/O per operator, and any warnings such as missing indexes or memory spills."),
+("Basic","What does a Key Lookup operator mean and why is it expensive?","It means the nonclustered index found matching rows but cannot supply all required columns, so for each row it navigates the clustered index to fetch the missing columns. With thousands of rows this causes thousands of random I/Os. Fix by adding the missing columns to INCLUDE on the NCI."),
+("Intermediate","When would you choose a Merge Join over a Hash Match?","Merge Join is preferred when both inputs arrive pre-sorted on the join key (e.g. via index seeks), because it advances both pointers in O(n+m) with minimal memory. Hash Match is preferred for large, unsorted inputs: it builds a hash table on the smaller side and probes it. If sorted order is available Merge is usually faster."),
+("Intermediate","How do you use SET STATISTICS IO to compare two query versions?","Run the first query with SET STATISTICS IO ON, note the logical reads per table. Apply your change (add an index, rewrite a predicate). Run the second query in the same session and compare. Lower logical reads means fewer page reads from the buffer pool, which is the primary I/O cost driver."),
+("Intermediate","What can cause Nested Loops to have a very high inner-side execution count?","A poorly selective outer-input predicate combined with a Nested Loops join where the inner side does a seek per outer row. If the outer returns 50,000 rows and the inner does a key lookup on each, that's 50,000 key lookups. The fix is usually a covering index on the NCI or an alternative join strategy (Hash Match)."),
+("Advanced","What is plan caching and when does it lead to poor performance?","SQL Server caches compiled query plans in the plan cache to avoid recompilation. If the first execution used parameters that produced an unrepresentative plan (e.g. a very selective value that made the optimizer choose an index seek), subsequent executions with different parameters may reuse that plan even when a scan would be faster. This is parameter sniffing — covered in detail on Thursday.")])
+
+# ================= DAY 4 — THU =================
+d4 = day(4, "THU", "Statistics, Parameter Sniffing and SARGability",
+"Understand how the query optimizer uses statistics to estimate row counts, what happens when it guesses wrong, how to detect and fix parameter sniffing, and how to write predicates the optimizer can seek on.",
+[("Statistics","Histograms and density vectors stored per column (or index) that the optimizer uses to estimate row counts for predicates."),
+("Histogram","Up to 200 steps showing the distribution of column values: range, density and row count per bucket."),
+("Cardinality estimate","The optimizer's prediction of how many rows a predicate will return. Wrong estimates produce wrong plans."),
+("Parameter sniffing","SQL Server compiles a plan for the first parameter value used for a query and caches it; later executions with different parameters reuse that plan, which may be badly wrong for them."),
+("OPTION(RECOMPILE)","A query hint that forces a fresh compilation for every execution, using the current parameter values. Eliminates sniffing at the cost of CPU for compilation."),
+("OPTION(OPTIMIZE FOR (@p = value))","Hint to compile the plan as if @p equals a specific value, typically a representative middle value."),
+("OPTION(OPTIMIZE FOR UNKNOWN)","Compile using average statistics instead of the sniffed value. Often a good default fix."),
+("SARGable predicate","Search ARGument-able: a predicate the optimizer can resolve with an index seek (column compared to a value)."),
+("Non-SARGable predicate","A predicate that prevents an index seek: a function on the indexed column, a leading wildcard, or an implicit type conversion."),
+("Implicit conversion","When a column's data type differs from the value compared against it, SQL Server silently converts every row value, forcing a scan."),
+("Query Store","A per-database feature (SQL Server 2016+) that persists query plans, run-time stats and regressions across restarts.")],
+["Statistics are updated automatically at 20 % modification threshold by default (500 rows on small tables); after bulk loads, run UPDATE STATISTICS.","A plan that works for Ravi's 2 orders might be catastrophic for Meena's 50,000 orders if sniffed on Ravi first.","OPTION(RECOMPILE) is the strongest fix but adds CPU overhead; use it on queries whose optimal plan truly varies by parameter.","Wrapping an indexed column in a function (YEAR(order_date) = 2026) always causes a scan; rewrite as a range predicate.","Implicit conversion from NVARCHAR parameter to VARCHAR column is the most common invisible performance killer.","Query Store lets you force a good plan in production without changing application code."],
+f'''
+<h3>1. How statistics work</h3>
+{C(r"""
+-- View the histogram for customer_id on the orders index
+DBCC SHOW_STATISTICS ('sales.orders', 'IX_orders_cust_date');
+-- Output includes:
+-- Header: rows, rows sampled, steps, density, avg_key_length
+-- Density vector: per-column density (1/distinct values)
+-- Histogram: RANGE_HI_KEY, RANGE_ROWS, EQ_ROWS, DISTINCT_RANGE_ROWS, AVG_RANGE_ROWS
+
+-- Manually update with full scan after a large data load
+UPDATE STATISTICS sales.orders WITH FULLSCAN;
+UPDATE STATISTICS sales.order_lines WITH FULLSCAN;
+
+-- Auto-update threshold: 20 % of rows changed (or 500 on small tables)
+-- Check auto-update setting
+SELECT name, is_auto_update_stats_on
+FROM sys.databases WHERE name = DB_NAME();
+""", "statistics.sql", lang="sql")}
+
+<h3>2. Parameter sniffing — demo and diagnosis</h3>
+{C(r"""
+-- Imagine: customer 1 has 2 orders; customer 999 has 500,000 orders.
+-- A proc compiled for customer 1 uses an Index Seek (great for 2 rows).
+-- When customer 999 runs it, the same seek plan fetches 500,000 rows
+-- via 500,000 key lookups — a catastrophic plan.
+
+CREATE PROCEDURE sales.GetOrdersByCustomer
+    @customer_id INT
+AS
+    SELECT o.order_id, o.order_date, o.total_amount
+    FROM sales.orders o
+    WHERE o.customer_id = @customer_id
+    ORDER BY o.order_date DESC;
+
+-- Sniff happens: first call with @customer_id = 1 compiles and caches the plan.
+EXEC sales.GetOrdersByCustomer @customer_id = 1;      -- plan cached for customer 1
+
+-- Later call with a high-volume customer reuses the same (wrong) plan:
+EXEC sales.GetOrdersByCustomer @customer_id = 999;    -- seeks 500K rows — slow!
+
+-- Confirm: the cached plan is for customer 1 values
+SELECT
+    qs.execution_count,
+    qs.total_logical_reads,
+    qp.query_plan
+FROM sys.dm_exec_procedure_stats ps
+CROSS APPLY sys.dm_exec_query_plan(ps.plan_handle) qp
+CROSS APPLY sys.dm_exec_sql_text(ps.sql_handle) st
+WHERE st.text LIKE '%GetOrdersByCustomer%';
+""", "sniffing_demo.sql", lang="sql")}
+
+<h3>3. Fixing parameter sniffing</h3>
+{C(r"""
+-- Fix 1: OPTION(RECOMPILE) — recompile every time, use the actual parameter value
+-- Use when: plan varies dramatically by parameter, compilation cost is acceptable
+CREATE OR ALTER PROCEDURE sales.GetOrdersByCustomer_v2
+    @customer_id INT
+AS
+    SELECT o.order_id, o.order_date, o.total_amount
+    FROM sales.orders o
+    WHERE o.customer_id = @customer_id
+    ORDER BY o.order_date DESC
+    OPTION (RECOMPILE);
+
+-- Fix 2: OPTIMIZE FOR UNKNOWN — use average statistics, ignore sniffed value
+-- Use when: parameters span a wide range and no single value is "typical"
+CREATE OR ALTER PROCEDURE sales.GetOrdersByCustomer_v3
+    @customer_id INT
+AS
+    SELECT o.order_id, o.order_date, o.total_amount
+    FROM sales.orders o
+    WHERE o.customer_id = @customer_id
+    ORDER BY o.order_date DESC
+    OPTION (OPTIMIZE FOR (@customer_id UNKNOWN));
+
+-- Fix 3: OPTIMIZE FOR a known representative value
+-- Use when: most executions are for a typical customer; outliers can be slow
+    OPTION (OPTIMIZE FOR (@customer_id = 500));
+
+-- Fix 4: Local variable trick (not recommended — loses statistics entirely)
+-- DECLARE @local_id INT = @customer_id; ... WHERE customer_id = @local_id
+-- Avoid: degrades to a constant estimate (usually 30 % selectivity) — unpredictable
+""", "sniffing_fixes.sql", lang="sql")}
+
+<h3>4. SARGable predicates</h3>
+<p>A predicate is SARGable when SQL Server can translate it to a seek range on the index. The rule: the indexed column must be on its own on one side of the comparison.</p>
+{table(["Non-SARGable (causes scan)","SARGable rewrite"],[
+["<code>WHERE YEAR(order_date) = 2026</code>","<code>WHERE order_date &gt;= '2026-01-01' AND order_date &lt; '2027-01-01'</code>"],
+["<code>WHERE LEFT(product_code, 3) = 'SKU'</code>","<code>WHERE product_code LIKE 'SKU%'</code>"],
+["<code>WHERE product_name LIKE '%Keyboard%'</code>","Full-text search (<code>CONTAINS</code>) or accept the scan"],
+["<code>WHERE CAST(order_id AS VARCHAR) = '12345'</code>","<code>WHERE order_id = 12345</code>"],
+["<code>WHERE qty * unit_price &gt; 1000</code>","Add a computed column <code>line_total AS qty * unit_price</code> and index it"]])}
+{C(r"""
+-- Implicit conversion — the silent killer
+-- Column definition: customer_code VARCHAR(20)
+-- Application sends: WHERE customer_code = N'C001'  (NVARCHAR parameter)
+-- SQL Server converts every VARCHAR row to NVARCHAR to compare → full table scan
+
+-- Check for implicit conversion warnings in an actual plan:
+-- Look for a yellow ! on the Index Scan; tooltip says "Type conversion in expression
+-- (CONVERT_IMPLICIT) may affect "CardinalityEstimate" in query plan choice"
+
+-- Fix: match parameter type to column type
+-- In C#: use SqlDbType.VarChar (not NVarChar) for VARCHAR columns
+-- In T-SQL: WHERE customer_code = 'C001'  (not N'C001')
+
+-- SARGable date range (most common rewrite)
+DECLARE @year INT = 2026;
+-- ❌ Non-SARGable
+SELECT * FROM sales.orders WHERE YEAR(order_date) = @year;
+-- ✓ SARGable
+SELECT * FROM sales.orders
+WHERE order_date >= DATEFROMPARTS(@year, 1, 1)
+  AND order_date <  DATEFROMPARTS(@year + 1, 1, 1);
+""", "sargable.sql", lang="sql")}
+{warn("Implicit conversions from NVARCHAR to VARCHAR are the most common hidden performance issue in .NET applications because SqlClient defaults to NVARCHAR for string parameters. Always set <code>SqlDbType.VarChar</code> (or the equivalent in Dapper/EF Core) when the column is VARCHAR.", "Watch out")}
+
+<h3>5. Query Store awareness</h3>
+{C(r"""
+-- Enable Query Store (SQL Server 2016+; on by default in Azure SQL)
+ALTER DATABASE SalesDb
+    SET QUERY_STORE = ON
+    WITH (OPERATION_MODE = READ_WRITE,
+          MAX_STORAGE_SIZE_MB = 500,
+          QUERY_CAPTURE_MODE = AUTO);
+
+-- Find regressed queries (plan changed and performance got worse)
+SELECT TOP 10
+    qsq.query_id,
+    qsq.query_hash,
+    qsrs.avg_duration,
+    qsrs.avg_logical_io_reads,
+    qsp.plan_id,
+    qst.query_sql_text
+FROM sys.query_store_query qsq
+JOIN sys.query_store_query_text  qst  ON qst.query_text_id  = qsq.query_text_id
+JOIN sys.query_store_plan        qsp  ON qsp.query_id       = qsq.query_id
+JOIN sys.query_store_runtime_stats qsrs ON qsrs.plan_id     = qsp.plan_id
+ORDER BY qsrs.avg_logical_io_reads DESC;
+
+-- Force a known-good plan (no code change required)
+EXEC sys.sp_query_store_force_plan @query_id = 42, @plan_id = 7;
+""", "query_store.sql", lang="sql")}
+{tip("In SSMS: Right-click the database → Reports → Query Store → Regressed Queries. This is the fastest way to spot a plan regression after a SQL Server upgrade or statistics update.")}
+''',
+["Applying OPTION(RECOMPILE) globally to all stored procedures — compilation overhead will spike under load.","Fixing parameter sniffing with the local-variable trick — it trades a sniffing problem for no statistics at all.","Writing YEAR(order_date) instead of a date range — a function on a column always forces a scan.","Sending NVARCHAR parameters for VARCHAR columns from .NET — causes implicit conversion and a scan.","Ignoring Query Store after a SQL Server version upgrade — plan regressions are common and Query Store catches them automatically."],
+("40 min", [
+"Write a stored procedure that selects orders by customer. Run it for a low-volume and a high-volume customer. Compare plans. Add OPTION(OPTIMIZE FOR UNKNOWN) and compare again.",
+"Write three queries using YEAR(order_date), CAST on the PK, and LIKE '%keyword%'. Check each plan for a scan. Rewrite each to be SARGable and confirm the plan changes to a seek.",
+"Enable Query Store on your SalesDb. Run several queries, then query sys.query_store_runtime_stats to find the one with the highest avg logical reads."
+]),
+[("What is parameter sniffing?", "SQL Server compiles a stored procedure or parameterised query using the first parameter value it sees, then caches that plan. Subsequent calls with different parameters reuse the cached plan, which may be optimal for the original value but very slow for others."),
+("What makes a predicate non-SARGable?", "Any transformation applied to the indexed column side of the predicate: a function call (YEAR(), LEFT(), CAST()), a leading wildcard in LIKE, or an implicit type conversion. These force SQL Server to evaluate the expression for every row, preventing an index seek."),
+("What does OPTION(RECOMPILE) do?", "It discards the cached plan after each execution and recompiles the query fresh using the actual runtime parameter values. This eliminates parameter sniffing entirely at the cost of CPU for recompilation on every run. Use it when the optimal plan varies significantly by parameter.")],
+[("Basic","What are SQL Server statistics?","Per-column (and per-index) metadata that describes the distribution of values in a column: a histogram of up to 200 steps showing range, row counts and density. The query optimizer uses them to estimate how many rows a predicate will return, which drives join type, index choice, and parallelism decisions."),
+("Basic","What is a SARGable predicate?","A predicate the optimizer can resolve with an index seek — the indexed column appears on its own on one side of the comparison operator. Non-SARGable predicates (functions on the column, leading wildcards, implicit type conversions) force a row-by-row evaluation and prevent seeks."),
+("Intermediate","How do you diagnose a parameter-sniffing problem?","Look for large discrepancies between Estimated Rows and Actual Rows in the actual execution plan. Check sys.dm_exec_procedure_stats for high total_logical_reads relative to execution_count. Use DBCC FREEPROCCACHE to clear the cache on a test instance and re-run with the high-volume parameter to see the optimal plan."),
+("Intermediate","Compare OPTION(RECOMPILE) vs OPTION(OPTIMIZE FOR UNKNOWN).","RECOMPILE recompiles the query every time, using the actual runtime value — always gets the optimal plan but adds CPU cost per execution. OPTIMIZE FOR UNKNOWN uses average-density statistics instead of the sniffed value — compiled once, based on typical data distribution, slightly suboptimal for extremes but no recompile cost."),
+("Intermediate","Why does sending NVARCHAR from .NET for a VARCHAR column cause a scan?","SQL Server's implicit conversion rules require that the VARCHAR column values be converted to NVARCHAR for comparison. This conversion happens on every row of the table, preventing the index seek and causing a full scan. Fix by setting SqlDbType.VarChar on the SqlParameter, or configuring Dapper/EF Core to send the correct type."),
+("Advanced","How does Query Store help with plan regressions after a SQL Server upgrade?","Query Store persists query plans, run-time statistics and their history across server restarts and upgrades. After an upgrade the new optimizer may choose a different (worse) plan. Query Store's Regressed Queries report identifies these automatically; you can force the old good plan with sp_query_store_force_plan without touching application code — a production-safe fix.")])
+
+# ================= DAY 5 — FRI =================
+d5 = day(5, "FRI", "Backups, Security and Watching ORM-generated SQL",
+"Set up a recoverable database with correct backup strategy, apply least-privilege security, and use SQL Server tooling to inspect and tune the SQL your ORM generates.",
+[("Full backup","A copy of the entire database at a point in time. The baseline for any restore."),
+("Differential backup","Records all pages changed since the last full backup. Faster to take than a full; a restore needs: last full + last diff."),
+("Transaction log backup","Backs up the active portion of the transaction log, allowing point-in-time recovery. Requires FULL or BULK_LOGGED recovery model."),
+("Recovery model","Controls what SQL Server logs and how much data can be recovered. SIMPLE: log truncated at checkpoint (no log backups possible). FULL: everything logged; supports point-in-time restore."),
+("RESTORE DATABASE","Restores data files from a backup chain; use WITH NORECOVERY for multi-step restores, WITH RECOVERY for the final step."),
+("Login","A server-level security principal (SQL Server auth or Windows/Azure AD). Cannot access databases directly."),
+("User","A database-level principal mapped to a login. Owns objects and receives permissions within the database."),
+("Role","A named set of permissions. Fixed server roles (<code>sysadmin</code>, <code>dbcreator</code>) and fixed/user-defined database roles (<code>db_datareader</code>)."),
+("GRANT / DENY / REVOKE","GRANT gives a permission; DENY explicitly blocks it (overrides GRANT); REVOKE removes a previous GRANT or DENY."),
+("Least privilege","Give every login/user/application only the minimum permissions required for their job."),
+("Schema","A namespace for database objects (<code>sales.orders</code>). Permissions can be granted at schema level.")],
+["SIMPLE recovery model truncates the log at every checkpoint — no point-in-time restore is possible.",
+"The backup chain is: last full → last differential (optional) → all log backups since the diff (or full).",
+"Never connect an application with a <code>sysadmin</code> login; create a dedicated application user with minimal permissions.",
+"DENY overrides GRANT even if the user is in a role that has GRANT — use it deliberately, rarely.",
+"The <code>public</code> role every database user inherits should have no extra permissions.",
+"ORM-generated SQL can be excellent or catastrophic; always check with SQL Server Profiler, Extended Events or EF Core logging."],
+f'''
+<h3>1. Recovery models</h3>
+{table(["","SIMPLE","FULL","BULK_LOGGED"],[
+["Log truncation","At checkpoint","Only after log backup","At log backup (bulk ops minimally logged)"],
+["Point-in-time restore","No","Yes","Only if no bulk ops in interval"],
+["Log backup needed","No","Yes","Yes"],
+["Use for","Dev/test, DW loads","OLTP production","Bulk load windows"]])}
+{C(r"""
+-- Check and change recovery model
+SELECT name, recovery_model_desc FROM sys.databases WHERE name = DB_NAME();
+
+ALTER DATABASE SalesDb SET RECOVERY FULL;
+
+-- After changing to FULL, take an immediate full backup to start the log chain
+BACKUP DATABASE SalesDb
+    TO DISK = '/var/opt/mssql/backups/SalesDb_full_20260101.bak'
+    WITH COMPRESSION, STATS = 10;
+""", "recovery_model.sql", lang="sql")}
+
+<h3>2. Backup types and schedule</h3>
+{C(r"""
+-- Full backup (Sunday night)
+BACKUP DATABASE SalesDb
+    TO DISK = '/var/opt/mssql/backups/SalesDb_full.bak'
+    WITH COMPRESSION, CHECKSUM, STATS = 10;
+
+-- Differential backup (every night Mon–Sat)
+BACKUP DATABASE SalesDb
+    TO DISK = '/var/opt/mssql/backups/SalesDb_diff.bak'
+    WITH DIFFERENTIAL, COMPRESSION, CHECKSUM, STATS = 10;
+
+-- Log backup (every 15 minutes)
+BACKUP LOG SalesDb
+    TO DISK = '/var/opt/mssql/backups/SalesDb_log_202601011600.bak'
+    WITH COMPRESSION, CHECKSUM;
+
+-- Restore sequence (restoring to 16:37 today):
+-- 1. Restore full with NORECOVERY (brings DB to restoring state)
+RESTORE DATABASE SalesDb
+    FROM DISK = '/var/opt/mssql/backups/SalesDb_full.bak'
+    WITH NORECOVERY;
+
+-- 2. Restore last differential with NORECOVERY
+RESTORE DATABASE SalesDb
+    FROM DISK = '/var/opt/mssql/backups/SalesDb_diff.bak'
+    WITH NORECOVERY;
+
+-- 3. Restore each log backup in sequence, last one WITH RECOVERY and STOPAT
+RESTORE LOG SalesDb
+    FROM DISK = '/var/opt/mssql/backups/SalesDb_log_202601011630.bak'
+    WITH RECOVERY, STOPAT = '2026-01-01T16:37:00';
+""", "backup_restore.sql", lang="sql")}
+{warn("Never test your backup strategy for the first time during an incident. After every new backup configuration, do a test restore to a different database name and verify the data.")}
+
+<h3>3. Logins, users and roles</h3>
+{C(r"""
+-- Server level: create a SQL Server login
+CREATE LOGIN sales_app_login
+    WITH PASSWORD = 'StrongP@ss_2026!',
+         CHECK_POLICY = ON,
+         CHECK_EXPIRATION = ON;
+
+-- Database level: create a user mapped to the login
+USE SalesDb;
+CREATE USER sales_app FOR LOGIN sales_app_login;
+
+-- Assign to a role (least privilege: read + execute procs only)
+ALTER ROLE db_datareader ADD MEMBER sales_app;
+ALTER ROLE db_datawriter  ADD MEMBER sales_app;  -- if the app writes
+
+-- Grant EXECUTE on stored procedures instead of table permissions
+GRANT EXECUTE ON SCHEMA::sales TO sales_app;
+
+-- Explicitly deny dangerous permissions
+DENY SELECT ON sales.customers TO sales_app;    -- app doesn't need this table
+
+-- Create a reporting read-only user
+CREATE LOGIN rpt_login WITH PASSWORD = 'Report2026!';
+CREATE USER  rpt_user  FOR LOGIN rpt_login;
+ALTER ROLE   db_datareader ADD MEMBER rpt_user;
+DENY INSERT, UPDATE, DELETE ON SCHEMA::sales TO rpt_user;
+""", "security.sql", lang="sql")}
+{table(["Fixed DB role","Permissions"],[
+["db_owner","Full control of the database — avoid for applications"],
+["db_datareader","SELECT on all tables in all schemas"],
+["db_datawriter","INSERT, UPDATE, DELETE on all tables in all schemas"],
+["db_ddladmin","CREATE/ALTER/DROP tables and indexes — only for DBA scripts"],
+["db_securityadmin","Manage role membership — DBA use only"],
+["public","Every user is a member; grant nothing extra here"]])}
+
+<h3>4. GRANT, DENY, REVOKE</h3>
+{C(r"""
+-- GRANT: give the permission
+GRANT SELECT ON sales.orders TO sales_app;
+
+-- REVOKE: take back a previous GRANT or DENY (not the same as DENY)
+REVOKE SELECT ON sales.orders FROM sales_app;
+
+-- DENY: explicitly block — overrides any GRANT, including role membership
+-- Useful when a user is in db_datareader but must NOT read a specific table
+DENY SELECT ON sales.customers TO sales_app;
+
+-- Check effective permissions for a user
+EXECUTE AS USER = 'sales_app';
+SELECT * FROM fn_my_permissions('sales.orders', 'OBJECT');
+REVERT;
+""", "grant_deny.sql", lang="sql")}
+
+<h3>5. Watching ORM-generated SQL</h3>
+<p>EF Core and Dapper generate SQL that is usually correct but sometimes slow. Three ways to see what they send:</p>
+{C(r"""
+// EF Core 8: log all SQL to the console (appsettings.json)
+{
+  "Logging": {
+    "LogLevel": {
+      "Microsoft.EntityFrameworkCore.Database.Command": "Information"
+    }
+  }
+}
+""", "appsettings.json", lang="json")}
+{C(r"""
+// EF Core 8: log to console with parameters, in C# DbContext setup
+optionsBuilder.UseSqlServer(connectionString)
+              .LogTo(Console.WriteLine, LogLevel.Information)
+              .EnableSensitiveDataLogging();  // shows parameter values — dev only!
+""", "DbContextConfig.cs")}
+{C(r"""
+-- Extended Events: lightweight session to capture SQL statements
+-- (SQL Server Profiler is deprecated; prefer XE)
+CREATE EVENT SESSION [CaptureSQL] ON SERVER
+ADD EVENT sqlserver.sql_statement_completed(
+    WHERE sqlserver.database_name = N'SalesDb'
+      AND duration > 50000),   -- > 50 ms
+ADD TARGET package0.ring_buffer;
+
+ALTER EVENT SESSION [CaptureSQL] ON SERVER STATE = START;
+
+-- View results
+SELECT
+    XEventData.XEvent.value('(data[@name="statement"]/value)[1]', 'NVARCHAR(MAX)') AS sql_text,
+    XEventData.XEvent.value('(data[@name="duration"]/value)[1]', 'BIGINT') / 1000 AS duration_ms
+FROM (
+    SELECT CAST(target_data AS XML) AS TargetData
+    FROM sys.dm_xe_session_targets t
+    JOIN sys.dm_xe_sessions s ON s.address = t.event_session_address
+    WHERE s.name = 'CaptureSQL'
+) AS Data
+CROSS APPLY TargetData.nodes('RingBufferTarget/event') AS XEventData(XEvent)
+ORDER BY duration_ms DESC;
+
+ALTER EVENT SESSION [CaptureSQL] ON SERVER STATE = STOP;
+DROP EVENT SESSION [CaptureSQL] ON SERVER;
+""", "extended_events.sql", lang="sql")}
+{tip("Common ORM performance issues to watch for: N+1 queries (a loop of single-row fetches instead of one JOIN), SELECT * (fetching all columns when only two are needed), missing .AsNoTracking() on read-only EF queries, and CAST conversions caused by mismatched C# types and SQL column types.")}
+''',
+["Using SIMPLE recovery in production — you lose all data since the last backup on a failure.",
+"Connecting the application with <code>sa</code> or any <code>sysadmin</code> login — catastrophic if the app is compromised.",
+"Confusing REVOKE with DENY — REVOKE removes an explicit permission; it does not block inherited role permissions.",
+"Enabling sensitive data logging in production — parameter values appear in application logs.",
+"Not testing restores — a backup that cannot be restored is not a backup."],
+("40 min", [
+"Set the SalesDb to FULL recovery, take a full backup, then a log backup.",
+"Create a <code>sales_app</code> login and user, grant EXECUTE on the sales schema, and DENY SELECT on customers. Test the effective permissions.",
+"Enable EF Core SQL logging (or Extended Events) and run a query that you know causes N+1; identify it in the log."
+]),
+[("What is the difference between FULL and SIMPLE recovery models?", "SIMPLE truncates the transaction log at every checkpoint, so no log backups are possible and you can only recover to the last full or differential backup. FULL logs all transactions continuously; combined with regular log backups it supports point-in-time recovery to any moment."),
+("What is the difference between a login and a user?", "A login is a server-level security principal (SQL Server or Windows/Azure AD authentication). A user is a database-level principal created inside a specific database and mapped to a login. The login authenticates to the server; the user is what permissions are granted within the database."),
+("What is DENY and when does it override GRANT?", "DENY explicitly refuses a permission. If a user has been GRANTed SELECT on a table through role membership but is also DENYed SELECT directly, the DENY wins. DENY overrides GRANT at any level, so it should be used deliberately and rarely — usually a schema redesign or separate role is cleaner.")],
+[("Basic","What is a full, differential and log backup?","Full: a copy of the entire database — the restore baseline. Differential: all pages changed since the last full — faster to take than a full; restoring needs last full + last diff. Log: the transaction log since the last log backup — restoring needs full + optional diff + all subsequent logs. Only FULL recovery model supports log backups."),
+("Basic","What is least privilege and why does it matter for database security?","Give every application login, database user, or service account only the permissions it actually needs — typically SELECT/INSERT/UPDATE/DELETE on the schemas it uses, and EXECUTE on stored procedures, not db_owner. If an account is compromised or the application has a SQL injection bug, an attacker cannot read billing data, drop tables, or run xp_cmdshell."),
+("Intermediate","Explain a full restore sequence using full + differential + log backups.","1. RESTORE DATABASE … WITH NORECOVERY (applies the full backup). 2. RESTORE DATABASE … WITH NORECOVERY (applies the most recent differential). 3. RESTORE LOG … WITH NORECOVERY for each log backup in sequence after the differential. 4. Final RESTORE LOG or RESTORE DATABASE WITH RECOVERY to bring the database online; optionally add STOPAT for point-in-time."),
+("Intermediate","How do you audit ORM-generated SQL in a development environment?","For EF Core: set LogLevel for Microsoft.EntityFrameworkCore.Database.Command to Information, optionally with EnableSensitiveDataLogging(). For Dapper: wrap the IDbConnection with a MiniProfiler or simple decorator that logs the SQL and parameters. In SQL Server: use Extended Events (sql_statement_completed filtered by duration) instead of the deprecated Profiler."),
+("Intermediate","What is the DENY vs REVOKE difference and when does each apply?","REVOKE removes a previously granted (or denied) explicit permission, leaving only whatever permissions the user inherits from roles. DENY explicitly blocks a permission — it overrides any GRANT from any source, including role membership. Use REVOKE to clean up an unnecessary GRANT; use DENY only when you need to block a user despite role membership."),
+("Advanced","What security risks does a misconfigured ORM introduce?","1. SQL injection if raw string interpolation is used instead of parameters (EF Core prevents this by default; Dapper requires parameterised queries). 2. Implicit conversions from NVARCHAR parameters on VARCHAR columns that cause scans. 3. SELECT * fetching sensitive columns (SSN, card numbers) the application does not display but which appear in logs. 4. Missing TDE or Always Encrypted for PII columns. 5. Connection strings in source code or plain-text config files.")])
+
+# ================= DAY 6 — SAT =================
+d6 = day(6, "SAT", "Micro-project: Load 1 M Rows and Tune Three Slow Queries",
+"Generate a realistic 1-million-row sales dataset with a set-based tally-table technique, then diagnose and fix three deliberately slow queries using execution plans and STATISTICS IO.",
+[("Tally table","A table (or CTE) of sequential integers used for set-based row generation without loops. Far faster than a WHILE cursor."),
+("Set-based generation","Producing N rows in one INSERT … SELECT using cross-joins of system views, avoiding row-by-row iteration."),
+("sys.all_objects","A system view with ~thousands of rows, cross-joined to itself to reach millions."),
+("CHECKSUM / ABS","Used to generate pseudo-random INT values from row numbers in a set-based context."),
+("NEWID()","Generates a random UNIQUEIDENTIFIER per row — useful for shuffling order in a set-based INSERT.")],
+["Never generate test data with a WHILE loop for millions of rows — a set-based INSERT runs in seconds not hours.",
+"Always run UPDATE STATISTICS WITH FULLSCAN after bulk-loading data before benchmarking.",
+"Record logical reads BEFORE adding any index so you have a valid baseline.",
+"One index change at a time — otherwise you can't tell which change caused the improvement."],
+f'''
+<h3>Requirements</h3>
+<ul>
+<li>Extend Week 13's sales schema (customers, orders, order_lines, products) to 1 M order lines.</li>
+<li>Load data with a pure set-based INSERT using a tally-table CTE.</li>
+<li>Tune three representative slow queries: a customer-history report, an order-summary aggregation, and a product-search with a non-SARGable predicate.</li>
+<li>Show before/after logical reads for each query.</li>
+</ul>
+
+<h3>Step 1 — Seed supporting rows</h3>
+{C(r"""
+-- 10,000 customers
+INSERT INTO sales.customers (customer_name, email, city, state, pin_code)
+SELECT
+    'Customer_' + RIGHT('00000' + CAST(n AS VARCHAR), 5),
+    'cust' + CAST(n AS VARCHAR) + '@example.in',
+    CASE (n % 6)
+        WHEN 0 THEN 'Mumbai'   WHEN 1 THEN 'Delhi'
+        WHEN 2 THEN 'Bengaluru' WHEN 3 THEN 'Hyderabad'
+        WHEN 4 THEN 'Chennai'  ELSE 'Pune' END,
+    CASE (n % 6)
+        WHEN 0 THEN 'MH' WHEN 1 THEN 'DL'
+        WHEN 2 THEN 'KA' WHEN 3 THEN 'TG'
+        WHEN 4 THEN 'TN' ELSE 'MH' END,
+    CAST(400000 + (n % 100000) AS CHAR(6))
+FROM (
+    SELECT TOP 10000 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects a CROSS JOIN sys.all_objects b
+) t;
+
+-- 500 products
+INSERT INTO sales.products (product_name, category, unit_price, is_active)
+SELECT
+    'Product_' + RIGHT('000' + CAST(n AS VARCHAR), 3),
+    CASE (n % 5)
+        WHEN 0 THEN 'Electronics' WHEN 1 THEN 'Apparel'
+        WHEN 2 THEN 'Grocery'     WHEN 3 THEN 'Books'
+        ELSE 'Home' END,
+    CAST((ABS(CHECKSUM(NEWID())) % 9900 + 100) AS DECIMAL(10,2)),
+    CASE WHEN n % 20 = 0 THEN 0 ELSE 1 END
+FROM (
+    SELECT TOP 500 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects
+) t;
+""", "seed_customers_products.sql", lang="sql")}
+
+<h3>Step 2 — Generate 200,000 orders (tally-table technique)</h3>
+{C(r"""
+-- A tally CTE produces row numbers 1..200000 in one pass, no loop
+;WITH Tally AS (
+    SELECT TOP 200000
+           ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects a
+    CROSS JOIN sys.all_objects b   -- ~thousands × thousands > 200000
+)
+INSERT INTO sales.orders (customer_id, order_date, status, total_amount)
+SELECT
+    (ABS(CHECKSUM(NEWID())) % 10000) + 1          AS customer_id,
+    DATEADD(DAY, -(ABS(CHECKSUM(NEWID())) % 730), CAST(GETDATE() AS DATE))
+                                                   AS order_date,   -- last 2 years
+    CASE (n % 5)
+        WHEN 0 THEN 'Pending'   WHEN 1 THEN 'Processing'
+        WHEN 2 THEN 'Shipped'   WHEN 3 THEN 'Delivered'
+        ELSE 'Cancelled' END                       AS status,
+    0                                              AS total_amount   -- updated below
+FROM Tally;
+
+SELECT CAST(COUNT(*)/1000.0 AS DECIMAL(10,1)) AS orders_k FROM sales.orders;
+-- orders_k: 200.0
+""", "generate_orders.sql", lang="sql")}
+
+<h3>Step 3 — Generate ~1 M order lines (tally cross-join)</h3>
+{C(r"""
+;WITH Tally AS (
+    SELECT TOP 5 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects
+)
+INSERT INTO sales.order_lines (order_id, product_id, qty, unit_price)
+SELECT
+    o.order_id,
+    (ABS(CHECKSUM(NEWID())) % 500) + 1            AS product_id,
+    (ABS(CHECKSUM(NEWID())) % 9) + 1              AS qty,
+    p.unit_price * (1 - CAST((n % 3) * 0.05 AS DECIMAL(4,2)))
+                                                   AS unit_price
+FROM sales.orders o
+CROSS JOIN Tally t                                 -- ~5 lines per order = ~1M rows
+JOIN sales.products p
+    ON  p.product_id = (ABS(CHECKSUM(NEWID())) % 500) + 1
+WHERE t.n <= (ABS(CHECKSUM(NEWID())) % 5) + 1;    -- 1–5 lines per order
+
+-- Update order totals
+UPDATE o
+SET    o.total_amount = agg.line_total
+FROM   sales.orders o
+JOIN   (SELECT order_id, SUM(qty * unit_price) AS line_total
+        FROM   sales.order_lines
+        GROUP  BY order_id) agg ON agg.order_id = o.order_id;
+
+SELECT CAST(COUNT(*)/1000000.0 AS DECIMAL(10,3)) AS lines_M FROM sales.order_lines;
+-- lines_M: ~1.000
+""", "generate_order_lines.sql", lang="sql")}
+{C(r"""
+-- After bulk load: refresh all statistics
+UPDATE STATISTICS sales.customers    WITH FULLSCAN;
+UPDATE STATISTICS sales.orders       WITH FULLSCAN;
+UPDATE STATISTICS sales.order_lines  WITH FULLSCAN;
+UPDATE STATISTICS sales.products     WITH FULLSCAN;
+""", "update_stats.sql", lang="sql")}
+
+<h3>Step 4 — Query 1: Customer history report (key-lookup problem)</h3>
+{C(r"""
+-- Slow version: NCI on customer_id only → key lookup for order_date, total_amount, status
+SET STATISTICS IO ON;
+
+SELECT TOP 50
+    c.customer_name,
+    o.order_date,
+    o.total_amount,
+    o.status
+FROM sales.orders o
+JOIN sales.customers c ON c.customer_id = o.customer_id
+WHERE o.customer_id = 7042
+ORDER BY o.order_date DESC;
+
+SET STATISTICS IO OFF;
+""", "query1_before.sql", lang="sql")}
+{C(r"""
+-- Example output BEFORE index (key lookup present)
+Table 'customers'. Scan count 0, logical reads 3,     physical reads 0
+Table 'orders'.    Scan count 1, logical reads 4312,  physical reads 0
+-- orders: 4312 logical reads — NCI seek then 50 key lookups across the CI
+""", "query1_before_stats.txt", lang="text")}
+{C(r"""
+-- Fix: covering index eliminates key lookup
+CREATE NONCLUSTERED INDEX IX_orders_cust_covering
+    ON sales.orders (customer_id)
+    INCLUDE (order_date, total_amount, status);
+""", "query1_fix.sql", lang="sql")}
+{C(r"""
+-- Example output AFTER index
+Table 'customers'. Scan count 0, logical reads 3,  physical reads 0
+Table 'orders'.    Scan count 1, logical reads 7,  physical reads 0
+-- orders: 4312 → 7 logical reads  (~616× improvement)
+""", "query1_after_stats.txt", lang="text")}
+
+<h3>Step 5 — Query 2: Monthly revenue aggregation (missing composite index)</h3>
+{C(r"""
+-- Slow version: aggregation over a date range scans the entire order_lines table
+SET STATISTICS IO ON;
+
+SELECT
+    YEAR(o.order_date)      AS yr,
+    MONTH(o.order_date)     AS mo,
+    SUM(ol.qty * ol.unit_price) AS revenue
+FROM   sales.orders o
+JOIN   sales.order_lines ol ON ol.order_id = o.order_id
+WHERE  o.order_date >= '2026-01-01'
+GROUP  BY YEAR(o.order_date), MONTH(o.order_date)
+ORDER  BY yr, mo;
+
+SET STATISTICS IO OFF;
+""", "query2_before.sql", lang="sql")}
+{C(r"""
+-- Example output BEFORE
+Table 'order_lines'. Scan count 9, logical reads 48312, physical reads 0
+Table 'orders'.      Scan count 1, logical reads 1204,  physical reads 0
+-- order_lines: 48,312 logical reads — full table scan on 1M rows
+""", "query2_before_stats.txt", lang="text")}
+{C(r"""
+-- Fix: covering index on order_lines for the join + aggregate
+CREATE NONCLUSTERED INDEX IX_order_lines_order_covering
+    ON sales.order_lines (order_id)
+    INCLUDE (qty, unit_price);
+-- SQL Server can now satisfy the aggregate from the NCI without touching the clustered index
+""", "query2_fix.sql", lang="sql")}
+{C(r"""
+-- Example output AFTER
+Table 'order_lines'. Scan count 9, logical reads 3187, physical reads 0
+Table 'orders'.      Scan count 1, logical reads  412, physical reads 0
+-- order_lines: 48,312 → 3,187 logical reads  (~15× improvement)
+""", "query2_after_stats.txt", lang="text")}
+
+<h3>Step 6 — Query 3: Product search (non-SARGable predicate)</h3>
+{C(r"""
+-- Slow version: LIKE '%keyword%' cannot seek on product_name
+SET STATISTICS IO ON;
+
+SELECT product_id, product_name, unit_price
+FROM   sales.products
+WHERE  product_name LIKE '%Electronics%'   -- leading wildcard → scan
+  AND  is_active = 1;
+
+SET STATISTICS IO OFF;
+""", "query3_before.sql", lang="sql")}
+{C(r"""
+-- Example output BEFORE
+Table 'products'. Scan count 1, logical reads 72, physical reads 0
+-- Full scan of all 500 products (small table but illustrates the pattern)
+-- On a large products table this scales linearly with row count
+""", "query3_before_stats.txt", lang="text")}
+{C(r"""
+-- Fix option A: anchor the LIKE (if the use case allows it)
+SELECT product_id, product_name, unit_price
+FROM   sales.products
+WHERE  product_name LIKE 'Electronics%'    -- no leading wildcard → seek possible
+  AND  is_active = 1;
+
+-- Fix option B: filtered index on is_active + category for the typical query pattern
+CREATE NONCLUSTERED INDEX IX_products_active_category
+    ON sales.products (category, product_name)
+    INCLUDE (unit_price)
+WHERE is_active = 1;
+
+-- Query rewritten for the filtered index
+SELECT product_id, product_name, unit_price
+FROM   sales.products
+WHERE  category = 'Electronics'
+  AND  is_active = 1;
+
+SET STATISTICS IO ON;
+-- [run the rewritten query]
+SET STATISTICS IO OFF;
+""", "query3_fix.sql", lang="sql")}
+{C(r"""
+-- Example output AFTER (category = 'Electronics' + filtered index)
+Table 'products'. Scan count 1, logical reads 3, physical reads 0
+-- 72 → 3 logical reads  (~24× improvement; only 'Electronics' active rows scanned)
+""", "query3_after_stats.txt", lang="text")}
+
+<h3>Summary: before/after logical reads</h3>
+{table(["Query","Table","Before (logical reads)","After (logical reads)","Improvement","Fix applied"],[
+["Customer history","orders","4,312","7","~616×","Covering NCI (INCLUDE)"],
+["Monthly revenue","order_lines","48,312","3,187","~15×","Covering NCI on FK"],
+["Product search","products","72","3","~24×","Filtered NCI + SARGable rewrite"]])}
+
+<h3>Stretch goals</h3>
+<ul>
+<li>Add a composite index on <code>(order_date, customer_id)</code> and test the monthly aggregation query again — does it help more than the covering NCI?</li>
+<li>Use Query Store to persist before/after stats across a server restart.</li>
+<li>Experiment with FILLFACTOR 70 on the orders clustered index after loading; re-check fragmentation after 10,000 more inserts.</li>
+</ul>
+''',
+iqs=[("Basic","What is a tally table and why use it for data generation?","A tally (or numbers) table is a table or CTE of sequential integers 1..N. By cross-joining two copies of a many-row system view you produce N rows in a single set-based INSERT without looping. Set-based operations allow SQL Server to parallelise and pipeline the INSERT, loading millions of rows in seconds instead of the minutes a WHILE loop would take."),
+("Basic","Why must you run UPDATE STATISTICS after a bulk load before benchmarking?","Statistics tell the optimizer how many rows a predicate returns. After inserting 1 M rows the auto-update threshold (20 %) may not have fired yet, so the optimizer still uses old histograms and may choose wrong join types or index access patterns. FULLSCAN reads every row to build an accurate histogram."),
+("Intermediate","How did adding INCLUDE columns to the NCI produce a 616× logical-read reduction on the customer-history query?","Before: the NCI seek on customer_id found 50 matching rows, then each required a key lookup (50 trips to the clustered index across its ~25,000 pages). The key lookups are random I/Os — each can land on a different page, so total pages touched was close to 50 × average CI depth = ~200+ pages, plus CI fragmentation; actual plan showed 4,312 logical reads. After: the NCI leaf pages hold order_id, customer_id, order_date, total_amount and status — the entire SELECT list is served from 7 NCI leaf pages. Zero key lookups."),
+("Intermediate","Why did rewriting the product query from LIKE '%Electronics%' to category = 'Electronics' allow the filtered index to be used?","The leading wildcard in LIKE '%Electronics%' means SQL Server cannot determine where in the index to start seeking — it must examine every row. The rewrite to an equality on a different column (category) is SARGable and matches the filtered index predicate (is_active = 1), allowing a seek into only the Electronics active rows.")])
+
+# ================= DAY 7 — SUN =================
+d7 = day(7, "SUN", "Revise Weeks 11–14 and Prepare for ADO.NET",
+"Consolidate the SQL Server storage and performance phase, fill in any gaps in your mental model, then prepare for the data-access layer next week.",
+[("Active recall","Testing yourself from memory before looking at notes — the most effective study technique."),
+("Spaced repetition","Reviewing material at intervals that match how quickly you forget it."),
+("Query tuning loop","Profile → measure logical reads → find the bottleneck (scan? key lookup? sort?) → index or rewrite → measure again.")],
+["Close all notes before attempting the quiz below.","If you can't describe the full key-lookup fix flow from memory, re-read Wednesday.","Write your own one-page SQL performance cheat sheet before next week.","Record a 2-minute verbal explanation of B+-trees — if you stumble, that's your gap."],
+f'''
+<h3>1. How to spend today (≈4 hours)</h3>
+{table(["Time","Activity"],[
+["45 min","Blank-page recall: write everything you remember about Weeks 11–14 — schema, indexes, plans, security"],
+["45 min","Compare with notes; mark each checklist item below green/amber/red"],
+["60 min","Re-study reds; type out one T-SQL example per red topic without copy-paste"],
+["45 min","Quiz and mock interview below (answer aloud, then check)"],
+["30 min","Finish Saturday's tuning project; write the before/after README"],
+["15 min","Push to git; preview next week's EF Core material"]])}
+
+<h3>2. Weeks 11–14 checklist</h3>
+<h4>Week 11 — SQL Server foundations</h4>
+<ul><li>Docker setup and MSSQL connection with VS Code / SSMS</li>
+<li>DDL: CREATE TABLE, constraints (PK, FK, UNIQUE, CHECK, DEFAULT)</li>
+<li>DML: INSERT, UPDATE, DELETE, MERGE, OUTPUT clause</li>
+<li>SELECT: WHERE, ORDER BY, TOP, OFFSET-FETCH, NULL handling</li>
+<li>Transactions: BEGIN/COMMIT/ROLLBACK, XACT_ABORT, isolation levels</li></ul>
+<h4>Week 12 — Joins and aggregation</h4>
+<ul><li>INNER, LEFT, RIGHT, FULL OUTER, CROSS, SELF joins</li>
+<li>GROUP BY, HAVING, COUNT/SUM/AVG/MIN/MAX</li>
+<li>Subqueries: correlated, EXISTS, NOT EXISTS</li>
+<li>Window functions: ROW_NUMBER, RANK, DENSE_RANK, NTILE; OVER(PARTITION BY … ORDER BY …)</li>
+<li>CTEs and recursive CTEs; set operators UNION/INTERSECT/EXCEPT</li></ul>
+<h4>Week 13 — Stored procedures, functions and triggers</h4>
+<ul><li>Stored procedures: parameters, OUTPUT, TRY/CATCH, RAISERROR, THROW</li>
+<li>Scalar and table-valued functions; determinism</li>
+<li>Triggers: AFTER vs INSTEAD OF; inserted/deleted pseudo-tables; risks</li>
+<li>Views: standard, indexed views; schema binding</li>
+<li>Dynamic SQL: sp_executesql and parameterisation to prevent injection</li></ul>
+<h4>Week 14 — Indexes and performance</h4>
+<ul><li>8 KB pages, heaps vs clustered tables, B+-tree height</li>
+<li>Fill factor, page splits, fragmentation checks and REBUILD/REORGANIZE</li>
+<li>Clustered key choice: narrow, static, ever-increasing</li>
+<li>Nonclustered: key vs INCLUDE, covering, filtered, composite column order</li>
+<li>Execution plan: scan vs seek vs key lookup; reading STATISTICS IO</li>
+<li>Parameter sniffing: demo, OPTION(RECOMPILE), OPTIMIZE FOR UNKNOWN</li>
+<li>SARGability: functions on columns, leading wildcards, implicit conversions</li>
+<li>Backups: FULL/DIFF/LOG, recovery models, restore sequence</li>
+<li>Security: logins vs users, roles, GRANT/DENY/REVOKE, least privilege</li></ul>
+
+<h3>3. SQL performance cheat sheet</h3>
+{table(["Symptom in plan","Likely cause","Fix"],[
+["Table Scan","No NCI for the predicate","Add NCI on WHERE column(s)"],
+["Clustered Index Scan","NCI missing or low selectivity","Filtered NCI or rewrite predicate"],
+["Key Lookup (many rows)","NCI missing INCLUDE columns","Add INCLUDE columns to NCI"],
+["Fat arrows (many rows)","Non-SARGable predicate, stale stats","Rewrite predicate; UPDATE STATISTICS"],
+["Sort operator","No ordered index for ORDER BY","Add matching index or remove ORDER BY"],
+["Hash Match (unexpected)","Large, unsorted inputs; no join index","Index the join column; check statistics"],
+["High Actual vs Estimated rows","Stale statistics","UPDATE STATISTICS WITH FULLSCAN"]])}
+{table(["Predicate pattern","SARGable?","Rewrite"],[
+["<code>WHERE YEAR(col) = 2026</code>","No","<code>col &gt;= '2026-01-01' AND col &lt; '2027-01-01'</code>"],
+["<code>WHERE CAST(id AS VARCHAR) = '5'</code>","No","<code>WHERE id = 5</code>"],
+["<code>WHERE col LIKE '%word%'</code>","No","Full-text search or accept scan"],
+["<code>WHERE col LIKE 'word%'</code>","Yes","—"],
+["<code>WHERE col = N'value' (VARCHAR col)</code>","No","Use <code>'value'</code> (implicit conversion)"],
+["<code>WHERE col = @param</code>","Yes if types match","Ensure parameter type = column type"]])}
+
+<h3>4. Before/after tuning template (README.md)</h3>
+{C(r"""
+# Week 14 Tuning Project — 1M-row Sales DB
+
+## Environment
+- SQL Server 2022 Developer (Docker)
+- Database: SalesDb
+- Table sizes: customers 10K, products 500, orders 200K, order_lines ~1M
+
+## Query 1 — Customer history report
+**Problem:** NCI on customer_id only; key lookup fetching order_date/total_amount/status.
+**Fix:** `CREATE NONCLUSTERED INDEX IX_orders_cust_covering ON sales.orders (customer_id) INCLUDE (order_date, total_amount, status)`
+
+| Metric              | Before | After  |
+|---------------------|--------|--------|
+| Logical reads       | 4,312  | 7      |
+| Key Lookup          | Yes    | No     |
+| Improvement         | —      | ~616×  |
+
+## Query 2 — Monthly revenue aggregation
+**Problem:** Full scan of order_lines (48K logical reads) for every monthly roll-up.
+**Fix:** Covering NCI on order_lines(order_id) INCLUDE (qty, unit_price).
+
+| Metric              | Before  | After  |
+|---------------------|---------|--------|
+| Logical reads       | 48,312  | 3,187  |
+| Improvement         | —       | ~15×   |
+
+## Query 3 — Product search
+**Problem:** LIKE '%Electronics%' — leading wildcard prevents seek.
+**Fix:** Filtered NCI on (category, product_name) WHERE is_active = 1; rewrite query to `category = 'Electronics'`.
+
+| Metric              | Before | After |
+|---------------------|--------|-------|
+| Logical reads       | 72     | 3     |
+| Improvement         | —      | ~24×  |
+""", "README.md", lang="text")}
+
+<h3>5. Mixed quiz — 8 questions</h3>
+<details><summary>Q1. A query does an Index Seek on IX_orders_customer but still reads 8,000 pages. What is likely happening and how do you fix it?</summary>
+<b>Key lookup.</b> The NCI found the rows but cannot supply all selected columns, so for each matching row it follows the row locator to the clustered index. With many rows this causes thousands of random page reads. Fix: add the missing SELECT-list columns to INCLUDE on the NCI to make it covering.</details>
+
+<details><summary>Q2. What is the difference between <code>OPTION(RECOMPILE)</code> and <code>OPTION(OPTIMIZE FOR UNKNOWN)</code>?</summary>
+<b>Recompile</b> forces a fresh compilation on every execution using the actual runtime parameter — always optimal but adds CPU cost. <b>OPTIMIZE FOR UNKNOWN</b> compiles once using average statistics instead of the sniffed value — lower CPU cost, slightly suboptimal for extreme values, eliminates sniffing.</details>
+
+<details><summary>Q3. Why does <code>WHERE YEAR(order_date) = 2026</code> prevent an index seek?</summary>
+<b>Non-SARGable.</b> The function <code>YEAR()</code> is applied to the indexed column, so SQL Server must evaluate it for every row in the table. Rewrite as <code>order_date >= '2026-01-01' AND order_date &lt; '2027-01-01'</code> to get a range seek.</details>
+
+<details><summary>Q4. You send a string parameter from C# for a VARCHAR(20) column. What performance issue can arise?</summary>
+<b>Implicit conversion.</b> SqlClient defaults to NVARCHAR for C# string parameters. SQL Server must convert every VARCHAR column value to NVARCHAR for the comparison, forcing a full table scan. Fix: set <code>SqlDbType.VarChar</code> on the SqlParameter.</details>
+
+<details><summary>Q5. What recovery model must be in use to perform point-in-time recovery, and why?</summary>
+<b>FULL</b> recovery model. SIMPLE truncates the transaction log at every checkpoint, discarding the log records needed for point-in-time recovery. FULL keeps the log intact until a log backup is taken, allowing restore to any logged moment.</details>
+
+<details><summary>Q6. A table has a clustered index on order_id (INT IDENTITY) and 10 nonclustered indexes. How does an UPDATE to the total_amount column affect all these indexes?</summary>
+<b>Only NCIs that include total_amount need to be updated.</b> NCIs on other key columns are unaffected. If total_amount is in an INCLUDE column of some NCIs, those NCI leaf pages are rewritten. If it is a key column of an NCI, the old key is deleted and a new key is inserted (possibly causing a page split). The clustered index row is updated in place.</details>
+
+<details><summary>Q7. What does <code>Scan count 9</code> mean in SET STATISTICS IO output?</summary>
+<b>The scan or seek was initiated 9 times on that table.</b> Usually this means the table was the inner side of a Nested Loops join and the loop iterated 9 times — once per outer row. It suggests either a very small outer input or a potential for a Hash/Merge join.</details>
+
+<details><summary>Q8. How does Query Store help recover from a plan regression after upgrading SQL Server?</summary>
+<b>It persists query plans and their runtime statistics across restarts and upgrades.</b> After an upgrade the new optimizer may choose a different (worse) plan. Query Store's Regressed Queries report identifies these automatically. You can force the previously good plan with <code>sp_query_store_force_plan</code> without changing application code, buying time to investigate a permanent fix.</details>
+
+<h3>6. Mock interview — answer aloud (2 minutes each)</h3>
+<ol>
+<li>Explain how a B+-tree seek works, from the root to the leaf, in terms of page reads.</li>
+<li>A stored procedure runs in 50 ms for one customer and 45 seconds for another. What do you check first?</li>
+<li>What three things make a good clustered index key?</li>
+<li>Your team wants to add 20 nonclustered indexes to improve read performance. What do you say?</li>
+<li>A developer says "I added an index but the plan still shows a scan." Name three possible reasons.</li>
+<li>How would you set up database security for a web application and a reporting tool on the same database?</li>
+<li>Describe the full backup + differential + log restore sequence step by step.</li>
+<li>What is the first thing you check when a query suddenly slows down after a week of normal performance?</li>
+</ol>
+
+<div class="note tip"><b>Next week:</b> Week 15 — ADO.NET, Dapper and EF Core Basics. You'll connect C# to your 1 M-row sales database using raw SqlConnection, then layer Dapper for simple mapping, and finally set up an EF Core 8 DbContext with the same schema. Micro-project: a console sales report tool that runs the three tuned queries and displays the results.</div>
+''',
+iqs=[("Basic","What is the query tuning loop?","Measure the baseline (SET STATISTICS IO ON; note logical reads). Open the actual execution plan. Find the most expensive operator. Identify the bottleneck (scan, key lookup, sort, or bad cardinality estimate). Apply one fix (index, predicate rewrite, or hint). Measure again. Repeat."),
+("Intermediate","A nonclustered index on column A has user_seeks = 0 and user_updates = 500,000 after a week. What do you do?","This index is never used for seeking but is maintained on every DML. It costs write overhead with no read benefit. Verify by clearing the plan cache on a test instance and running all known queries to confirm nothing uses it; then drop it in a maintenance window."),
+("Intermediate","How does fill factor relate to page splits?","Fill factor sets the percentage of a leaf page left full at the time of an index rebuild. A lower fill factor leaves more free space per page, so incoming inserts can fit on the existing page without splitting. Over time inserts fill the reserved space and splits resume; the next rebuild resets fill factor again."),
+("Intermediate","What is the difference between a scan and a seek in a clustered index?","A clustered index scan reads all leaf pages from left to right — it accesses the full table. A clustered index seek uses the B+-tree to navigate directly to the qualifying leaf page range, reading only the pages that contain the matching rows. The seek is O(log n + matched pages); the scan is O(total pages).")])
+
+days = "\n".join([d1,d2,d3,d4,d5,d6,d7])
+
+cards = [
+ (1,"MON","Storage: Pages, Heaps and B+-Trees","Storage","8 KB pages, heaps vs clustered, B+-tree, page splits, fill factor, clustered key choice.","2 hrs"),
+ (2,"TUE","Nonclustered Indexes","NC Indexes","Key vs INCLUDE, covering, filtered, composite, FK indexing, write overhead.","2 hrs"),
+ (3,"WED","Reading Execution Plans","Execution Plans","Scan/seek/key lookup, Hash/Merge/NL join, STATISTICS IO, diagnosing key lookups.","2 hrs"),
+ (4,"THU","Statistics, Sniffing and SARGability","Sniffing &amp; SARGs","Cardinality, parameter sniffing fixes, SARGable rewrites, Query Store.","2 hrs"),
+ (5,"FRI","Backups, Security and ORM SQL","Backups &amp; Security","Full/diff/log, recovery models, logins/users/roles, GRANT/DENY, watching ORM SQL.","2 hrs"),
+ (6,"SAT","1M-row Load and Tuning","Project: Tuning","Tally-table generator, three slow queries, before/after IO stats, covering indexes.","4 hrs"),
+ (7,"SUN","Revise Weeks 11–14","Phase 2 Revision","Checklist, SQL cheat sheet, 8-question quiz, mock interview, Next: ADO.NET.","4 hrs"),
+]
+
+build("/home/claude/build/week04.html", "/home/claude/build/week14.html", 14,
+      "Week 14 — Indexing and Performance Tuning",
+      "Phase 2", "~18 hrs",
+      ["Phase 2 · Week 14 of 74", ".NET 8 LTS / 9", "SQL Server 2022", "~18 hrs", "1M-row tuning"],
+      "SQL Server's query optimizer can only be as good as the indexes and statistics you give it. This week you'll learn how data lives in 8 KB pages, how B+-trees enable sub-millisecond seeks on million-row tables, and how to design nonclustered indexes that eliminate key lookups. You'll read execution plans like a DBA, diagnose parameter sniffing in stored procedures, rewrite non-SARGable predicates, and load a 1 M-row sales database using a set-based tally technique. The phase ends with backups, least-privilege security, and techniques for watching the SQL your ORM generates.",
+      cards, days)
+print("built week14")

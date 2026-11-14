@@ -1,0 +1,1464 @@
+<title>.NET Notes · Week 15</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 15</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">ADO.NET</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Dapper</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">EF Core setup</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">EF Relationships</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">EF CRUD</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: StoreData</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Week wrap-up</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 2 · Week 15 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">SQL Server 2022</span><span class="chip">~18 hrs</span><span class="chip">CRUD ×3</span></div>
+  <h1>Week 15 — ADO.NET, Dapper and EF Core Basics</h1>
+  <p>Data access is the backbone of every business application. This week you descend from raw ADO.NET through Dapper to EF Core, understanding exactly what each layer adds — and costs. You'll handle SQL injection, map relationships, run migrations, and wire all three approaches behind a single interface in the StoreData micro-project.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>ADO.NET: SqlConnection, Command, DataReader</h3><p>Connection strings, parameters, injection attack/fix, pooling, async CRUD.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>Dapper: Query&lt;T&gt;, Execute, multi-mapping</h3><p>Micro-ORM on ADO.NET, anonymous params, IN-list, stored procs, QueryMultiple.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>EF Core: DbContext, DbSet, migrations</h3><p>UseSqlServer, conventions, dotnet ef add/update/script, design-time factory.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Relationships: Fluent API and IEntityTypeConfiguration</h3><p>One-to-many, many-to-many, skip navigations, cascade, Fluent API.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>CRUD with EF Core and change tracking</h3><p>Add/Read/Update/Delete, EntityState, AsNoTracking, SaveChanges internals.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>StoreData.sln — ADO.NET · Dapper · EF Core side by side</h3><p>ICatalogDal with three implementations, Docker + sqlcmd setup, console menu.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Compare, try to break, README and git</h3><p>Stopwatch harness, LogTo, edge-case table, checklist, quiz, next week preview.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>ADO.NET: SqlConnection, SqlCommand, SqlDataReader</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Open a real SQL Server connection with Microsoft.Data.SqlClient, run queries safely with parameters, and understand async patterns and connection pooling.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>ADO.NET</dt><dd>Active Data Objects .NET — the low-level data-access API; every higher ORM sits on top of it.</dd></div><div class="def"><dt>Microsoft.Data.SqlClient</dt><dd>The modern cross-platform SQL Server driver (NuGet); replaces the old System.Data.SqlClient.</dd></div><div class="def"><dt>SqlConnection</dt><dd>Represents one connection to SQL Server; opening it checks out a pooled connection.</dd></div><div class="def"><dt>SqlCommand</dt><dd>Encapsulates a T-SQL statement or stored procedure to run against a connection.</dd></div><div class="def"><dt>SqlDataReader</dt><dd>A fast, forward-only cursor over result rows; call Read() once per row.</dd></div><div class="def"><dt>ExecuteScalar</dt><dd>Runs a command and returns the first column of the first row as object; good for COUNT/SUM.</dd></div><div class="def"><dt>ExecuteNonQuery</dt><dd>Runs INSERT/UPDATE/DELETE; returns the number of rows affected.</dd></div><div class="def"><dt>ExecuteReader</dt><dd>Runs a SELECT and returns a SqlDataReader.</dd></div><div class="def"><dt>Parameters</dt><dd>Typed values attached to a SqlCommand via SqlParameters; prevent SQL injection.</dd></div><div class="def"><dt>SQL injection</dt><dd>Attacker injects T-SQL by embedding it in a string concatenation; parameters stop it.</dd></div><div class="def"><dt>Connection pooling</dt><dd>ADO.NET reuses physical connections; opening/closing SqlConnection is cheap by design.</dd></div><div class="def"><dt>TrustServerCertificate</dt><dd>Connection-string key needed for local Docker SQL Server that uses a self-signed cert.</dd></div><div class="def"><dt>await using</dt><dd>Disposes an IAsyncDisposable asynchronously; use on SqlConnection and SqlCommand in async code.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Always use <code>await using</code> (or a <code>using</code> block) to close connections back to the pool.</li><li><b>Never</b> concatenate user input into T-SQL strings; always use <code>SqlParameter</code>.</li><li><code>CommandTimeout</code> defaults to 30 s; set it higher for reports, lower for OLTP.</li><li><code>SqlDataReader</code> is forward-only and must be closed before the connection can run another command.</li><li><code>ExecuteScalar</code> returns <code>null</code> if the result set is empty; cast to <code>object</code> then check.</li></ul></div>
+
+<h3>1. Connection string and first query</h3>
+<div class="code"><div class="fname">BasicQuery.cs</div><pre><code class="language-csharp">// NuGet: Microsoft.Data.SqlClient
+using Microsoft.Data.SqlClient;
+
+const string ConnStr =
+    "Server=localhost,1433;Database=StoreDb;User Id=sa;Password=YourStrong!Pass;" +
+    "TrustServerCertificate=True;";   // needed when Docker uses a self-signed cert
+
+await using var conn = new SqlConnection(ConnStr);
+await conn.OpenAsync();             // checks out a pooled connection
+
+const string sql = "SELECT ProductId, Name, Price FROM Products WHERE CategoryId = @catId";
+await using var cmd = new SqlCommand(sql, conn);
+cmd.Parameters.AddWithValue("@catId", 2);     // safe: parameterised
+
+await using var reader = await cmd.ExecuteReaderAsync();
+while (await reader.ReadAsync())
+{
+    int    id    = reader.GetInt32(0);
+    string name  = reader.GetString(1);
+    decimal price = reader.GetDecimal(2);
+    Console.WriteLine($"  {id,4}  {name,-30}  ₹{price,8:N2}");
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> The connection string key <code>TrustServerCertificate=True</code> is fine for a local Docker instance. For production, use a properly signed certificate instead.</div>
+
+<h3>2. SQL injection — attack and fix</h3>
+<div class="code"><div class="fname">SqlInjection.cs</div><pre><code class="language-csharp">// ❌ VULNERABLE — attacker sends name = "'; DROP TABLE Products; --"
+string userInput = Console.ReadLine()!;
+string badSql = $"SELECT * FROM Products WHERE Name = '{userInput}'";
+// Resulting T-SQL:  SELECT * FROM Products WHERE Name = ''; DROP TABLE Products; --'
+
+// ✓ SAFE — parameter binding
+await using var conn = new SqlConnection(ConnStr);
+await conn.OpenAsync();
+await using var cmd = new SqlCommand(
+    "SELECT ProductId, Name FROM Products WHERE Name = @name", conn);
+cmd.Parameters.Add("@name", System.Data.SqlDbType.NVarChar, 200).Value = userInput;
+
+await using var reader = await cmd.ExecuteReaderAsync();
+while (await reader.ReadAsync())
+    Console.WriteLine(reader.GetString(1));</code></pre></div>
+<div class="note warn"><b>Best practice.</b> Never use <code>Parameters.AddWithValue</code> for binary/date types — the driver infers the wrong SqlDbType. Use <code>Parameters.Add(name, SqlDbType.Date).Value = val</code> for explicit types.</div>
+
+<h3>3. ExecuteScalar and ExecuteNonQuery</h3>
+<div class="code"><div class="fname">ScalarNonQuery.cs</div><pre><code class="language-csharp">// ExecuteScalar — scalar result
+await using var conn = new SqlConnection(ConnStr);
+await conn.OpenAsync();
+
+await using var countCmd = new SqlCommand(
+    "SELECT COUNT(*) FROM Orders WHERE CustomerId = @cid AND OrderDate &gt;= @from", conn);
+countCmd.Parameters.Add("@cid",  System.Data.SqlDbType.Int).Value       = 101;
+countCmd.Parameters.Add("@from", System.Data.SqlDbType.Date).Value      = new DateTime(2026, 1, 1);
+object? raw = await countCmd.ExecuteScalarAsync();
+int count = raw is null ? 0 : Convert.ToInt32(raw);
+Console.WriteLine($"Orders this year: {count}");
+
+// ExecuteNonQuery — INSERT, UPDATE, DELETE
+await using var insCmd = new SqlCommand(
+    "INSERT INTO Products (Name, Price, CategoryId) VALUES (@n, @p, @c)", conn);
+insCmd.Parameters.Add("@n", System.Data.SqlDbType.NVarChar, 200).Value  = "Wireless Mouse";
+insCmd.Parameters.Add("@p", System.Data.SqlDbType.Decimal).Value        = 799m;
+insCmd.Parameters.Add("@c", System.Data.SqlDbType.Int).Value            = 3;
+int rows = await insCmd.ExecuteNonQueryAsync();
+Console.WriteLine($"{rows} row(s) inserted");   // 1 row(s) inserted</code></pre></div>
+
+<h3>4. Reading the new IDENTITY back</h3>
+<div class="code"><div class="fname">InsertAndGetId.cs</div><pre><code class="language-csharp">// Append OUTPUT INSERTED.Id to get the generated PK in one round trip
+const string insertSql = @"
+    INSERT INTO Products (Name, Price, CategoryId)
+    OUTPUT INSERTED.ProductId
+    VALUES (@n, @p, @c)";
+
+await using var conn = new SqlConnection(ConnStr);
+await conn.OpenAsync();
+await using var cmd = new SqlCommand(insertSql, conn);
+cmd.Parameters.Add("@n", System.Data.SqlDbType.NVarChar, 200).Value = "Bluetooth Keyboard";
+cmd.Parameters.Add("@p", System.Data.SqlDbType.Decimal).Value        = 1299m;
+cmd.Parameters.Add("@c", System.Data.SqlDbType.Int).Value            = 3;
+
+object? inserted = await cmd.ExecuteScalarAsync();
+int newId = Convert.ToInt32(inserted);
+Console.WriteLine($"New product id: {newId}");</code></pre></div>
+
+<h3>5. Connection pooling explained</h3>
+<ol>
+<li>The <i>first</i> <code>Open()</code> creates a real TCP connection to SQL Server.</li>
+<li>On <code>Close()</code> / <code>Dispose()</code>, ADO.NET returns it to an in-process pool keyed by connection string.</li>
+<li>The <i>next</i> <code>Open()</code> with the same string reuses that physical connection — typically &lt;1 ms vs ~50 ms for a new one.</li>
+<li>Default pool: 1–100 connections. Tune with <code>Min Pool Size</code> and <code>Max Pool Size</code> in the string.</li>
+</ol>
+<div class="code"><div class="fname">PoolDemo.cs</div><pre><code class="language-csharp">// All three share the pool — physical connections are reused
+for (int i = 0; i &lt; 5; i++)
+{
+    await using var c = new SqlConnection(ConnStr);
+    await c.OpenAsync();                            // fast after first open
+    Console.WriteLine($"State: {c.State}");         // Open
+}   // Dispose() returns to pool, does NOT close the TCP connection</code></pre></div>
+<div class="note warn"><b>Avoid.</b> Setting <code>Pooling=False</code> in the connection string disables pooling — every Open creates a new TCP connection. Never do this in production OLTP code.</div>
+
+<h3>6. Async pattern: async/await from top to bottom</h3>
+<div class="code"><div class="fname">DataAccess.cs</div><pre><code class="language-csharp">public static async Task&lt;IReadOnlyList&lt;Product&gt;&gt; GetByCategoryAsync(int categoryId,
+    CancellationToken ct = default)
+{
+    var results = new List&lt;Product&gt;();
+
+    await using var conn = new SqlConnection(ConnStr);
+    await conn.OpenAsync(ct);
+
+    await using var cmd = new SqlCommand(
+        "SELECT ProductId, Name, Price FROM Products WHERE CategoryId = @cid ORDER BY Name", conn);
+    cmd.Parameters.Add("@cid", System.Data.SqlDbType.Int).Value = categoryId;
+
+    await using var reader = await cmd.ExecuteReaderAsync(ct);
+    while (await reader.ReadAsync(ct))
+    {
+        results.Add(new Product(
+            reader.GetInt32(0),
+            reader.GetString(1),
+            reader.GetDecimal(2)));
+    }
+    return results;
+}
+
+public record Product(int Id, string Name, decimal Price);</code></pre></div>
+<div class="note tip"><b>Tip.</b> Pass a <code>CancellationToken</code> from your controller or top-level host all the way into <code>OpenAsync</code> and <code>ReadAsync</code>. When the HTTP client disconnects, the query is cancelled and the connection returns to the pool immediately.</div>
+
+<h3>Common mistakes</h3><ul><li>Forgetting <code>TrustServerCertificate=True</code> for a local Docker instance and getting a certificate error.</li><li>Building SQL strings with <code>$"...{userInput}..."</code> — use parameters.</li><li>Reading <code>reader.GetString(0)</code> when the column is <code>NULL</code> — check <code>reader.IsDBNull(0)</code> first.</li><li>Not disposing the reader before reusing the connection (a second command on the same connection while a reader is open throws <code>InvalidOperationException</code>).</li><li>Storing the connection as a singleton field — pool a string, not an open connection.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create <code>StoreDb</code> in Docker (commands on Saturday). Write a console app that reads Products and prints them in a formatted table with ₹ prices.</li><li>Add a method <code>InsertProductAsync(string name, decimal price, int categoryId)</code> that inserts a row and returns the new ProductId using <code>OUTPUT INSERTED.ProductId</code>.</li><li>Demonstrate the injection attack in a debug build (print the bad SQL to the console), then switch to parameters and show the safe version.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does <code>await using</code> do?</summary>It calls <code>DisposeAsync()</code> after the block, returning the connection to the pool asynchronously.</details><details><summary>Why shouldn't you hold a SqlConnection open across a long operation?</summary>It holds a physical connection from the pool. Under load, other threads starve waiting for a free connection.</details><details><summary>What is <code>ExecuteScalar</code> good for?</summary>Single-value queries: COUNT, MAX, MIN, a newly inserted IDENTITY. Returns <code>null</code> if the result set is empty.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is ADO.NET?</summary><div>The base data-access layer in .NET. It provides SqlConnection, SqlCommand, SqlDataReader and DataAdapter. ORMs like Dapper and EF Core are built on top of it.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do SqlParameters prevent SQL injection?</summary><div>The driver serialises the value separately from the query text. The value is never interpreted as T-SQL, so appending <code>; DROP TABLE Products</code> is just a string value.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain connection pooling in ADO.NET.</summary><div>When you call Dispose/Close, the physical TCP connection is kept alive in a pool keyed by connection string. The next Open with the same string reuses it, avoiding the ~50 ms cost of a fresh TCP handshake and login.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the difference between ExecuteScalar, ExecuteNonQuery and ExecuteReader?</summary><div>ExecuteScalar returns one value (first column, first row) — good for COUNT/SUM. ExecuteNonQuery runs DML and returns the rows-affected count. ExecuteReader opens a forward-only cursor for multi-row SELECT results.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you use <code>CommandBehavior.CloseConnection</code>?</summary><div>When you want the connection auto-closed when the reader is closed — useful when you return the reader from a method so the caller doesn't need to manage the connection explicitly. With async/await and proper disposal this is rarely needed.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the risk of <code>Parameters.AddWithValue</code>?</summary><div>The driver infers the SqlDbType from the .NET value. A string infers NVarChar(4000) but your column might be Varchar(50), causing an index-scan rather than a seek. Use <code>Parameters.Add(name, SqlDbType.NVarChar, 50)</code> to be precise.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Dapper: micro-ORM on top of ADO.NET</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Use Dapper to map query results directly into C# objects with minimal ceremony, run multi-mapping, stored procedures and IN-list queries.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Dapper</dt><dd>A micro-ORM that extends <code>IDbConnection</code> with extension methods like <code>Query&lt;T&gt;</code> and <code>Execute</code>.</dd></div><div class="def"><dt>Query&lt;T&gt;</dt><dd>Runs a SELECT and materialises each row into a strongly-typed T using property-name matching.</dd></div><div class="def"><dt>QueryAsync&lt;T&gt;</dt><dd>The async variant of Query, returning <code>IEnumerable&lt;T&gt;</code> (materialised on return).</dd></div><div class="def"><dt>Execute</dt><dd>Runs INSERT/UPDATE/DELETE; accepts an anonymous object for parameters.</dd></div><div class="def"><dt>Anonymous params</dt><dd>An anonymous object <code>new { Name = x, Price = y }</code> whose property names match SQL parameter names.</dd></div><div class="def"><dt>Multi-mapping</dt><dd><code>Query&lt;TFirst, TSecond, TReturn&gt;</code> joins two tables and maps them into separate objects.</dd></div><div class="def"><dt>QueryMultiple</dt><dd>Runs multiple SELECT statements in one round trip and reads each result set sequentially.</dd></div><div class="def"><dt>Stored procedure</dt><dd>A compiled T-SQL routine; Dapper calls it with <code>commandType: CommandType.StoredProcedure</code>.</dd></div><div class="def"><dt>IN-list</dt><dd>A variable number of values after IN (); Dapper expands a C# collection into <code>(@p0,@p1,...)</code>.</dd></div><div class="def"><dt>DynamicParameters</dt><dd>Dapper's typed parameter bag; supports OUTPUT parameters and table-valued parameters.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Dapper maps by <b>property name</b> (case-insensitive) — column alias in SQL to match the property name when they differ.</li><li>Dapper materialises the result set before returning, so you can close the connection immediately after the call.</li><li>Use <code>QueryFirstOrDefaultAsync&lt;T&gt;</code> when you expect at most one row.</li><li>Dapper's IN-list expansion sends <code>@ids0, @ids1, …</code> — this prevents injection but generates a unique plan per list size.</li><li><code>DynamicParameters</code> is needed for OUTPUT params and stored procedures that have both IN and OUT.</li></ul></div>
+
+<h3>1. Installing and first query</h3>
+<div class="code"><div class="fname">DapperBasics.cs</div><pre><code class="language-csharp">// NuGet: Dapper  (also requires Microsoft.Data.SqlClient)
+using Dapper;
+using Microsoft.Data.SqlClient;
+
+const string ConnStr = "Server=localhost,1433;Database=StoreDb;User Id=sa;" +
+                       "Password=YourStrong!Pass;TrustServerCertificate=True;";
+
+await using var conn = new SqlConnection(ConnStr);
+
+// Query&lt;T&gt; maps column names to property names (case-insensitive)
+IEnumerable&lt;Product&gt; products =
+    await conn.QueryAsync&lt;Product&gt;("SELECT ProductId, Name, Price FROM Products ORDER BY Price");
+
+foreach (var p in products)
+    Console.WriteLine($"  {p.ProductId,4}  {p.Name,-30}  ₹{p.Price,8:N2}");
+
+// Get a single row (null when not found)
+Product? item = await conn.QueryFirstOrDefaultAsync&lt;Product&gt;(
+    "SELECT ProductId, Name, Price FROM Products WHERE ProductId = @id",
+    new { id = 7 });
+
+Console.WriteLine(item is null ? "Not found" : $"Found: {item.Name}");
+
+public class Product
+{
+    public int     ProductId  { get; set; }
+    public string  Name       { get; set; } = "";
+    public decimal Price      { get; set; }
+}</code></pre></div>
+
+<h3>2. Execute — INSERT/UPDATE/DELETE with anonymous params</h3>
+<div class="code"><div class="fname">DapperExecute.cs</div><pre><code class="language-csharp">await using var conn = new SqlConnection(ConnStr);
+
+// Anonymous object: property names become @name, @price, @categoryId
+int inserted = await conn.ExecuteAsync(
+    "INSERT INTO Products (Name, Price, CategoryId) VALUES (@name, @price, @categoryId)",
+    new { name = "Wireless Earbuds", price = 1899m, categoryId = 4 });
+
+Console.WriteLine($"Inserted {inserted} row(s)");   // 1
+
+// Batch insert: pass a collection — Dapper loops and runs one statement per item
+var newItems = new[]
+{
+    new { name = "USB Hub",  price = 599m, categoryId = 3 },
+    new { name = "Web Cam",  price = 2499m, categoryId = 3 },
+};
+int total = await conn.ExecuteAsync(
+    "INSERT INTO Products (Name, Price, CategoryId) VALUES (@name, @price, @categoryId)",
+    newItems);
+Console.WriteLine($"Batch inserted {total} row(s)");   // 2</code></pre></div>
+<div class="note tip"><b>Tip.</b> Dapper batch inserts loop in C#, not in a single SQL statement. For large volumes, use <code>SqlBulkCopy</code> or a table-valued parameter.</div>
+
+<h3>3. Multi-mapping: JOIN two tables into two objects</h3>
+<div class="code"><div class="fname">DapperMultimap.cs</div><pre><code class="language-csharp">const string joinSql = @"
+    SELECT p.ProductId, p.Name, p.Price,
+           c.CategoryId, c.CategoryName
+    FROM   Products p
+    JOIN   Categories c ON c.CategoryId = p.CategoryId
+    ORDER  BY c.CategoryName, p.Name";
+
+await using var conn = new SqlConnection(ConnStr);
+
+// First 3 columns → Product; next 2 → Category
+IEnumerable&lt;Product&gt; rows = await conn.QueryAsync&lt;Product, Category, Product&gt;(
+    joinSql,
+    map: (product, category) =&gt; { product.Category = category; return product; },
+    splitOn: "CategoryId");   // Dapper splits at the first column named CategoryId
+
+foreach (var p in rows)
+    Console.WriteLine($"  [{p.Category?.CategoryName}] {p.Name}  ₹{p.Price:N2}");
+
+public class Category
+{
+    public int    CategoryId   { get; set; }
+    public string CategoryName { get; set; } = "";
+}
+
+public class Product
+{
+    public int      ProductId  { get; set; }
+    public string   Name       { get; set; } = "";
+    public decimal  Price      { get; set; }
+    public Category? Category  { get; set; }
+}</code></pre></div>
+
+<h3>4. QueryMultiple — two result sets in one round trip</h3>
+<div class="code"><div class="fname">DapperQueryMultiple.cs</div><pre><code class="language-csharp">const string twoSelects = @"
+    SELECT ProductId, Name, Price FROM Products WHERE CategoryId = @catId;
+    SELECT COUNT(*) FROM Products WHERE CategoryId = @catId;";
+
+await using var conn = new SqlConnection(ConnStr);
+using var multi = await conn.QueryMultipleAsync(twoSelects, new { catId = 2 });
+
+IEnumerable&lt;Product&gt; products = await multi.ReadAsync&lt;Product&gt;();
+int total = await multi.ReadSingleAsync&lt;int&gt;();
+
+Console.WriteLine($"Category 2 has {total} product(s):");
+foreach (var p in products)
+    Console.WriteLine($"  {p.Name}  ₹{p.Price:N2}");</code></pre></div>
+
+<h3>5. Stored procedures</h3>
+<div class="code"><div class="fname">DapperStoredProc.cs</div><pre><code class="language-csharp">// T-SQL proc definition (run once to create it):
+// CREATE PROCEDURE usp_GetOrdersByCustomer
+//   @CustomerId INT, @From DATE, @To DATE
+// AS
+//   SELECT o.OrderId, o.OrderDate, o.TotalAmount
+//   FROM   Orders o
+//   WHERE  o.CustomerId = @CustomerId
+//     AND  o.OrderDate BETWEEN @From AND @To;
+
+await using var conn = new SqlConnection(ConnStr);
+var orders = await conn.QueryAsync&lt;Order&gt;(
+    "usp_GetOrdersByCustomer",
+    new { CustomerId = 101, From = new DateTime(2026, 1, 1), To = DateTime.Today },
+    commandType: System.Data.CommandType.StoredProcedure);
+
+foreach (var o in orders)
+    Console.WriteLine($"  #{o.OrderId}  {o.OrderDate:dd-MMM-yyyy}  ₹{o.TotalAmount:N2}");
+
+public record Order(int OrderId, DateTime OrderDate, decimal TotalAmount);</code></pre></div>
+
+<h3>6. IN-list queries</h3>
+<div class="code"><div class="fname">DapperInList.cs</div><pre><code class="language-csharp">// Dapper expands the collection automatically:  WHERE ProductId IN (@ids0, @ids1, @ids2)
+var ids = new[] { 3, 7, 12, 19 };
+await using var conn = new SqlConnection(ConnStr);
+IEnumerable&lt;Product&gt; found = await conn.QueryAsync&lt;Product&gt;(
+    "SELECT ProductId, Name, Price FROM Products WHERE ProductId IN @ids",
+    new { ids });   // Note: no parentheses — Dapper adds them
+
+foreach (var p in found)
+    Console.WriteLine($"  {p.ProductId}  {p.Name}  ₹{p.Price:N2}");</code></pre></div>
+<div class="note warn"><b>Limit.</b> SQL Server has an IN-list limit of 2 100 parameters by default. For large sets, batch into groups of 1000 or use a table-valued parameter.</div>
+
+<h3>Common mistakes</h3><ul><li>Forgetting <code>splitOn</code> in multi-mapping (default is 'Id'; use the actual column name).</li><li>Calling <code>Query&lt;T&gt;</code> (synchronous) in an async method instead of <code>QueryAsync&lt;T&gt;</code>.</li><li>Mismatch between SQL column alias and C# property name — alias the column in SQL to match.</li><li>Passing a large collection to IN-list without batching, hitting the 2100-parameter limit.</li><li>Forgetting <code>commandType: CommandType.StoredProcedure</code> — the default is Text, which wraps the proc name in a SELECT.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write <code>ProductRepository</code> with methods <code>GetAllAsync</code>, <code>GetByIdAsync</code>, <code>InsertAsync</code> using Dapper.</li><li>Add a method that queries Orders with their customer names using multi-mapping (JOIN on <code>CustomerId</code>).</li><li>Add a <code>GetByIdsAsync(IEnumerable&lt;int&gt; ids)</code> method using the IN-list feature.</li></ol>
+<h3>Self-check questions</h3><details><summary>How does Dapper map columns to properties?</summary>By property name, case-insensitively. If the name differs, alias the column in SQL: <code>ProductId AS Id</code>.</details><details><summary>What is QueryMultiple used for?</summary>Sending several SELECT statements in one network round trip, then reading each result set in order with <code>Read&lt;T&gt;</code>.</details><details><summary>How does Dapper handle IN-list parameters?</summary>A collection property (e.g., <code>new { ids = new[] {1,2,3} }</code>) is expanded to <code>(@ids0, @ids1, @ids2)</code> automatically.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is Dapper and how does it relate to ADO.NET?</summary><div>Dapper is a micro-ORM — a set of extension methods on IDbConnection. It sits directly on ADO.NET, using SqlCommand internally but handling the reader-to-object mapping for you, with minimal overhead.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Dapper vs EF Core: when would you pick each?</summary><div>Dapper for maximum control over SQL, raw performance, complex reports or existing stored procedures. EF Core for create/update/delete, change tracking, migrations and teams that prefer not to write SQL by hand.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you call a stored procedure with Dapper?</summary><div>Pass the procedure name as the SQL, and <code>commandType: CommandType.StoredProcedure</code>. Parameters match by name.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is <code>DynamicParameters</code> and when do you need it?</summary><div>A typed bag for Dapper parameters that supports OUTPUT and RETURN values: <code>var dp = new DynamicParameters(); dp.Add("@NewId", dbType: DbType.Int32, direction: ParameterDirection.Output);</code> then read with <code>dp.Get&lt;int&gt;("@NewId")</code>. Required for stored procedures that return values via OUTPUT params.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does Dapper's batch Execute work?</summary><div>Passing an IEnumerable as the param argument makes Dapper iterate and run the statement once per item in a loop. It is NOT a single bulk SQL — use SqlBulkCopy or TVPs for high-volume inserts.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Can Dapper be used with transactions?</summary><div>Yes. Pass the transaction as the <code>transaction</code> argument: <code>conn.Execute(sql, params, transaction: tx)</code>. The connection and transaction must both be open and must match.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>EF Core: DbContext, DbSet, UseSqlServer, migrations</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Define a model, wire up EF Core, add the first migration, and apply it to create the schema — the foundation every day this week builds on.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>DbContext</dt><dd>EF Core's unit-of-work and gateway to the database; holds configuration and the tracked entity cache.</dd></div><div class="def"><dt>DbSet&lt;T&gt;</dt><dd>A typed collection representing a database table; source of LINQ queries.</dd></div><div class="def"><dt>UseSqlServer</dt><dd>Extension method (from <code>Microsoft.EntityFrameworkCore.SqlServer</code>) that tells EF Core to generate T-SQL for SQL Server.</dd></div><div class="def"><dt>Convention</dt><dd>A default EF Core rule: a property named <code>Id</code> or <code>&lt;ClassName&gt;Id</code> becomes the PK; <code>string</code> maps to <code>nvarchar(max)</code>.</dd></div><div class="def"><dt>Migration</dt><dd>A generated C# file recording the incremental schema change; applied with <code>dotnet ef database update</code>.</dd></div><div class="def"><dt>ModelSnapshot</dt><dd>EF Core's record of the current model; used to generate the next migration diff.</dd></div><div class="def"><dt>dotnet ef</dt><dd>The EF Core CLI tool (<code>dotnet-ef</code> global tool) for migrations, scaffolding and dbcontext operations.</dd></div><div class="def"><dt>add migration</dt><dd>Computes the diff between ModelSnapshot and the current model and writes <code>Up()</code>/<code>Down()</code> methods.</dd></div><div class="def"><dt>update database</dt><dd>Runs pending migrations against the target database.</dd></div><div class="def"><dt>script migration</dt><dd>Generates an idempotent SQL script — safe to run on a CI server or in a DBA review.</dd></div><div class="def"><dt>Design-time factory</dt><dd>A class implementing <code>IDesignTimeDbContextFactory&lt;TContext&gt;</code> that the CLI uses to build a DbContext when no DI host is available.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Never commit a migration you haven't reviewed — look at the generated C# to confirm EF Core did what you intended.</li><li>Keep one <code>DbContext</code> per HTTP request (Scoped lifetime) in web apps; never Singleton.</li><li><code>dotnet ef migrations remove</code> deletes the last unapplied migration file — only works before <code>update database</code>.</li><li>Always add <code>MaxLength</code>/<code>Column</code> annotations (or Fluent API) for string properties; <code>nvarchar(max)</code> blocks some indexes.</li><li>Use <code>dotnet ef migrations script</code> for production deployments rather than <code>update database</code>.</li></ul></div>
+
+<h3>1. NuGet packages and project setup</h3>
+<div class="code"><div class="fname">StoreData.csproj (excerpt)</div><pre><code class="language-xml">// In StoreData.csproj:
+// &lt;PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.*" /&gt;
+// &lt;PackageReference Include="Microsoft.EntityFrameworkCore.Design"    Version="8.0.*"&gt;
+//   &lt;PrivateAssets&gt;all&lt;/PrivateAssets&gt;
+//   &lt;IncludeAssets&gt;runtime; build; native; contentfiles; analyzers&lt;/IncludeAssets&gt;
+// &lt;/PackageReference&gt;
+
+// Global tool (run once per machine):
+// dotnet tool install --global dotnet-ef</code></pre></div>
+
+<h3>2. Model classes</h3>
+<div class="code"><div class="fname">Core/Models/Category.cs</div><pre><code class="language-csharp">// Core/Models/Category.cs
+namespace StoreData.Core.Models;
+
+public class Category
+{
+    public int    CategoryId   { get; set; }         // convention: PK
+    public string CategoryName { get; set; } = "";
+    public ICollection&lt;Product&gt; Products { get; set; } = [];
+}</code></pre></div>
+<div class="code"><div class="fname">Core/Models/Product.cs</div><pre><code class="language-csharp">// Core/Models/Product.cs
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace StoreData.Core.Models;
+
+public class Product
+{
+    public int    ProductId   { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Name        { get; set; } = "";
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Price      { get; set; }
+
+    public int    CategoryId  { get; set; }           // FK by convention
+    public Category? Category { get; set; }           // navigation
+}</code></pre></div>
+
+<h3>3. DbContext</h3>
+<div class="code"><div class="fname">Data/StoreDbContext.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using StoreData.Core.Models;
+
+namespace StoreData.Data;
+
+public class StoreDbContext : DbContext
+{
+    public StoreDbContext(DbContextOptions&lt;StoreDbContext&gt; options) : base(options) { }
+
+    public DbSet&lt;Category&gt; Categories =&gt; Set&lt;Category&gt;();
+    public DbSet&lt;Product&gt;  Products   =&gt; Set&lt;Product&gt;();
+
+    protected override void OnModelCreating(ModelBuilder model)
+    {
+        // All Fluent API config goes here (or in IEntityTypeConfiguration classes, Thursday)
+        model.Entity&lt;Category&gt;()
+             .HasIndex(c =&gt; c.CategoryName)
+             .IsUnique();
+    }
+}</code></pre></div>
+
+<h3>4. Design-time factory (for the CLI)</h3>
+<div class="code"><div class="fname">Data/StoreDbContextFactory.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+
+namespace StoreData.Data;
+
+// dotnet ef uses this when there is no running host to provide a DbContext
+public class StoreDbContextFactory : IDesignTimeDbContextFactory&lt;StoreDbContext&gt;
+{
+    public StoreDbContext CreateDbContext(string[] args)
+    {
+        var options = new DbContextOptionsBuilder&lt;StoreDbContext&gt;()
+            .UseSqlServer(
+                "Server=localhost,1433;Database=StoreDb;User Id=sa;" +
+                "Password=YourStrong!Pass;TrustServerCertificate=True;")
+            .Options;
+        return new StoreDbContext(options);
+    }
+}</code></pre></div>
+
+<h3>5. First migration and applying it</h3>
+<div class="code"><div class="fname">Terminal</div><pre><code class="language-bash"># From the solution root or the project folder containing StoreDbContext:
+
+dotnet ef migrations add InitialCreate --project StoreData --startup-project StoreData
+# → Migrations/20261114120000_InitialCreate.cs
+# → Migrations/StoreDbContextModelSnapshot.cs
+
+dotnet ef database update --project StoreData
+# → Runs InitialCreate.Up() — creates Categories and Products tables
+
+# Review the generated SQL without running it:
+dotnet ef migrations script --idempotent --output migrate.sql</code></pre></div>
+
+<h3>6. What the generated migration looks like</h3>
+<div class="code"><div class="fname">Migrations/InitialCreate.cs (excerpt)</div><pre><code class="language-csharp">// Auto-generated — review before committing
+public partial class InitialCreate : Migration
+{
+    protected override void Up(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.CreateTable(
+            name: "Categories",
+            columns: table =&gt; new
+            {
+                CategoryId   = table.Column&lt;int&gt;(nullable: false)
+                                    .Annotation("SqlServer:Identity", "1, 1"),
+                CategoryName = table.Column&lt;string&gt;(maxLength: 200, nullable: false)
+            },
+            constraints: table =&gt; table.PrimaryKey("PK_Categories", x =&gt; x.CategoryId));
+
+        migrationBuilder.CreateTable(
+            name: "Products",
+            columns: table =&gt; new
+            {
+                ProductId  = table.Column&lt;int&gt;(nullable: false)
+                                  .Annotation("SqlServer:Identity", "1, 1"),
+                Name       = table.Column&lt;string&gt;(maxLength: 200, nullable: false),
+                Price      = table.Column&lt;decimal&gt;(type: "decimal(18,2)", nullable: false),
+                CategoryId = table.Column&lt;int&gt;(nullable: false)
+            },
+            constraints: table =&gt;
+            {
+                table.PrimaryKey("PK_Products", x =&gt; x.ProductId);
+                table.ForeignKey(
+                    name: "FK_Products_Categories_CategoryId",
+                    column: x =&gt; x.CategoryId,
+                    principalTable: "Categories",
+                    principalColumn: "CategoryId",
+                    onDelete: ReferentialAction.Cascade);
+            });
+
+        migrationBuilder.CreateIndex("IX_Categories_CategoryName", "Categories", "CategoryName", unique: true);
+    }
+
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropTable("Products");
+        migrationBuilder.DropTable("Categories");
+    }
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> Add a second model change, run <code>dotnet ef migrations add AddStockColumn</code>, review the diff, then <code>dotnet ef database update</code> again — this trains the incremental migration muscle.</div>
+
+<h3>Common mistakes</h3><ul><li>Forgetting <code>Microsoft.EntityFrameworkCore.Design</code> — the CLI throws <code>Unable to create a 'DbContext'</code>.</li><li>Not adding a design-time factory when there is no Web host — same error.</li><li>Leaving string properties as <code>nvarchar(max)</code> (no <code>[MaxLength]</code>) — blocks some indexes and wastes storage.</li><li>Running <code>dotnet ef database update</code> in production instead of using <code>script --idempotent</code>.</li><li>Calling <code>migrations remove</code> after <code>update database</code> — the migration is already applied and the remove will fail.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create the <code>StoreData</code> class library with the <code>Category</code> and <code>Product</code> models, <code>StoreDbContext</code>, and factory.</li><li>Run <code>dotnet ef migrations add InitialCreate</code> and inspect the generated file.</li><li>Apply the migration with <code>dotnet ef database update</code> and confirm the tables exist with <code>sqlcmd</code> or SSMS.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is a DbContext?</summary>EF Core's session: it tracks entity state changes, holds the DbSets, translates LINQ to SQL, and manages the connection.</details><details><summary>Why is a design-time factory needed?</summary>When the CLI runs <code>dotnet ef migrations add</code>, no host is running. The factory gives the CLI a way to build a configured DbContext without startup code.</details><details><summary>What does <code>migrations remove</code> do?</summary>Deletes the most recent migration file — only safe if it hasn't been applied. After <code>database update</code>, you must revert with a new migration instead.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is EF Core and how does it compare to ADO.NET?</summary><div>EF Core is an ORM that maps C# classes to database tables and translates LINQ queries to SQL. ADO.NET is the lower-level API you'd write by hand without an ORM. EF Core reduces boilerplate but gives less SQL control.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a migration in EF Core?</summary><div>A C# file with Up() and Down() methods describing a schema change. EF Core generates it from the diff between the last ModelSnapshot and the current model. Apply it with <code>dotnet ef database update</code>.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What conventions does EF Core use for primary keys?</summary><div>A property named <code>Id</code> or <code>&lt;TypeName&gt;Id</code> becomes the PK automatically. For <code>int</code> and <code>long</code> PKs, SQL Server's IDENTITY is applied.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the ModelSnapshot and why shouldn't you delete it?</summary><div>EF Core stores the last-known model in Migrations/&lt;Context&gt;ModelSnapshot.cs. It diffs the current model against this file to generate the next migration. Deleting it means EF Core thinks the schema is empty and regenerates everything.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you use <code>dotnet ef migrations script --idempotent</code>?</summary><div>For production. The script wraps each migration in an IF NOT EXISTS check against the __EFMigrationsHistory table, so it's safe to run repeatedly and can be reviewed/approved before execution.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you configure a decimal column type?</summary><div>Use the Data Annotation <code>[Column(TypeName = "decimal(18,2)")]</code> or Fluent API <code>.HasColumnType("decimal(18,2)")</code>. Without it EF Core maps C# decimal to SQL Server's <code>decimal(18,2)</code> by default in EF 8, but it is best to be explicit.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>EF Core relationships: Fluent API and IEntityTypeConfiguration</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Map one-to-many and many-to-many relationships correctly, control cascade behaviour, and move configuration out of OnModelCreating into clean per-type classes.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Navigation property</dt><dd>A C# property pointing to a related entity or collection; EF Core uses it to build JOINs.</dd></div><div class="def"><dt>Foreign key</dt><dd>A scalar property (e.g. <code>CategoryId</code>) that holds the PK value of the related entity.</dd></div><div class="def"><dt>One-to-many</dt><dd>One Category has many Products; the FK lives on the many-side (Products.CategoryId).</dd></div><div class="def"><dt>Many-to-many</dt><dd>Order ↔ Product; EF Core 5+ creates a join table automatically via skip navigations.</dd></div><div class="def"><dt>Skip navigation</dt><dd>A direct collection on each end of a many-to-many without an explicit join entity.</dd></div><div class="def"><dt>Join entity</dt><dd>An explicit class (e.g. <code>OrderLine</code>) for a many-to-many when you need extra columns on the join row.</dd></div><div class="def"><dt>Required relationship</dt><dd>FK is non-nullable; deleting the principal cascades to dependents by convention.</dd></div><div class="def"><dt>Optional relationship</dt><dd>FK is nullable; delete of principal sets FK to NULL by convention.</dd></div><div class="def"><dt>Cascade delete</dt><dd>SQL Server and EF Core automatically delete dependent rows when the principal is deleted.</dd></div><div class="def"><dt>Fluent API</dt><dd>Calls to <code>modelBuilder.Entity&lt;T&gt;()</code> in <code>OnModelCreating</code> that override conventions.</dd></div><div class="def"><dt>IEntityTypeConfiguration&lt;T&gt;</dt><dd>Interface for a per-entity configuration class; keeps <code>OnModelCreating</code> clean.</dd></div><div class="def"><dt>HasOne/HasMany/WithMany/WithOne</dt><dd>Fluent API methods that fully describe a relationship.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Naming conventions handle most simple FKs. Use Fluent API when names deviate or you need extra control.</li><li><code>DeleteBehavior.Restrict</code> prevents accidental cascade delete; prefer it for most business entities.</li><li>Skip navigations are the cleanest many-to-many when the join row has no extra columns.</li><li>Always put a unique index on the join table's composite PK — EF Core does this by convention.</li><li>Use <code>IEntityTypeConfiguration&lt;T&gt;</code> classes for each entity to keep <code>OnModelCreating</code> from growing uncontrollably.</li></ul></div>
+
+<h3>1. One-to-many (Category → Products, full example)</h3>
+<div class="code"><div class="fname">Data/Config/ProductConfig.cs</div><pre><code class="language-csharp">// All Fluent API config in one place per entity
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using StoreData.Core.Models;
+
+namespace StoreData.Data.Config;
+
+public class ProductConfig : IEntityTypeConfiguration&lt;Product&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;Product&gt; b)
+    {
+        b.ToTable("Products");
+        b.HasKey(p =&gt; p.ProductId);
+
+        b.Property(p =&gt; p.Name)
+         .IsRequired()
+         .HasMaxLength(200);
+
+        b.Property(p =&gt; p.Price)
+         .HasColumnType("decimal(18,2)");
+
+        // One Category has many Products; FK is ProductId (nullable = false)
+        b.HasOne(p =&gt; p.Category)
+         .WithMany(c =&gt; c.Products)
+         .HasForeignKey(p =&gt; p.CategoryId)
+         .OnDelete(DeleteBehavior.Restrict);  // prevent accidental cascade
+    }
+}</code></pre></div>
+<div class="code"><div class="fname">Data/StoreDbContext.cs (OnModelCreating)</div><pre><code class="language-csharp">// Register all IEntityTypeConfiguration classes with one line in OnModelCreating:
+protected override void OnModelCreating(ModelBuilder model)
+{
+    model.ApplyConfigurationsFromAssembly(typeof(StoreDbContext).Assembly);
+}</code></pre></div>
+
+<h3>2. Many-to-many via skip navigations (Order ↔ Product)</h3>
+<div class="code"><div class="fname">Core/Models/Order.cs</div><pre><code class="language-csharp">// Minimal model — no explicit join entity needed
+public class Order
+{
+    public int    OrderId     { get; set; }
+    public string CustomerName { get; set; } = "";
+    public ICollection&lt;Product&gt; Products { get; set; } = [];
+}
+
+// Product already has: public ICollection&lt;Order&gt; Orders { get; set; } = [];</code></pre></div>
+<div class="code"><div class="fname">Data/Config/OrderConfig.cs</div><pre><code class="language-csharp">public class OrderConfig : IEntityTypeConfiguration&lt;Order&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;Order&gt; b)
+    {
+        b.ToTable("Orders");
+        b.HasKey(o =&gt; o.OrderId);
+
+        b.Property(o =&gt; o.CustomerName).IsRequired().HasMaxLength(200);
+
+        // EF Core creates the join table OrderProduct automatically
+        b.HasMany(o =&gt; o.Products)
+         .WithMany(p =&gt; p.Orders)
+         .UsingEntity(j =&gt; j.ToTable("OrderProducts"));
+    }
+}</code></pre></div>
+
+<h3>3. Many-to-many with an explicit join entity (OrderLine)</h3>
+<div class="code"><div class="fname">Core/Models/OrderLine.cs</div><pre><code class="language-csharp">// Use when the join row has extra columns (Qty, UnitPrice, Discount)
+public class OrderLine
+{
+    public int     OrderId   { get; set; }     // composite PK part 1
+    public int     ProductId { get; set; }     // composite PK part 2
+    public int     Qty       { get; set; }
+    public decimal UnitPrice { get; set; }
+
+    public Order?   Order   { get; set; }
+    public Product? Product { get; set; }
+}</code></pre></div>
+<div class="code"><div class="fname">Data/Config/OrderLineConfig.cs</div><pre><code class="language-csharp">public class OrderLineConfig : IEntityTypeConfiguration&lt;OrderLine&gt;
+{
+    public void Configure(EntityTypeBuilder&lt;OrderLine&gt; b)
+    {
+        b.ToTable("OrderLines");
+        b.HasKey(ol =&gt; new { ol.OrderId, ol.ProductId });   // composite PK
+
+        b.Property(ol =&gt; ol.UnitPrice).HasColumnType("decimal(18,2)");
+
+        b.HasOne(ol =&gt; ol.Order)
+         .WithMany()
+         .HasForeignKey(ol =&gt; ol.OrderId)
+         .OnDelete(DeleteBehavior.Cascade);
+
+        b.HasOne(ol =&gt; ol.Product)
+         .WithMany()
+         .HasForeignKey(ol =&gt; ol.ProductId)
+         .OnDelete(DeleteBehavior.Restrict);
+    }
+}</code></pre></div>
+
+<h3>4. Required vs optional relationships</h3>
+<div class="tbl"><table><tr><th></th><th>Required</th><th>Optional</th></tr><tr><td>FK type</td><td><code>int CategoryId</code> (non-nullable)</td><td><code>int? SupplierId</code> (nullable)</td></tr><tr><td>Default cascade</td><td><code>Cascade</code> — delete principal deletes dependents</td><td><code>ClientSetNull</code> — EF sets FK to null</td></tr><tr><td>SQL Server FK</td><td><code>ON DELETE CASCADE</code></td><td><code>ON DELETE SET NULL</code> or <code>NO ACTION</code></td></tr><tr><td>Use when</td><td>Dependent can't exist without principal</td><td>Dependent can exist without the principal</td></tr></table></div>
+
+<h3>5. Data annotations vs Fluent API</h3>
+<div class="tbl"><table><tr><th>Capability</th><th>Data Annotations</th><th>Fluent API</th></tr><tr><td>PK, MaxLength, Required</td><td><code>[Key]</code> <code>[MaxLength]</code> <code>[Required]</code></td><td><code>HasKey</code> <code>HasMaxLength</code> <code>IsRequired</code></td></tr><tr><td>Composite PK</td><td>Not supported</td><td><code>HasKey(e =&gt; new {{ e.A, e.B }})</code></td></tr><tr><td>Relationship details</td><td><code>[ForeignKey]</code> (limited)</td><td><code>HasOne/HasMany/WithMany</code></td></tr><tr><td>Cascade behaviour</td><td>Not supported</td><td><code>OnDelete(DeleteBehavior.xxx)</code></td></tr><tr><td>Owned entity</td><td>Not supported</td><td><code>OwnsOne/OwnsMany</code></td></tr><tr><td>Table splitting</td><td>Not supported</td><td><code>ToTable</code> with <code>ToView</code></td></tr><tr><td>Location</td><td>On the model class</td><td>Separate config class / OnModelCreating</td></tr><tr><td>Recommendation</td><td>Simple constraints on POCOs</td><td>Anything advanced or when model must stay clean</td></tr></table></div>
+
+<h3>6. Adding migrations for the new entities</h3>
+<div class="code"><div class="fname">Terminal</div><pre><code class="language-bash"># After adding Order, OrderLine and their configs:
+dotnet ef migrations add AddOrdersAndLines
+dotnet ef database update
+
+# Check the generated SQL to verify composite PK and FKs look right:
+dotnet ef migrations script --idempotent</code></pre></div>
+<div class="note tip"><b>Tip.</b> Run <code>dotnet ef migrations script</code> after every migration and skim the output for unexpected DROP TABLE statements — EF Core occasionally gets confused and tries to recreate an existing table if the ModelSnapshot diverges.</div>
+
+<h3>Common mistakes</h3><ul><li>Forgetting to add the navigation property on both sides and wondering why the FK column isn't created.</li><li>Using <code>DeleteBehavior.Cascade</code> on a many-to-many join table principal — can delete products from an order, usually not intended.</li><li>Declaring a composite PK with an annotation (<code>[Key]</code> on two properties) — only Fluent API supports composite PKs.</li><li>Not calling <code>ApplyConfigurationsFromAssembly</code> and wondering why the config class has no effect.</li><li>Mixing annotations and Fluent API for the same property — Fluent API wins but it's confusing.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add a <code>Supplier</code> entity with an optional relationship to <code>Product</code> (nullable <code>SupplierId</code>). Generate and apply the migration.</li><li>Add an <code>OrderLine</code> join entity with a composite PK and <code>UnitPrice</code>/<code>Qty</code> columns. Write the <code>IEntityTypeConfiguration</code> class.</li><li>Query all orders with their lines and products loaded using <code>Include</code>/<code>ThenInclude</code>.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is a skip navigation?</summary>A collection property on each end of a many-to-many that bypasses the join entity class, letting you write <code>order.Products.Add(p)</code> without touching the join table directly.</details><details><summary>What does <code>ApplyConfigurationsFromAssembly</code> do?</summary>Scans the assembly for classes implementing <code>IEntityTypeConfiguration&lt;T&gt;</code> and calls <code>Configure</code> on each — no manual registration needed.</details><details><summary>What is the difference between Cascade and Restrict delete behaviour?</summary>Cascade: deleting the principal deletes all dependents automatically. Restrict: deleting the principal throws if dependents exist — you must delete them first.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How does EF Core know which property is the foreign key?</summary><div>By convention: a property named <code>&lt;NavigationName&gt;Id</code> (e.g. <code>CategoryId</code>) becomes the FK for the <code>Category</code> navigation. Use <code>[ForeignKey]</code> or <code>HasForeignKey</code> when the name deviates.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a navigation property?</summary><div>A C# property that references a related entity or collection. EF Core uses it to generate JOINs and load related data with Include.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When should you use an explicit join entity vs skip navigations?</summary><div>Use an explicit join entity (like OrderLine) when the join row has extra data (Qty, UnitPrice). Use skip navigations for a pure relationship with no extra columns.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does IEntityTypeConfiguration&lt;T&gt; do?</summary><div>Moves per-entity Fluent API configuration to its own class, keeping OnModelCreating clean. Registered via model.ApplyConfigurationsFromAssembly.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the difference between required and optional relationships in EF Core?</summary><div>Required: FK is non-nullable; default cascade is Cascade. Optional: FK is nullable; default cascade is ClientSetNull (EF sets the FK to null in memory before saving).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why is Restrict safer than Cascade for business data?</summary><div>Cascade deletes silently remove child rows. Restrict forces you to explicitly decide what to do with dependents, preventing accidental data loss.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>CRUD with EF Core and change tracking</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Add, query, update and delete entities, understand how change tracking states work, and see how SaveChanges builds the SQL behind the scenes.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Change tracking</dt><dd>EF Core watches every entity it fetched and computes what changed when SaveChanges is called.</dd></div><div class="def"><dt>EntityState</dt><dd>Enum: Added, Modified, Deleted, Unchanged, Detached — the state of an entity in the DbContext.</dd></div><div class="def"><dt>Snapshot</dt><dd>A deep copy EF Core takes when it loads an entity; it diffs the current values against this on SaveChanges.</dd></div><div class="def"><dt>Add</dt><dd><code>context.Products.Add(p)</code> — marks entity as Added; EF Core will INSERT on SaveChanges.</dd></div><div class="def"><dt>Update</dt><dd><code>context.Products.Update(p)</code> — marks all scalar properties as Modified; EF Core will UPDATE on SaveChanges.</dd></div><div class="def"><dt>Remove</dt><dd><code>context.Products.Remove(p)</code> — marks entity as Deleted; EF Core will DELETE on SaveChanges.</dd></div><div class="def"><dt>SaveChanges</dt><dd>Wraps all pending changes in a transaction and executes the SQL; returns rows affected.</dd></div><div class="def"><dt>No-tracking query</dt><dd><code>.AsNoTracking()</code> — EF Core skips the snapshot overhead; use for read-only queries.</dd></div><div class="def"><dt>Entry</dt><dd><code>context.Entry(entity).State</code> — inspect or manually set the EntityState.</dd></div><div class="def"><dt>Detached</dt><dd>Entity not tracked by any context; obtained from a no-tracking query or created with <code>new</code>.</dd></div><div class="def"><dt>Concurrency token</dt><dd>A <code>[Timestamp]</code>/<code>rowversion</code> column; EF Core adds <code>WHERE RowVersion = @orig</code> to UPDATE/DELETE.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Use <code>AsNoTracking()</code> for every read-only query — it can be 2–5× faster at scale.</li><li><code>context.Update(entity)</code> marks ALL columns as modified; prefer fetching first and changing only the properties that changed.</li><li><code>context.SaveChanges()</code> wraps all changes in a single implicit transaction.</li><li>Multiple <code>Add</code> calls followed by one <code>SaveChanges</code> is a single transaction; this is the unit-of-work pattern.</li><li>Always call <code>SaveChangesAsync</code> in async code.</li></ul></div>
+
+<h3>1. Create (Add + SaveChanges)</h3>
+<div class="code"><div class="fname">EfCreate.cs</div><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+
+var category = new Category { CategoryName = "Electronics" };
+db.Categories.Add(category);
+await db.SaveChangesAsync();
+// EF Core generated: INSERT INTO Categories (CategoryName) VALUES (N'Electronics')
+// IDENTITY flows back automatically — category.CategoryId is now populated
+
+var product = new Product { Name = "Noise Cancelling Headphones", Price = 4999m, CategoryId = category.CategoryId };
+db.Products.Add(product);
+await db.SaveChangesAsync();
+Console.WriteLine($"New product id: {product.ProductId}");</code></pre></div>
+
+<h3>2. Read — LINQ queries and AsNoTracking</h3>
+<div class="code"><div class="fname">EfRead.cs</div><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+
+// All products (no tracking for read-only display)
+List&lt;Product&gt; all = await db.Products
+    .AsNoTracking()
+    .OrderBy(p =&gt; p.Price)
+    .ToListAsync();
+
+// Filter + include navigation
+List&lt;Product&gt; expensive = await db.Products
+    .AsNoTracking()
+    .Include(p =&gt; p.Category)
+    .Where(p =&gt; p.Price &gt; 1000m)
+    .OrderByDescending(p =&gt; p.Price)
+    .ToListAsync();
+
+foreach (var p in expensive)
+    Console.WriteLine($"  [{p.Category?.CategoryName}] {p.Name}  ₹{p.Price:N2}");
+
+// Single row (throws if more than one)
+Product? found = await db.Products
+    .AsNoTracking()
+    .FirstOrDefaultAsync(p =&gt; p.ProductId == 7);</code></pre></div>
+<div class="note tip"><b>Tip.</b> EF Core translates LINQ to SQL server-side. Add <code>.LogTo(Console.WriteLine)</code> to <code>DbContextOptionsBuilder</code> (Saturday) to see the generated T-SQL.</div>
+
+<h3>3. Update — fetch-and-modify vs context.Update</h3>
+<div class="code"><div class="fname">EfUpdate.cs</div><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+
+// ✓ Preferred: fetch, change only the properties you want to update
+var product = await db.Products.FindAsync(7);
+if (product is not null)
+{
+    product.Price = 3499m;                       // only Price is marked Modified
+    await db.SaveChangesAsync();
+    // UPDATE Products SET Price = 3499 WHERE ProductId = 7
+}
+
+// ⚠ context.Update — marks EVERY column as Modified (complete overwrite risk)
+var detached = new Product { ProductId = 7, Name = "Headphones", Price = 3499m, CategoryId = 1 };
+db.Products.Update(detached);    // all columns in the UPDATE; Name/CategoryId must be correct
+await db.SaveChangesAsync();</code></pre></div>
+
+<h3>4. Delete</h3>
+<div class="code"><div class="fname">EfDelete.cs</div><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+
+// Fetch and remove
+var toDelete = await db.Products.FindAsync(7);
+if (toDelete is not null)
+{
+    db.Products.Remove(toDelete);
+    await db.SaveChangesAsync();
+    // DELETE FROM Products WHERE ProductId = 7
+}
+
+// Stub delete — no SELECT round trip needed (EF Core 7+ ExecuteDeleteAsync is cleaner)
+// db.Products.Remove(new Product { ProductId = 7 });  // Attach + mark Deleted
+// await db.SaveChangesAsync();
+
+// EF Core 7+ bulk delete (no change tracking overhead):
+await db.Products.Where(p =&gt; p.Price &lt; 10m).ExecuteDeleteAsync();</code></pre></div>
+
+<h3>5. How SaveChanges builds SQL</h3>
+<ol>
+<li>EF Core iterates every tracked entity and compares current values with the snapshot.</li>
+<li>It groups changes into INSERT / UPDATE / DELETE commands.</li>
+<li>It wraps them in an implicit <code>BEGIN TRANSACTION</code> … <code>COMMIT</code>.</li>
+<li>For IDENTITY PKs it appends <code>OUTPUT INSERTED.[Id]</code> so the C# object gets the generated key back.</li>
+</ol>
+<div class="code"><div class="fname">SaveChangesDemo.cs</div><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+
+// All three DML statements in ONE transaction
+var cat = new Category { CategoryName = "Accessories" };
+db.Categories.Add(cat);
+
+var obsolete = await db.Products.FindAsync(3);
+if (obsolete is not null) db.Products.Remove(obsolete);
+
+var existing = await db.Products.FindAsync(5);
+if (existing is not null) existing.Price *= 0.9m;      // 10 % discount
+
+int changes = await db.SaveChangesAsync();              // commit: INSERT + DELETE + UPDATE
+Console.WriteLine($"{changes} change(s) saved");</code></pre></div>
+
+<h3>6. EntityState inspection</h3>
+<div class="code"><div class="fname">EntityStates.cs</div><pre><code class="language-csharp">await using var db = new StoreDbContext(options);
+
+var p = new Product { Name = "Test", Price = 1m, CategoryId = 1 };
+Console.WriteLine(db.Entry(p).State);     // Detached — not tracked yet
+
+db.Products.Add(p);
+Console.WriteLine(db.Entry(p).State);     // Added
+
+await db.SaveChangesAsync();
+Console.WriteLine(db.Entry(p).State);     // Unchanged
+
+p.Price = 2m;
+Console.WriteLine(db.Entry(p).State);     // Modified (detected on property set via snapshot)
+
+db.Products.Remove(p);
+Console.WriteLine(db.Entry(p).State);     // Deleted</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Calling <code>context.Update(entity)</code> with a detached entity that's missing some properties — overwrites columns with default values.</li><li>Forgetting <code>await</code> before <code>SaveChangesAsync</code> — no data is saved, no exception, just silence.</li><li>Using the same DbContext instance for two parallel async operations — DbContext is not thread-safe.</li><li>Not using <code>AsNoTracking</code> in a report endpoint that returns thousands of rows — wastes memory on snapshots.</li><li>Modifying a property after <code>SaveChanges</code> and expecting EF to auto-save — you must call <code>SaveChanges</code> again.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a console menu: (1) List products, (2) Add product, (3) Update price, (4) Delete product, (Q) Quit. Each option calls the matching EF Core CRUD operation.</li><li>Print the generated SQL by setting <code>.LogTo(Console.WriteLine)</code> on the DbContextOptionsBuilder and inspect the INSERT/UPDATE/DELETE statements.</li><li>Change the update to use <code>context.Products.Update(detached)</code> and observe that all columns appear in the UPDATE — confirm with the log.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is an EntityState?</summary>An enum value (Added, Modified, Deleted, Unchanged, Detached) that tells EF Core what SQL to generate for each tracked entity on SaveChanges.</details><details><summary>Why prefer AsNoTracking for read-only queries?</summary>EF Core takes a snapshot of each loaded entity for change detection. Skipping tracking means no snapshots, less memory, and faster queries.</details><details><summary>How does EF Core get the generated IDENTITY value back?</summary>It appends <code>OUTPUT INSERTED.[PK]</code> to the INSERT statement. The returned value is applied to the entity's key property automatically.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does SaveChanges do?</summary><div>It detects all changes in tracked entities (compare vs snapshot), generates the minimum required INSERT/UPDATE/DELETE statements, wraps them in a transaction, executes them, and applies generated PKs back to entities.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is AsNoTracking?</summary><div>A LINQ operator that tells EF Core not to track the returned entities. Useful for read-only queries — no snapshot overhead, faster and lighter.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you delete an entity with EF Core?</summary><div>Load it (or attach it by PK), call <code>db.Remove(entity)</code>, then <code>db.SaveChangesAsync()</code>. For bulk deletes without loading, use <code>.ExecuteDeleteAsync()</code> (EF Core 7+).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the difference between context.Add(entity) and context.Update(entity)?</summary><div>Add marks the entity as Added (INSERT). Update marks it as Modified with ALL scalar properties included in the UPDATE — risky with detached objects because properties you didn't set become their default values in the database.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does change tracking detect modifications?</summary><div>At load time EF Core takes a snapshot of the entity's property values. On SaveChanges, it compares current values to the snapshot. Any difference marks that property (and the entity) as Modified.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a concurrency token and when do you need one?</summary><div>A <code>[Timestamp]</code> (rowversion) column that EF Core adds to WHERE clauses in UPDATE/DELETE. If another process changed the row, the WHERE clause finds zero rows, EF throws <code>DbUpdateConcurrencyException</code>. Use it when optimistic concurrency control matters.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>StoreData.sln — ADO.NET, Dapper and EF Core side by side</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a single console application with three interchangeable data-access layers behind one interface, backed by SQL Server in Docker.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>ICatalogDal</dt><dd>The shared interface: GetAll, GetById, Insert, Update, Delete for products.</dd></div><div class="def"><dt>AdoCatalogDal</dt><dd>Implements ICatalogDal with raw <code>Microsoft.Data.SqlClient</code>.</dd></div><div class="def"><dt>DapperCatalogDal</dt><dd>Implements ICatalogDal with Dapper.</dd></div><div class="def"><dt>EfCatalogDal</dt><dd>Implements ICatalogDal with EF Core DbContext.</dd></div><div class="def"><dt>DAL</dt><dd>Data Access Layer — the code responsible for reading and writing to the database.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>All three DALs implement the same interface so the console menu can swap between them at runtime.</li><li>The Product and Category models are shared in a Core class library.</li><li><code>docker compose up</code> starts SQL Server; <code>sqlcmd</code> creates the schema.</li></ul></div>
+
+<h3>Solution layout</h3>
+<div class="code"><div class="fname">Solution structure</div><pre><code class="language-text">StoreData.sln
+├── StoreData.Core/      (class library — models, interface)
+│   ├── Models/
+│   │   ├── Category.cs
+│   │   └── Product.cs
+│   └── ICatalogDal.cs
+├── StoreData.Data/      (class library — three DAL implementations + EF migrations)
+│   ├── Ado/
+│   │   └── AdoCatalogDal.cs
+│   ├── Dapper/
+│   │   └── DapperCatalogDal.cs
+│   ├── Ef/
+│   │   ├── StoreDbContext.cs
+│   │   ├── StoreDbContextFactory.cs
+│   │   ├── Config/
+│   │   │   ├── ProductConfig.cs
+│   │   │   └── CategoryConfig.cs
+│   │   ├── EfCatalogDal.cs
+│   │   └── Migrations/
+└── StoreData.App/       (console project)
+    └── Program.cs</code></pre></div>
+
+<h3>Step 1 — scaffold and add packages</h3>
+<div class="code"><div class="fname">Terminal</div><pre><code class="language-bash">dotnet new sln -n StoreData
+dotnet new classlib -n StoreData.Core
+dotnet new classlib -n StoreData.Data
+dotnet new console  -n StoreData.App
+
+dotnet sln add StoreData.Core StoreData.Data StoreData.App
+dotnet add StoreData.Data reference StoreData.Core
+dotnet add StoreData.App  reference StoreData.Core
+dotnet add StoreData.App  reference StoreData.Data
+
+dotnet add StoreData.Data package Microsoft.Data.SqlClient
+dotnet add StoreData.Data package Dapper
+dotnet add StoreData.Data package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add StoreData.Data package Microsoft.EntityFrameworkCore.Design
+dotnet tool install --global dotnet-ef</code></pre></div>
+
+<h3>Step 2 — Docker + schema setup</h3>
+<div class="code"><div class="fname">docker-compose.yml</div><pre><code class="language-yaml"># docker-compose.yml (place in solution root)
+version: "3.9"
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "YourStrong!Pass"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"</code></pre></div>
+<div class="code"><div class="fname">setup.sh</div><pre><code class="language-bash"># Start, then create schema:
+docker compose up -d
+sleep 10   # wait for SQL Server to be ready
+
+docker exec -it storedata-sql-1 /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost -U sa -P "YourStrong!Pass" -No -Q "
+CREATE DATABASE StoreDb;
+GO
+USE StoreDb;
+GO
+CREATE TABLE Categories (
+    CategoryId   INT IDENTITY(1,1) PRIMARY KEY,
+    CategoryName NVARCHAR(200) NOT NULL UNIQUE
+);
+CREATE TABLE Products (
+    ProductId  INT IDENTITY(1,1) PRIMARY KEY,
+    Name       NVARCHAR(200)   NOT NULL,
+    Price      DECIMAL(18,2)   NOT NULL,
+    CategoryId INT             NOT NULL REFERENCES Categories(CategoryId)
+);
+INSERT INTO Categories (CategoryName) VALUES ('Electronics'), ('Accessories'), ('Books');
+INSERT INTO Products (Name, Price, CategoryId) VALUES
+  ('Wireless Mouse',    799.00, 2),
+  ('Mechanical Keyboard', 2499.00, 2),
+  ('Clean Code (book)', 499.00, 3),
+  ('Noise Cancelling Headphones', 4999.00, 1),
+  ('USB-C Hub',         1299.00, 2);
+"</code></pre></div>
+
+<h3>Step 3 — Core models and interface</h3>
+<div class="code"><div class="fname">StoreData.Core/Models/Product.cs</div><pre><code class="language-csharp">namespace StoreData.Core.Models;
+
+public class Product
+{
+    public int     ProductId   { get; set; }
+    public string  Name        { get; set; } = "";
+    public decimal Price       { get; set; }
+    public int     CategoryId  { get; set; }
+    public string  CategoryName { get; set; } = "";   // read-only join field
+}</code></pre></div>
+<div class="code"><div class="fname">StoreData.Core/ICatalogDal.cs</div><pre><code class="language-csharp">using StoreData.Core.Models;
+
+namespace StoreData.Core;
+
+public interface ICatalogDal
+{
+    Task&lt;IReadOnlyList&lt;Product&gt;&gt; GetAllAsync();
+    Task&lt;Product?&gt;               GetByIdAsync(int id);
+    Task&lt;int&gt;                    InsertAsync(string name, decimal price, int categoryId);
+    Task&lt;bool&gt;                   UpdatePriceAsync(int id, decimal newPrice);
+    Task&lt;bool&gt;                   DeleteAsync(int id);
+}</code></pre></div>
+
+<h3>Step 4 — AdoCatalogDal</h3>
+<div class="code"><div class="fname">StoreData.Data/Ado/AdoCatalogDal.cs</div><pre><code class="language-csharp">using System.Data;
+using Microsoft.Data.SqlClient;
+using StoreData.Core;
+using StoreData.Core.Models;
+
+namespace StoreData.Data.Ado;
+
+public class AdoCatalogDal(string connStr) : ICatalogDal
+{
+    public async Task&lt;IReadOnlyList&lt;Product&gt;&gt; GetAllAsync()
+    {
+        const string sql = @"
+            SELECT p.ProductId, p.Name, p.Price, p.CategoryId, c.CategoryName
+            FROM   Products p JOIN Categories c ON c.CategoryId = p.CategoryId
+            ORDER  BY p.Name";
+
+        var list = new List&lt;Product&gt;();
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+        await using var cmd  = new SqlCommand(sql, conn);
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+            list.Add(Map(reader));
+        return list;
+    }
+
+    public async Task&lt;Product?&gt; GetByIdAsync(int id)
+    {
+        const string sql = @"
+            SELECT p.ProductId, p.Name, p.Price, p.CategoryId, c.CategoryName
+            FROM   Products p JOIN Categories c ON c.CategoryId = p.CategoryId
+            WHERE  p.ProductId = @id";
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        await using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
+        return await reader.ReadAsync() ? Map(reader) : null;
+    }
+
+    public async Task&lt;int&gt; InsertAsync(string name, decimal price, int categoryId)
+    {
+        const string sql = @"
+            INSERT INTO Products (Name, Price, CategoryId)
+            OUTPUT INSERTED.ProductId
+            VALUES (@n, @p, @c)";
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.Add("@n", SqlDbType.NVarChar, 200).Value = name;
+        cmd.Parameters.Add("@p", SqlDbType.Decimal).Value        = price;
+        cmd.Parameters.Add("@c", SqlDbType.Int).Value            = categoryId;
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+    }
+
+    public async Task&lt;bool&gt; UpdatePriceAsync(int id, decimal newPrice)
+    {
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "UPDATE Products SET Price = @p WHERE ProductId = @id", conn);
+        cmd.Parameters.Add("@p",  SqlDbType.Decimal).Value = newPrice;
+        cmd.Parameters.Add("@id", SqlDbType.Int).Value     = id;
+        return await cmd.ExecuteNonQueryAsync() == 1;
+    }
+
+    public async Task&lt;bool&gt; DeleteAsync(int id)
+    {
+        await using var conn = new SqlConnection(connStr);
+        await conn.OpenAsync();
+        await using var cmd = new SqlCommand(
+            "DELETE FROM Products WHERE ProductId = @id", conn);
+        cmd.Parameters.Add("@id", SqlDbType.Int).Value = id;
+        return await cmd.ExecuteNonQueryAsync() == 1;
+    }
+
+    private static Product Map(SqlDataReader r) =&gt; new()
+    {
+        ProductId    = r.GetInt32(0),
+        Name         = r.GetString(1),
+        Price        = r.GetDecimal(2),
+        CategoryId   = r.GetInt32(3),
+        CategoryName = r.GetString(4),
+    };
+}</code></pre></div>
+
+<h3>Step 5 — DapperCatalogDal</h3>
+<div class="code"><div class="fname">StoreData.Data/Dapper/DapperCatalogDal.cs</div><pre><code class="language-csharp">using Dapper;
+using Microsoft.Data.SqlClient;
+using StoreData.Core;
+using StoreData.Core.Models;
+
+namespace StoreData.Data.Dapper;
+
+public class DapperCatalogDal(string connStr) : ICatalogDal
+{
+    private const string JoinSql = @"
+        SELECT p.ProductId, p.Name, p.Price, p.CategoryId, c.CategoryName
+        FROM   Products p JOIN Categories c ON c.CategoryId = p.CategoryId";
+
+    public async Task&lt;IReadOnlyList&lt;Product&gt;&gt; GetAllAsync()
+    {
+        await using var conn = new SqlConnection(connStr);
+        return (await conn.QueryAsync&lt;Product&gt;(JoinSql + " ORDER BY p.Name")).ToList();
+    }
+
+    public async Task&lt;Product?&gt; GetByIdAsync(int id)
+    {
+        await using var conn = new SqlConnection(connStr);
+        return await conn.QueryFirstOrDefaultAsync&lt;Product&gt;(
+            JoinSql + " WHERE p.ProductId = @id", new { id });
+    }
+
+    public async Task&lt;int&gt; InsertAsync(string name, decimal price, int categoryId)
+    {
+        await using var conn = new SqlConnection(connStr);
+        return await conn.ExecuteScalarAsync&lt;int&gt;(
+            "INSERT INTO Products (Name,Price,CategoryId) OUTPUT INSERTED.ProductId VALUES (@name,@price,@categoryId)",
+            new { name, price, categoryId });
+    }
+
+    public async Task&lt;bool&gt; UpdatePriceAsync(int id, decimal newPrice)
+    {
+        await using var conn = new SqlConnection(connStr);
+        int rows = await conn.ExecuteAsync(
+            "UPDATE Products SET Price = @newPrice WHERE ProductId = @id", new { newPrice, id });
+        return rows == 1;
+    }
+
+    public async Task&lt;bool&gt; DeleteAsync(int id)
+    {
+        await using var conn = new SqlConnection(connStr);
+        return await conn.ExecuteAsync("DELETE FROM Products WHERE ProductId = @id", new { id }) == 1;
+    }
+}</code></pre></div>
+
+<h3>Step 6 — EfCatalogDal</h3>
+<div class="code"><div class="fname">StoreData.Data/Ef/EfCatalogDal.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using StoreData.Core;
+using StoreData.Core.Models;
+using StoreData.Data.Ef;
+
+namespace StoreData.Data.Ef;
+
+public class EfCatalogDal(StoreDbContext db) : ICatalogDal
+{
+    public async Task&lt;IReadOnlyList&lt;Product&gt;&gt; GetAllAsync() =&gt;
+        await db.Products
+                .AsNoTracking()
+                .Include(p =&gt; p.Category)
+                .OrderBy(p =&gt; p.Name)
+                .Select(p =&gt; new Product
+                {
+                    ProductId    = p.ProductId,
+                    Name         = p.Name,
+                    Price        = p.Price,
+                    CategoryId   = p.CategoryId,
+                    CategoryName = p.Category!.CategoryName
+                })
+                .ToListAsync();
+
+    public async Task&lt;Product?&gt; GetByIdAsync(int id) =&gt;
+        await db.Products
+                .AsNoTracking()
+                .Include(p =&gt; p.Category)
+                .Where(p =&gt; p.ProductId == id)
+                .Select(p =&gt; new Product
+                {
+                    ProductId    = p.ProductId,
+                    Name         = p.Name,
+                    Price        = p.Price,
+                    CategoryId   = p.CategoryId,
+                    CategoryName = p.Category!.CategoryName
+                })
+                .FirstOrDefaultAsync();
+
+    public async Task&lt;int&gt; InsertAsync(string name, decimal price, int categoryId)
+    {
+        var product = new StoreData.Core.Models.EfProduct
+            { Name = name, Price = price, CategoryId = categoryId };
+        db.Products.Add(product);
+        await db.SaveChangesAsync();
+        return product.ProductId;
+    }
+
+    public async Task&lt;bool&gt; UpdatePriceAsync(int id, decimal newPrice)
+    {
+        var product = await db.Products.FindAsync(id);
+        if (product is null) return false;
+        product.Price = newPrice;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task&lt;bool&gt; DeleteAsync(int id)
+    {
+        int rows = await db.Products.Where(p =&gt; p.ProductId == id).ExecuteDeleteAsync();
+        return rows == 1;
+    }
+}</code></pre></div>
+
+<h3>Step 7 — Console menu (Program.cs)</h3>
+<div class="code"><div class="fname">StoreData.App/Program.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using StoreData.Core;
+using StoreData.Data.Ado;
+using StoreData.Data.Dapper;
+using StoreData.Data.Ef;
+
+const string ConnStr =
+    "Server=localhost,1433;Database=StoreDb;User Id=sa;" +
+    "Password=YourStrong!Pass;TrustServerCertificate=True;";
+
+// Switch between DALs here (or via config)
+ICatalogDal dal = ChooseDal("ado");   // "ado" | "dapper" | "ef"
+
+await RunMenuAsync(dal);
+
+static ICatalogDal ChooseDal(string name)
+{
+    const string cs = "Server=localhost,1433;Database=StoreDb;User Id=sa;" +
+                      "Password=YourStrong!Pass;TrustServerCertificate=True;";
+    return name switch
+    {
+        "dapper" =&gt; new DapperCatalogDal(cs),
+        "ef"     =&gt; new EfCatalogDal(BuildDb(cs)),
+        _        =&gt; new AdoCatalogDal(cs)       // "ado" is default
+    };
+}
+
+static StoreDbContext BuildDb(string cs)
+{
+    var opts = new DbContextOptionsBuilder&lt;StoreDbContext&gt;()
+        .UseSqlServer(cs)
+        .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+        .Options;
+    return new StoreDbContext(opts);
+}
+
+async Task RunMenuAsync(ICatalogDal dal)
+{
+    while (true)
+    {
+        Console.WriteLine("\n1) List products  2) Get by id  3) Insert  4) Update price  5) Delete  Q) Quit");
+        Console.Write("Choice: ");
+        switch (Console.ReadLine()?.Trim().ToUpper())
+        {
+            case "1":
+                foreach (var p in await dal.GetAllAsync())
+                    Console.WriteLine($"  {p.ProductId,3}  {p.Name,-35}  [{p.CategoryName}]  ₹{p.Price:N2}");
+                break;
+            case "2":
+                Console.Write("Id: ");
+                if (int.TryParse(Console.ReadLine(), out int id))
+                {
+                    var p = await dal.GetByIdAsync(id);
+                    Console.WriteLine(p is null ? "  Not found" : $"  {p.Name}  ₹{p.Price:N2}");
+                }
+                break;
+            case "3":
+                Console.Write("Name: ");   string name = Console.ReadLine()!;
+                Console.Write("Price: ");  decimal price = decimal.Parse(Console.ReadLine()!);
+                Console.Write("CategoryId: "); int cat = int.Parse(Console.ReadLine()!);
+                int newId = await dal.InsertAsync(name, price, cat);
+                Console.WriteLine($"  Inserted with id {newId}");
+                break;
+            case "4":
+                Console.Write("Id: ");    int uid = int.Parse(Console.ReadLine()!);
+                Console.Write("New price: "); decimal np = decimal.Parse(Console.ReadLine()!);
+                Console.WriteLine(await dal.UpdatePriceAsync(uid, np) ? "  Updated" : "  Not found");
+                break;
+            case "5":
+                Console.Write("Id: ");    int did = int.Parse(Console.ReadLine()!);
+                Console.WriteLine(await dal.DeleteAsync(did) ? "  Deleted" : "  Not found");
+                break;
+            case "Q":
+                return;
+        }
+    }
+}</code></pre></div>
+
+<h3>Expected output (DAL = ado)</h3>
+<div class="code nofile"><pre><code class="language-text">1) List products  2) Get by id  3) Insert  4) Update price  5) Delete  Q) Quit
+Choice: 1
+    1  Clean Code (book)                  [Books]       ₹499.00
+    4  Mechanical Keyboard                [Accessories] ₹2,499.00
+    5  Noise Cancelling Headphones        [Electronics] ₹4,999.00
+    3  USB-C Hub                          [Accessories] ₹1,299.00
+    2  Wireless Mouse                     [Accessories] ₹799.00</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul><li>Switch the DAL at runtime by reading the first CLI argument: <code>dotnet run -- dapper</code>.</li><li>Add a <code>GetByCategoryAsync(string name)</code> method to the interface and implement it in all three layers.</li><li>Add a <code>Category</code> CRUD menu option — test that FK violation is caught properly when deleting a category with products.</li></ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the purpose of the ICatalogDal interface?</summary><div>It decouples the console menu from the data-access implementation. Any class that satisfies the contract can be swapped in without changing the calling code — the same pattern used in Weeks 2 and 4 with IRepository.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why do all three DALs take a connection string or DbContext in the constructor?</summary><div>To support dependency injection. The caller (console or later a web controller) supplies the dependency; the DAL doesn't create it.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you test the three DALs for consistency?</summary><div>Write a parameterised test fixture (xUnit IClassFixture + MemberData) that runs the same CRUD assertions against all three implementations, using a Localdb or Docker container as the test database.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What would you change if the application grew to hundreds of concurrent users?</summary><div>Use DbContextFactory for EF (avoid a Singleton DbContext), ensure all connection opens/closes return quickly to the pool, add indexes for query columns, consider Dapper for heavy read paths, and move to an async service layer.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Compare, test to break, README, git and week revision</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Bench the three DALs, test their edge cases, write the README, commit, and lock in the week's concepts before Week 16.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Stopwatch</dt><dd><code>System.Diagnostics.Stopwatch</code> measures elapsed wall-clock time for simple micro-benchmarks.</dd></div><div class="def"><dt>LogTo</dt><dd><code>.LogTo(Console.WriteLine)</code> on DbContextOptionsBuilder — logs generated SQL to the console.</dd></div><div class="def"><dt>DbUpdateException</dt><dd>EF Core wraps a database error (FK violation, unique constraint, etc.) in this exception.</dd></div><div class="def"><dt>SqlException</dt><dd>ADO.NET and Dapper throw this for SQL Server errors; check <code>Number</code> for the SQL Server error code.</dd></div><div class="def"><dt>Idempotent script</dt><dd>A migration SQL script that can be run multiple times safely (checks __EFMigrationsHistory).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Compare Stopwatch timing honestly: single-query numbers vary ±30 %; run at least 100 iterations.</li><li><code>LogTo</code> is for development only — it logs every query; remove it in production.</li><li>Catch <code>DbUpdateException</code> (EF), <code>SqlException</code> (ADO/Dapper) for FK and unique-key violations.</li><li>Always test 'down paths': not found, duplicate insert, deleted row update.</li></ul></div>
+
+<h3>1. Stopwatch timing harness</h3>
+<div class="code"><div class="fname">Benchmark.cs</div><pre><code class="language-csharp">using System.Diagnostics;
+using StoreData.Core;
+
+static async Task TimeAsync(string label, Func&lt;Task&gt; work, int iterations = 100)
+{
+    // warm up
+    await work();
+
+    var sw = Stopwatch.StartNew();
+    for (int i = 0; i &lt; iterations; i++) await work();
+    sw.Stop();
+
+    double avg = sw.Elapsed.TotalMilliseconds / iterations;
+    Console.WriteLine($"  {label,-20} avg {avg,7:F2} ms over {iterations} iterations");
+}
+
+// Run the same GetAllAsync on each layer
+ICatalogDal ado    = new AdoCatalogDal(ConnStr);
+ICatalogDal dapper = new DapperCatalogDal(ConnStr);
+ICatalogDal ef     = new EfCatalogDal(BuildDb(ConnStr));
+
+Console.WriteLine("=== GetAllAsync (100 × 5 products) ===");
+await TimeAsync("ADO.NET",  () =&gt; ado.GetAllAsync());
+await TimeAsync("Dapper",   () =&gt; dapper.GetAllAsync());
+await TimeAsync("EF Core",  () =&gt; ef.GetAllAsync());</code></pre></div>
+<div class="note tip"><b>Tip.</b> With a local Docker SQL Server and 5 rows the numbers will all be < 5 ms and mostly indistinguishable. The gap only becomes meaningful at thousands of rows or under connection-pool pressure.</div>
+
+<h3>2. LogTo — see EF Core's SQL</h3>
+<div class="code"><div class="fname">LogToDemo.cs</div><pre><code class="language-csharp">var opts = new DbContextOptionsBuilder&lt;StoreDbContext&gt;()
+    .UseSqlServer(ConnStr)
+    .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information)
+    .Options;
+
+await using var db = new StoreDbContext(opts);
+var products = await db.Products.Include(p =&gt; p.Category).Where(p =&gt; p.Price &gt; 1000).ToListAsync();
+
+// Console output (excerpt):
+// info: 14/11/2026 12:34:56.789 RelationalEventId.CommandExecuted
+//       Executed DbCommand (2ms) [Parameters=[@__p_0='1000'], CommandType=Text, CommandTimeout=30]
+//       SELECT p.ProductId, p.Name, p.Price, p.CategoryId,
+//              c.CategoryId, c.CategoryName
+//       FROM Products AS p
+//       INNER JOIN Categories AS c ON p.CategoryId = c.CategoryId
+//       WHERE p.Price &gt; @__p_0</code></pre></div>
+
+<h3>3. Try-to-break table</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Layer</th><th>Expected</th><th>How to verify</th></tr><tr><td>DB not running</td><td>ADO.NET</td><td><code>SqlException</code>: connection refused</td><td>Stop Docker container, run GetAllAsync</td></tr><tr><td>DB not running</td><td>Dapper</td><td><code>SqlException</code>: same as above</td><td>Same</td></tr><tr><td>DB not running</td><td>EF Core</td><td><code>SqlException</code> wrapped in connection error</td><td>Same</td></tr><tr><td>Duplicate CategoryName</td><td>ADO.NET</td><td><code>SqlException</code> number 2601 (unique index)</td><td>INSERT duplicate category</td></tr><tr><td>Duplicate CategoryName</td><td>Dapper</td><td><code>SqlException</code> number 2601</td><td>INSERT duplicate category</td></tr><tr><td>Duplicate CategoryName</td><td>EF Core</td><td><code>DbUpdateException</code> → inner <code>SqlException</code> 2601</td><td>Add duplicate Category, SaveChanges</td></tr><tr><td>Delete category with products</td><td>ADO.NET</td><td><code>SqlException</code> 547 (FK violation)</td><td>DELETE from Categories WHERE FK exists</td></tr><tr><td>Delete category with products</td><td>EF Core</td><td><code>DbUpdateException</code> → 547 (DeleteBehavior.Restrict)</td><td>Remove() + SaveChanges</td></tr><tr><td>GetById with unknown id</td><td>All three</td><td>Returns <code>null</code> / <code>null</code></td><td>GetByIdAsync(99999)</td></tr><tr><td>SQL injection attempt (ADO)</td><td>ADO.NET</td><td>Returns 0 rows; not executed as SQL</td><td>Pass <code>'; DROP TABLE Products; --</code> as name param</td></tr></table></div>
+
+<h3>4. README template</h3>
+<div class="code"><div class="fname">README.md</div><pre><code class="language-markdown"># StoreData — Week 15 micro-project
+
+Three data-access layers (ADO.NET · Dapper · EF Core) behind one `ICatalogDal` interface.
+
+## Prerequisites
+- .NET 8 SDK
+- Docker Desktop (for SQL Server 2022)
+- `dotnet-ef` global tool
+
+## Quick start
+```bash
+docker compose up -d
+bash setup.sh           # creates StoreDb schema and seed data
+dotnet run --project StoreData.App -- ado      # or dapper / ef
+```
+
+## Architecture
+| Layer | File | NuGet |
+|-------|------|-------|
+| ADO.NET | Ado/AdoCatalogDal.cs | Microsoft.Data.SqlClient |
+| Dapper  | Dapper/DapperCatalogDal.cs | Dapper |
+| EF Core | Ef/EfCatalogDal.cs | Microsoft.EntityFrameworkCore.SqlServer |
+
+## Running EF Core migrations
+```bash
+dotnet ef migrations add &lt;Name&gt; --project StoreData.Data --startup-project StoreData.App
+dotnet ef database update
+```</code></pre></div>
+
+<h3>5. Git commands</h3>
+<div class="code"><div class="fname">Terminal</div><pre><code class="language-bash">cd StoreData
+git init
+git add .
+git commit -m "Week 15: StoreData — ADO.NET, Dapper and EF Core side by side"
+
+# (optional) push to your GitHub
+git remote add origin https://github.com/nayak22/dotnet-roadmap.git
+git push -u origin main</code></pre></div>
+
+<h3>6. Week 15 revision checklist</h3>
+<h4>ADO.NET (Monday)</h4>
+<ul><li>SqlConnection / SqlCommand / SqlDataReader lifecycle</li><li>Parameters.Add vs AddWithValue</li><li>ExecuteScalar / ExecuteNonQuery / ExecuteReader</li><li>Connection pooling mechanism</li><li>SQL injection attack + parameterised fix</li><li>async pattern with CancellationToken</li></ul>
+<h4>Dapper (Tuesday)</h4>
+<ul><li>Query&lt;T&gt; and anonymous params</li><li>Multi-mapping and splitOn</li><li>QueryMultiple for two result sets</li><li>Stored procedure call with commandType</li><li>IN-list expansion</li><li>DynamicParameters for OUTPUT params</li></ul>
+<h4>EF Core — model/migrations (Wednesday)</h4>
+<ul><li>DbContext / DbSet</li><li>UseSqlServer and conventions</li><li>Data annotations vs Fluent API</li><li>Design-time factory purpose</li><li>add migration / update database / script</li><li>Reviewing generated migration files</li></ul>
+<h4>EF Core — relationships (Thursday)</h4>
+<ul><li>One-to-many FK and navigation properties</li><li>Many-to-many skip navigations</li><li>Explicit join entity with composite PK</li><li>Required vs optional / cascade behaviours</li><li>IEntityTypeConfiguration&lt;T&gt;</li><li>ApplyConfigurationsFromAssembly</li></ul>
+<h4>EF Core — CRUD and change tracking (Friday)</h4>
+<ul><li>EntityState lifecycle</li><li>How SaveChanges detects changes</li><li>AsNoTracking for read-only queries</li><li>context.Add vs context.Update difference</li><li>ExecuteDeleteAsync (EF 7+)</li><li>LogTo for SQL inspection</li></ul>
+
+<h3>7. Predict the output / does it compile? quiz</h3>
+<details><summary>Q1. What does this print and why?</summary>
+<div class="code nofile"><pre><code class="language-csharp">await using var conn = new SqlConnection(ConnStr);
+await conn.OpenAsync();
+Console.WriteLine(conn.State);
+await conn.CloseAsync();
+Console.WriteLine(conn.State);
+await conn.OpenAsync();
+Console.WriteLine(conn.State);</code></pre></div><b>Open, Closed, Open.</b> CloseAsync returns the connection to the pool (the TCP socket stays alive). The second OpenAsync checks it back out.</details>
+<details><summary>Q2. Does this compile?</summary>
+<div class="code nofile"><pre><code class="language-csharp">IEnumerable&lt;Product&gt; products = await conn.QueryAsync&lt;Product&gt;("SELECT * FROM Products");
+string first = products.First().Name;
+string second = products.ElementAt(1).Name;</code></pre></div><b>Yes, compiles and runs.</b> Dapper materialises the result before returning, so iterating twice is safe. <code>ElementAt</code> on an IEnumerable is O(n) for a list, but it won't re-query the DB.</details>
+<details><summary>Q3. What happens?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var cat = new Category { CategoryName = "Electronics" };   // already exists in DB
+db.Categories.Add(cat);
+await db.SaveChangesAsync();</code></pre></div><b>DbUpdateException</b> wrapping a <code>SqlException</code> number 2601 (unique index violation on CategoryName).</details>
+<details><summary>Q4. What does this UPDATE statement look like?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var p = new Product { ProductId = 7, Price = 999m };
+db.Products.Update(p);
+await db.SaveChangesAsync();</code></pre></div><b>UPDATE Products SET Name = '', Price = 999, CategoryId = 0 WHERE ProductId = 7</b> — context.Update marks ALL columns Modified. Name and CategoryId become their default values, overwriting real data. Always fetch first.</details>
+<details><summary>Q5. How many SQL queries does this run?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var products = await db.Products.AsNoTracking().ToListAsync();
+var count    = await db.Products.CountAsync();</code></pre></div><b>Two.</b> Each LINQ terminal (<code>ToListAsync</code>, <code>CountAsync</code>) is a separate database round trip. Use <code>QueryMultiple</code> (Dapper) or a single <code>SELECT … ; SELECT COUNT(*)</code> to combine them.</details>
+
+<div class="note tip"><b>Next week:</b> Week 16 — EF Core in depth: eager vs lazy vs explicit loading, filtered Include, split queries, raw SQL with FromSql, interceptors, global query filters, owned entities, and performance diagnostics with MiniProfiler and execution plans.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why benchmark all three layers against the same interface?</summary><div>To measure fairly: same query, same data, same machine. The interface swap ensures we don't accidentally benchmark different SQL or different connection behaviour.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>ADO.NET vs Dapper vs EF Core: how would you choose in a real project?</summary><div>Use EF Core as the default for most entity CRUD and migrations. Drop to Dapper for complex reports, stored procedures and batch operations where SQL control matters. Use ADO.NET directly only for maximum performance paths or when neither ORM fits.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the SqlException.Number property?</summary><div>The SQL Server error code. Common ones: 547 = FK violation, 2627 = PK violation, 2601 = unique index violation, 18456 = login failed. Catching SqlException and checking Number lets you give the user a meaningful error message.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>How would you implement a retry policy for transient SQL errors?</summary><div>Wrap the DAL call in a Polly policy or use EF Core's built-in <code>EnableRetryOnFailure</code> in <code>UseSqlServer</code>. Transient SQL Server error codes include 1205 (deadlock), 40613, 40197. Retry with exponential back-off and a jitter.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week15-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

@@ -1,0 +1,1437 @@
+<title>.NET Notes · Week 17</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 17</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">Pipeline</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Lifetimes</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Config &amp; Options</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Minimal APIs</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Controllers</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: TodoApi</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Review</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 2 · Week 17 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">SQL Server 2022</span><span class="chip">~18 hrs</span><span class="chip">To-do API</span></div>
+  <h1>Week 17 — ASP.NET Core Fundamentals</h1>
+  <p>ASP.NET Core is the backbone of every .NET web project. This week you will master the middleware pipeline, dependency injection lifetimes, the layered configuration system, and both ways to build HTTP APIs — minimal APIs and controllers. By Sunday you will have a fully working TodoApi with EF Core, Swagger UI, and a validation filter, ready to extend in Week 18.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>Program.cs and the Middleware Pipeline</h3><p>Program.cs anatomy, Kestrel, Use/Run/Map, class middleware, middleware order.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>DI Lifetimes</h3><p>Singleton/Scoped/Transient, instance-ID demo, captive dependency, keyed services.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Configuration and Options</h3><p>Layering, env vars, user secrets, IOptions vs Snapshot vs Monitor, ValidateOnStart.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Minimal APIs</h3><p>MapGet/Post/Put/Delete, TypedResults, MapGroup, endpoint filters, ProblemDetails.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Controllers</h3><p>[ApiController], attribute routing, auto 400, ActionResult&lt;T&gt;, controllers vs minimal.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>TodoApi — EF Core CRUD</h3><p>Minimal API + EF Core, SQLite, DTOs, CRUD + toggle + filter/search, migrations, seed.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Validation, Swagger &amp; Review</h3><p>Validation filter, Swashbuckle, try-to-break, README, quiz, week checklist.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Program.cs, Kestrel and the Middleware Pipeline</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Understand what Program.cs does, how Kestrel serves HTTP, what the middleware pipeline is, and write both inline and class-based middleware that runs in the correct order.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Kestrel</dt><dd>The cross-platform HTTP server embedded in every ASP.NET Core app. It listens on TCP ports and translates bytes into <code>HttpContext</code>.</dd></div><div class="def"><dt>Minimal hosting model</dt><dd>The <code>WebApplication.CreateBuilder</code> + <code>app.Run()</code> pattern introduced in .NET 6 that removes Startup.cs.</dd></div><div class="def"><dt>WebApplicationBuilder</dt><dd>Returned by <code>WebApplication.CreateBuilder()</code>. Exposes <code>Services</code> (DI) and <code>Configuration</code>.</dd></div><div class="def"><dt>WebApplication</dt><dd>The built app. Exposes <code>Use*</code> methods to register middleware, then <code>Run()</code>.</dd></div><div class="def"><dt>Middleware</dt><dd>A component that handles an HTTP request and optionally calls the next component.</dd></div><div class="def"><dt>RequestDelegate</dt><dd><code>Func&lt;HttpContext, Task&gt;</code> — the signature every middleware ultimately is.</dd></div><div class="def"><dt>HttpContext</dt><dd>One instance per request, holding <code>Request</code>, <code>Response</code>, <code>User</code>, <code>Items</code>, etc.</dd></div><div class="def"><dt>Pipeline</dt><dd>The ordered chain of middleware components. The first registered runs first on the way in and last on the way out.</dd></div><div class="def"><dt>Use</dt><dd>Adds middleware and calls <code>next()</code> — both before and after the next component run.</dd></div><div class="def"><dt>Run</dt><dd>Adds a terminal middleware; never calls <code>next()</code>.</dd></div><div class="def"><dt>Map</dt><dd>Branches the pipeline based on a URL path prefix.</dd></div><div class="def"><dt>launchSettings.json</dt><dd>VS/VS Code config for launch profiles — sets ports, environment, env vars. Not deployed.</dd></div><div class="def"><dt>ASPNETCORE_ENVIRONMENT</dt><dd>Env var that sets the environment name (<code>Development</code> / <code>Staging</code> / <code>Production</code>).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Middleware order matters: auth must come before authorisation, routing before endpoints.</li><li><code>Use</code> without calling <code>next()</code> is effectively a <code>Run</code> — it short-circuits.</li><li>Kestrel is production-ready but can be fronted by Nginx/IIS for TLS termination.</li><li><code>app.Environment.IsDevelopment()</code> is the idiomatic guard for dev-only middleware.</li><li><code>WebApplication.CreateBuilder</code> already registers logging, configuration and DI.</li></ul></div>
+
+<h3>1. Program.cs anatomy</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Program.cs — every line has a job
+var builder = WebApplication.CreateBuilder(args);  // ① wire up config, DI, logging
+
+builder.Services.AddControllers();                 // ② register services (later days)
+
+var app = builder.Build();                         // ③ build — no more service registration after this
+
+// ④ — MIDDLEWARE PIPELINE (order matters!)
+app.UseHttpsRedirection();                         // redirect HTTP → HTTPS
+app.UseRouting();                                  // match URL to an endpoint
+app.UseAuthentication();                           // who are you?
+app.UseAuthorization();                            // are you allowed?
+app.MapControllers();                              // wire controller actions as endpoints
+
+app.Run();                                         // ⑤ start Kestrel and block</code></pre></div>
+<div class="note tip"><b>Tip.</b> The <code>var app = builder.Build()</code> line is the boundary: services before it, middleware after it.</div>
+
+<h3>2. How middleware executes</h3>
+<p>Think of a stack of functions. The pipeline runs in-order going in; then the same components run in reverse order on the way back out.</p>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Inline middleware with Use — runs both on the way in and the way out
+app.Use(async (ctx, next) =&gt;
+{{
+    Console.WriteLine($"→ {ctx.Request.Path}");   // executes on the WAY IN
+    await next(ctx);                               // call the next middleware
+    Console.WriteLine($"← {ctx.Response.StatusCode}"); // executes on the WAY OUT
+}});
+
+// Terminal middleware: never calls next
+app.Run(async ctx =&gt;
+{{
+    await ctx.Response.WriteAsync("नमस्ते! TodoAPI is running.");
+}});
+
+// Output for GET /:
+//   → /
+//   ← 200</code></pre></div>
+
+<h3>3. Class-based middleware</h3>
+<p>Inline lambdas are fine for quick experiments, but for anything that needs DI or unit-testing, write a class.</p>
+<div class="code"><div class="fname">Middleware/RequestTimingMiddleware.cs</div><pre><code class="language-csharp">// The middleware class — lives in /Middleware/RequestTimingMiddleware.cs
+public class RequestTimingMiddleware(RequestDelegate next, ILogger&lt;RequestTimingMiddleware&gt; logger)
+{{
+    public async Task InvokeAsync(HttpContext ctx)
+    {{
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await next(ctx);                               // inner pipeline runs here
+        sw.Stop();
+        logger.LogInformation("{Method} {Path} → {Status} in {Ms} ms",
+            ctx.Request.Method, ctx.Request.Path,
+            ctx.Response.StatusCode, sw.ElapsedMilliseconds);
+    }}
+}}
+
+// Extension method (optional but idiomatic)
+public static class RequestTimingExtensions
+{{
+    public static IApplicationBuilder UseRequestTiming(this IApplicationBuilder app)
+        =&gt; app.UseMiddleware&lt;RequestTimingMiddleware&gt;();
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs (excerpt)</div><pre><code class="language-csharp">// Register in Program.cs — BEFORE MapControllers or MapGet
+app.UseRequestTiming();</code></pre></div>
+<div class="note tip"><b>Tip.</b> If the middleware needs a scoped service, inject it into <code>InvokeAsync</code> as a parameter — not into the constructor — because the middleware itself is a singleton.</div>
+
+<h3>4. Use / Run / Map</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Use — chains middleware
+app.Use(async (ctx, next) =&gt; {{ /* before */ await next(ctx); /* after */ }});
+
+// Run — terminal, nothing after it runs
+app.Run(async ctx =&gt; await ctx.Response.WriteAsync("Done"));
+
+// Map — branches on path prefix; each branch gets its own sub-pipeline
+app.Map("/health", branch =&gt;
+{{
+    branch.Run(async ctx =&gt;
+    {{
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync("""{{"status":"ok"}}""");
+    }});
+}});
+
+// MapWhen — branches on any predicate (e.g. header value)
+app.MapWhen(ctx =&gt; ctx.Request.Headers.ContainsKey("X-Internal"),
+    branch =&gt; branch.Run(async ctx =&gt; await ctx.Response.WriteAsync("internal path")));</code></pre></div>
+
+<h3>5. launchSettings.json and environments</h3>
+<div class="code"><div class="fname">Properties/launchSettings.json</div><pre><code class="language-json">{{
+  "profiles": {{
+    "http": {{
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5100",
+      "environmentVariables": {{
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }}
+    }},
+    "https": {{
+      "applicationUrl": "https://localhost:7100;http://localhost:5100",
+      "environmentVariables": {{
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }}
+    }}
+  }}
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Use env guards in Program.cs
+if (app.Environment.IsDevelopment())
+{{
+    app.UseDeveloperExceptionPage();   // rich error page; never in production!
+}}
+
+// Or inline
+app.UseWhen(ctx =&gt; !ctx.Request.Path.StartsWithSegments("/health"),
+    branch =&gt; branch.UseRequestTiming());
+
+// Three built-in environments; you can add your own (e.g. "Staging", "UAT")
+// Set via env var:  ASPNETCORE_ENVIRONMENT=Production dotnet run
+// Or launchSettings, appsettings.&lt;env&gt;.json is merged automatically.</code></pre></div>
+
+<h3>6. Correct middleware order</h3>
+<div class="tbl"><table><tr><th>Middleware</th><th>Why its position matters</th></tr><tr><td><code>UseExceptionHandler / UseDeveloperExceptionPage</code></td><td>Must be first so it catches exceptions from everything downstream</td></tr><tr><td><code>UseHsts / UseHttpsRedirection</code></td><td>Early, before anything writes to the response</td></tr><tr><td><code>UseStaticFiles</code></td><td>Before routing — serves .css/.js without hitting the endpoint pipeline</td></tr><tr><td><code>UseRouting</code></td><td>Populates <code>RouteData</code>; auth and policy need it</td></tr><tr><td><code>UseAuthentication</code></td><td>After routing (needs the matched endpoint metadata for some schemes)</td></tr><tr><td><code>UseAuthorization</code></td><td>After authentication</td></tr><tr><td><code>MapControllers / MapGet / …</code></td><td>Last — the actual endpoint executers</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Registering <code>UseAuthentication</code> before <code>UseRouting</code> (some schemes rely on endpoint metadata).</li><li>Writing <code>app.Use</code> after <code>app.Run</code> — it's unreachable.</li><li>Calling <code>await next(ctx)</code> more than once per request.</li><li>Injecting a scoped service into middleware constructor instead of <code>InvokeAsync</code>.</li><li>Forgetting to call <code>await next(ctx)</code> in a Use middleware and silently short-circuiting.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create a blank <code>dotnet new web -n TodoApi</code>; add a <code>RequestTimingMiddleware</code> that logs method, path and elapsed ms.</li><li>Add a <code>/health</code> branch with <code>Map</code> that returns <code>{{"status":"ok","env":"..."}}</code> as JSON.</li><li>Verify the middleware order produces in/out log pairs correctly by adding two <code>Use</code> blocks.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does <code>await next(ctx)</code> do?</summary>It hands control to the next middleware in the pipeline. Code before it runs on the way in; code after it runs on the way out.</details><details><summary>What is the difference between Use and Run?</summary>Both add middleware. Use chains to the next component (by calling next). Run is terminal — it never calls next and ends the pipeline.</details><details><summary>What env variable controls the environment name?</summary><code>ASPNETCORE_ENVIRONMENT</code>. Common values are Development, Staging, Production. <code>app.Environment.IsDevelopment()</code> checks it.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is Kestrel?</summary><div>Kestrel is ASP.NET Core's built-in, cross-platform HTTP server. It listens on TCP, parses HTTP, and feeds requests into the middleware pipeline. It's production-capable and can sit behind a reverse proxy (Nginx, IIS, YARP) for TLS termination.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is middleware and how is the pipeline ordered?</summary><div>Middleware is a function that processes an HttpContext and optionally calls the next function. Components are added in order — first registered runs first on the way in and last on the way out. Order is critical: exception handling must be first, auth before authorisation, routing before endpoints.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain Use vs Run vs Map.</summary><div>Use adds a middleware that may call next(). Run adds a terminal middleware that never calls next. Map branches the pipeline on a path prefix, giving the branch its own sub-pipeline.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the minimal hosting model and why was Startup.cs removed?</summary><div>Starting in .NET 6, WebApplication.CreateBuilder and WebApplication replace the separate Startup class. Services and middleware can be configured in one place (Program.cs), reducing boilerplate and aligning with C# top-level statements.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you inject a scoped service into middleware?</summary><div>Add it as a parameter to <code>InvokeAsync</code>, not to the constructor. Middleware is a singleton; injecting a scoped service into the constructor would capture it for the application lifetime, causing bugs.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does ASP.NET Core find the right appsettings file?</summary><div><code>appsettings.json</code> is always loaded. Then <code>appsettings.{Environment}.json</code> is loaded and merged on top. If a key exists in both, the environment-specific file wins.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Dependency Injection Lifetimes</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Master Singleton, Scoped and Transient lifetimes with concrete instance-ID demos, understand the captive dependency trap, and use IServiceScopeFactory and keyed services (.NET 8).</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>DI container</dt><dd>The built-in <code>IServiceCollection</code> / <code>IServiceProvider</code> that creates and manages objects.</dd></div><div class="def"><dt>Singleton</dt><dd>One instance for the entire app lifetime. Shared by every request and every thread.</dd></div><div class="def"><dt>Scoped</dt><dd>One instance per HTTP request (or per manually created scope). The right lifetime for DbContext.</dd></div><div class="def"><dt>Transient</dt><dd>A new instance every time it is resolved. Cheap, stateless services.</dd></div><div class="def"><dt>Service descriptor</dt><dd>An entry in <code>IServiceCollection</code> describing a service type, its implementation, and lifetime.</dd></div><div class="def"><dt>Captive dependency</dt><dd>A singleton that holds a scoped or transient service, keeping it alive longer than intended.</dd></div><div class="def"><dt>ValidateScopes</dt><dd>DI option that detects captive dependency bugs at startup in Development.</dd></div><div class="def"><dt>ValidateOnStart</dt><dd>Checks that every registered service can be resolved at startup, not on the first request.</dd></div><div class="def"><dt>IServiceScopeFactory</dt><dd>Lets you create a DI scope manually — useful inside background services or singletons.</dd></div><div class="def"><dt>IEnumerable&lt;T&gt; injection</dt><dd>Inject all registrations of an interface. Last <code>AddX</code> call wins the single-inject slot.</dd></div><div class="def"><dt>Keyed services</dt><dd>.NET 8: register multiple implementations of the same interface under different string/enum keys.</dd></div><div class="def"><dt>InstanceId</dt><dd>A <code>Guid</code> set at construction, useful to prove which instance is returned.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Scoped is the default for services that use <code>DbContext</code> — one per request = one transaction.</li><li>Singleton services must be thread-safe — they can be called by many threads concurrently.</li><li><code>builder.Services.AddScoped&lt;T&gt;()</code> is the most common registration.</li><li>Use <code>TryAdd*</code> family to register a default that can be overridden (useful in libraries).</li><li>Calling <code>provider.GetRequiredService&lt;T&gt;()</code> throws if T isn't registered — good for startup failure.</li></ul></div>
+
+<h3>1. Instance-ID demo — proving lifetimes</h3>
+<div class="code"><div class="fname">Services/Traceable.cs</div><pre><code class="language-csharp">// Services/Traceable.cs — base service with a visible instance ID
+public interface ITraceable {{ Guid Id {{ get; }} }}
+
+public class SingletonService : ITraceable
+{{
+    public Guid Id {{ get; }} = Guid.NewGuid();     // set once at construction
+}}
+public class ScopedService : ITraceable
+{{
+    public Guid Id {{ get; }} = Guid.NewGuid();
+}}
+public class TransientService : ITraceable
+{{
+    public Guid Id {{ get; }} = Guid.NewGuid();
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Program.cs registrations
+builder.Services.AddSingleton&lt;SingletonService&gt;();
+builder.Services.AddScoped&lt;ScopedService&gt;();
+builder.Services.AddTransient&lt;TransientService&gt;();
+
+// Minimal API endpoint to inspect lifetimes
+app.MapGet("/lifetimes", (
+    SingletonService  s1,
+    SingletonService  s2,   // same instance
+    ScopedService     sc1,
+    ScopedService     sc2,  // same instance within THIS request
+    TransientService  t1,
+    TransientService  t2    // different instances every time
+) =&gt;
+{{
+    return new
+    {{
+        singleton_same  = s1.Id == s2.Id,   // true
+        scoped_same     = sc1.Id == sc2.Id, // true
+        transient_same  = t1.Id == t2.Id,   // false
+        singleton_id    = s1.Id,
+        scoped_id       = sc1.Id,
+    }};
+}});
+// Two requests in a row: singleton_id stays the same, scoped_id changes.</code></pre></div>
+
+<h3>2. Captive dependency and ValidateScopes</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// ❌ CAPTIVE DEPENDENCY — catches the scoped service in a singleton's lifetime
+public class BadSingletonService(ScopedService scoped)
+{{
+    // The first request's ScopedService stays alive for the entire app lifetime
+    // Every request after the first reuses stale state — including stale DbContext!
+}}
+
+// In Development, turning on ValidateScopes catches this at Build() time:
+builder.Host.UseDefaultServiceProvider(o =&gt;
+{{
+    o.ValidateScopes  = true;   // detect scoped-in-singleton at startup
+    o.ValidateOnStart = true;   // ensure every service can be resolved at startup
+}});
+// Throws: "Cannot consume scoped service 'ScopedService' from singleton 'BadSingletonService'"</code></pre></div>
+<div class="note warn"><b>Avoid.</b> ValidateScopes is enabled automatically in Development when you call <code>WebApplication.CreateBuilder</code> — but adding it explicitly with <code>ValidateOnStart=true</code> gives you earlier failure on misconfigured registrations.</div>
+
+<h3>3. IServiceScopeFactory — creating a scope manually</h3>
+<p>Background services (<code>IHostedService</code>) are singletons. They need IServiceScopeFactory to resolve scoped services per work item.</p>
+<div class="code"><div class="fname">Services/GstReminderService.cs</div><pre><code class="language-csharp">// A hosted service that processes GST reminders on a schedule
+public class GstReminderService(IServiceScopeFactory scopeFactory, ILogger&lt;GstReminderService&gt; logger)
+    : BackgroundService
+{{
+    protected override async Task ExecuteAsync(CancellationToken ct)
+    {{
+        while (!ct.IsCancellationRequested)
+        {{
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService&lt;AppDbContext&gt;();  // scoped!
+            var dueCount = await db.Todos
+                .Where(t =&gt; t.DueDate &lt;= DateOnly.FromDateTime(DateTime.Today) &amp;&amp; !t.IsDone)
+                .CountAsync(ct);
+            logger.LogInformation("{Count} GST/tax items are due today", dueCount);
+
+            await Task.Delay(TimeSpan.FromHours(1), ct);
+        }}
+    }}
+}}</code></pre></div>
+
+<h3>4. Multiple registrations and IEnumerable&lt;T&gt;</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Three notification channels for a payment gateway
+public interface INotifier {{ Task NotifyAsync(string message); }}
+public class EmailNotifier  : INotifier {{ public Task NotifyAsync(string m) {{ Console.WriteLine($"[Email] {{m}}"); return Task.CompletedTask; }} }}
+public class SmsNotifier    : INotifier {{ public Task NotifyAsync(string m) {{ Console.WriteLine($"[SMS]   {{m}}"); return Task.CompletedTask; }} }}
+public class WhatsAppNotifier: INotifier {{ public Task NotifyAsync(string m) {{ Console.WriteLine($"[WA]    {{m}}"); return Task.CompletedTask; }} }}
+
+// Register all three
+builder.Services.AddScoped&lt;INotifier, EmailNotifier&gt;();
+builder.Services.AddScoped&lt;INotifier, SmsNotifier&gt;();
+builder.Services.AddScoped&lt;INotifier, WhatsAppNotifier&gt;();
+
+// Inject IEnumerable&lt;INotifier&gt; to get all three
+app.MapPost("/notify", async (IEnumerable&lt;INotifier&gt; notifiers, string message) =&gt;
+{{
+    foreach (var n in notifiers) await n.NotifyAsync(message);
+    return Results.Ok();
+}});
+
+// Inject INotifier directly → you get WhatsAppNotifier (the last AddScoped wins)</code></pre></div>
+
+<h3>5. Keyed services (.NET 8)</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Register under different keys — useful for strategy/factory patterns
+builder.Services.AddKeyedScoped&lt;INotifier, EmailNotifier&gt;("email");
+builder.Services.AddKeyedScoped&lt;INotifier, SmsNotifier&gt;("sms");
+builder.Services.AddKeyedScoped&lt;INotifier, WhatsAppNotifier&gt;("whatsapp");
+
+// Resolve by key in a minimal API endpoint
+app.MapPost("/notify/{{channel}}", async (
+    [FromKeyedServices("email")]    INotifier email,
+    [FromKeyedServices("sms")]      INotifier sms,
+    string channel, string message) =&gt;
+{{
+    var notifier = channel switch
+    {{
+        "email" =&gt; email,
+        "sms"   =&gt; sms,
+        _       =&gt; throw new ArgumentException($"Unknown channel: {{channel}}")
+    }};
+    await notifier.NotifyAsync(message);
+    return Results.Ok();
+}});
+
+// Or resolve programmatically from a scope
+var notifier = scope.ServiceProvider.GetRequiredKeyedService&lt;INotifier&gt;("whatsapp");</code></pre></div>
+<div class="note tip"><b>Tip.</b> Keyed services replace the common pattern of injecting a factory function or dictionary of implementations.</div>
+
+<h3>6. Lifetime summary</h3>
+<div class="tbl"><table><tr><th>Lifetime</th><th>Created</th><th>Shared</th><th>Typical use</th><th>Thread-safe?</th></tr><tr><td>Singleton</td><td>Once at first resolve</td><td>All requests, all threads</td><td>Config, caches, HttpClient factory</td><td>Must be</td></tr><tr><td>Scoped</td><td>Once per request/scope</td><td>Within one request</td><td>DbContext, unit-of-work, current user</td><td>Only within the scope</td></tr><tr><td>Transient</td><td>Every resolve</td><td>Never</td><td>Lightweight stateless helpers, formatters</td><td>N/A (new each time)</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Injecting a scoped service into a singleton (captive dependency — DbContext in a singleton is a classic bug).</li><li>Making a singleton that caches per-request data (all requests share the same state).</li><li>Forgetting that transient instances aren't disposed until the scope ends (not immediately).</li><li>Using <code>GetService&lt;T&gt;</code> (returns null) where <code>GetRequiredService&lt;T&gt;</code> (throws) is safer.</li><li>Registering the same service twice with <code>AddScoped</code> when you meant to override with <code>TryAddScoped</code>.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add <code>SingletonService</code>, <code>ScopedService</code>, <code>TransientService</code> to your TodoApi and hit the <code>/lifetimes</code> endpoint twice — confirm singleton ID stays the same.</li><li>Intentionally create a captive dependency and confirm <code>ValidateScopes=true</code> catches it at <code>builder.Build()</code>.</li><li>Register three <code>INotifier</code> implementations and inject <code>IEnumerable&lt;INotifier&gt;</code> to broadcast a message.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is a captive dependency?</summary>When a longer-lived service (Singleton) holds a shorter-lived service (Scoped/Transient), keeping it alive beyond its intended scope, causing stale state and resource leaks.</details><details><summary>Why is Scoped the right lifetime for DbContext?</summary>One DbContext per request = one database connection, one transaction, one change-tracker. Sharing it across requests would mix transactions.</details><details><summary>How do you use a scoped service from a background service?</summary>Inject IServiceScopeFactory into the background service (which is a singleton), then call CreateAsyncScope() per work item and resolve the scoped service from scope.ServiceProvider.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What are the three DI lifetimes in ASP.NET Core?</summary><div>Singleton (one instance for the whole app), Scoped (one per HTTP request or manual scope), Transient (new instance every time it's resolved). Register with AddSingleton, AddScoped, AddTransient.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why can't you inject a Scoped service into a Singleton?</summary><div>The Singleton is created once and lives for the app's lifetime. The Scoped service's scope (the request) ends, but the Singleton still holds a reference to it, keeping it alive and stale. This is the captive dependency bug.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you register and resolve all implementations of an interface?</summary><div>Register each with AddScoped/AddSingleton/AddTransient on the same interface. Inject <code>IEnumerable&lt;T&gt;</code> to get all of them. Direct injection of T returns only the last registration.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is ValidateScopes and when should you enable it?</summary><div>A DI option that checks at Build() time that no Singleton captures a Scoped dependency. It's auto-enabled in Development but you should also enable ValidateOnStart to catch all resolution errors at startup, not on the first request.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What are keyed services in .NET 8?</summary><div>A way to register multiple implementations of the same interface under different string/enum keys, then resolve the right one by key using [FromKeyedServices(key)] in endpoints or GetRequiredKeyedService<T>(key) programmatically. Replaces factory/dictionary patterns.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you use IServiceScopeFactory?</summary><div>When a singleton or background service needs to consume scoped services. Create a scope per unit of work (e.g. per message, per job), resolve scoped services from it, and dispose the scope when done.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Configuration and Options</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Layer configuration sources correctly, bind strongly typed options, choose between IOptions/IOptionsSnapshot/IOptionsMonitor, and validate at startup.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>IConfiguration</dt><dd>The runtime view of all configuration sources merged together.</dd></div><div class="def"><dt>appsettings.json</dt><dd>Base configuration file, always loaded.</dd></div><div class="def"><dt>appsettings.{Environment}.json</dt><dd>Environment-specific overrides loaded on top.</dd></div><div class="def"><dt>Environment variables</dt><dd>Override any config key at deploy time. Double underscore <code>__</code> acts as a nesting separator.</dd></div><div class="def"><dt>Command-line args</dt><dd>Override at run time: <code>dotnet run --Smtp:Port=587</code>.</dd></div><div class="def"><dt>User secrets</dt><dd>Development-only secrets stored outside the project, never committed to git.</dd></div><div class="def"><dt>Options pattern</dt><dd>Bind a config section to a typed POCO via <code>Configure&lt;T&gt;</code>.</dd></div><div class="def"><dt>IOptions&lt;T&gt;</dt><dd>Singleton. Reads config once at startup. Use for settings that never change.</dd></div><div class="def"><dt>IOptionsSnapshot&lt;T&gt;</dt><dd>Scoped. Re-reads config per request. Use for settings that reload at runtime.</dd></div><div class="def"><dt>IOptionsMonitor&lt;T&gt;</dt><dd>Singleton with change notification via <code>OnChange</code>.</dd></div><div class="def"><dt>ValidateDataAnnotations</dt><dd>Validates options POCOs with <code>[Required]</code>, <code>[Range]</code> etc. at startup.</dd></div><div class="def"><dt>ValidateOnStart</dt><dd>Triggers validation at startup instead of first use.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Config key lookup is case-insensitive.</li><li><code>__</code> in env var names maps to <code>:</code> in config keys: <code>Smtp__Port=587</code> sets <code>Smtp:Port</code>.</li><li>User secrets are keyed to the project's <code>&lt;UserSecretsId&gt;</code> in the .csproj.</li><li>Never put real credentials in appsettings.json — use user-secrets in dev, Key Vault / env vars in prod.</li><li><code>IOptions&lt;T&gt;</code> is a singleton — the same instance is returned across the app lifetime.</li></ul></div>
+
+<h3>1. Configuration layering</h3>
+<p>WebApplication.CreateBuilder loads sources in this order (later sources win):</p>
+<div class="tbl"><table><tr><th>Priority</th><th>Source</th><th>When to use</th></tr><tr><td>1 (lowest)</td><td><code>appsettings.json</code></td><td>Defaults shared across all envs</td></tr><tr><td>2</td><td><code>appsettings.{{Environment}}.json</code></td><td>Env-specific overrides (dev URLs, test DBs)</td></tr><tr><td>3</td><td>User secrets (dev only)</td><td>Credentials on dev machines</td></tr><tr><td>4</td><td>Environment variables</td><td>Deployment-time overrides (CI/CD, Docker)</td></tr><tr><td>5 (highest)</td><td>Command-line args</td><td>Run-time overrides</td></tr></table></div>
+<div class="code"><div class="fname">appsettings.json</div><pre><code class="language-json">// appsettings.json
+{{
+  "App": {{
+    "Name": "TodoAPI",
+    "MaxPageSize": 50,
+    "AllowedOrigins": ["http://localhost:3000"]
+  }},
+  "Smtp": {{
+    "Host": "smtp.gmail.com",
+    "Port": 587,
+    "From": "noreply@example.com",
+    "Password": ""       // empty here — override via user-secrets or env var
+  }}
+}}</code></pre></div>
+<div class="code"><div class="fname">appsettings.Development.json</div><pre><code class="language-json">// appsettings.Development.json — merged on top of the base in Development
+{{
+  "Logging": {{
+    "LogLevel": {{
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information"
+    }}
+  }},
+  "App": {{
+    "MaxPageSize": 200    // higher limit in dev
+  }}
+}}</code></pre></div>
+
+<h3>2. User secrets</h3>
+<div class="code nofile"><pre><code class="language-bash"># Init user secrets (adds &lt;UserSecretsId&gt; to .csproj)
+dotnet user-secrets init
+
+# Set a secret — stored in ~/.microsoft/usersecrets/&lt;id&gt;/secrets.json  (never in the project)
+dotnet user-secrets set "Smtp:Password" "mySecretGmailAppPassword"
+dotnet user-secrets set "ConnectionStrings:Default" "Server=localhost;Database=TodoDb;..."
+
+# List and remove
+dotnet user-secrets list
+dotnet user-secrets remove "Smtp:Password"</code></pre></div>
+
+<h3>3. Env vars with __ nesting</h3>
+<div class="code nofile"><pre><code class="language-bash"># Docker Compose or CI/CD — override nested config keys using __
+# Smtp:Port  →  Smtp__Port
+# App:Name   →  App__Name
+
+# docker-compose.yml
+# environment:
+#   - Smtp__Password=myDockerPassword
+#   - App__MaxPageSize=100
+#   - ConnectionStrings__Default=Server=sqlserver;Database=TodoDb;...
+
+# Or in a shell
+export Smtp__Password="myPassword"
+dotnet run</code></pre></div>
+
+<h3>4. Options pattern — typed POCO binding</h3>
+<div class="code"><div class="fname">Options/AppOptions.cs</div><pre><code class="language-csharp">// Options/AppOptions.cs
+public class AppOptions
+{{
+    public const string Section = "App";
+
+    [Required] public string Name {{ get; init; }} = "";
+    [Range(1, 1000)] public int MaxPageSize {{ get; init; }} = 50;
+    public List&lt;string&gt; AllowedOrigins {{ get; init; }} = [];
+}}
+
+public class SmtpOptions
+{{
+    public const string Section = "Smtp";
+
+    [Required] public string Host {{ get; init; }} = "";
+    [Range(1, 65535)] public int Port {{ get; init; }} = 587;
+    [Required][EmailAddress] public string From {{ get; init; }} = "";
+    public string Password {{ get; init; }} = "";
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Program.cs — bind and validate at startup
+builder.Services
+    .AddOptions&lt;AppOptions&gt;()
+    .BindConfiguration(AppOptions.Section)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();         // fail fast at startup, not on first use
+
+builder.Services
+    .AddOptions&lt;SmtpOptions&gt;()
+    .BindConfiguration(SmtpOptions.Section)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();</code></pre></div>
+
+<h3>5. IOptions vs IOptionsSnapshot vs IOptionsMonitor</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// All three inject the same POCO but differ in when they re-read config:
+
+// 1. IOptions&lt;T&gt; — singleton, config loaded once, never updates
+app.MapGet("/options/app", (IOptions&lt;AppOptions&gt; opts) =&gt;
+    new {{ opts.Value.Name, opts.Value.MaxPageSize }});
+
+// 2. IOptionsSnapshot&lt;T&gt; — scoped, re-reads per request (useful when you reload appsettings)
+app.MapGet("/options/app/snap", (IOptionsSnapshot&lt;AppOptions&gt; opts) =&gt;
+    new {{ opts.Value.Name, opts.Value.MaxPageSize }});
+
+// 3. IOptionsMonitor&lt;T&gt; — singleton, change notifications, great for long-running services
+public class FeatureFlagService(IOptionsMonitor&lt;AppOptions&gt; monitor)
+{{
+    private AppOptions _current = monitor.CurrentValue;
+
+    // ctor
+    public FeatureFlagService(IOptionsMonitor&lt;AppOptions&gt; monitor) : this(monitor)
+    {{
+        monitor.OnChange(updated =&gt; _current = updated);   // hot-reload callback
+    }}
+
+    public bool CanShowDebugInfo =&gt; _current.Name.Contains("dev", StringComparison.OrdinalIgnoreCase);
+}}</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>IOptions&lt;T&gt;</th><th>IOptionsSnapshot&lt;T&gt;</th><th>IOptionsMonitor&lt;T&gt;</th></tr><tr><td>Lifetime</td><td>Singleton</td><td>Scoped</td><td>Singleton</td></tr><tr><td>When config reads</td><td>Once at startup</td><td>Every request</td><td>On change</td></tr><tr><td>Change notification</td><td>No</td><td>No</td><td>Yes (OnChange)</td></tr><tr><td>Inject into singleton</td><td>Yes</td><td>No</td><td>Yes</td></tr><tr><td>Use for</td><td>Stable settings</td><td>Per-request reloadable</td><td>Hot-reload, feature flags</td></tr></table></div>
+
+<h3>6. Reading config directly (without options)</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Sometimes you just need a single value — read it inline
+var connStr = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException("Connection string 'Default' not configured.");
+
+var maxPageSize = builder.Configuration.GetValue&lt;int&gt;("App:MaxPageSize", defaultValue: 50);
+
+// Bind a whole section to a POCO without DI (useful in Startup / Program)
+var smtpOptions = builder.Configuration
+    .GetSection(SmtpOptions.Section)
+    .Get&lt;SmtpOptions&gt;() ?? new SmtpOptions();</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Putting secrets in appsettings.json and committing them to git.</li><li>Using <code>IOptions&lt;T&gt;</code> for settings that change at runtime — use IOptionsMonitor.</li><li>Injecting <code>IOptionsSnapshot&lt;T&gt;</code> into a singleton (it's scoped).</li><li>Forgetting <code>ValidateOnStart</code> so a misconfigured SMTP host only errors on first send.</li><li>Using <code>:</code> as separator in environment variable names on Linux — use <code>__</code> instead.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add <code>AppOptions</code> to your TodoApi with <code>MaxPageSize</code> and <code>AllowedOrigins</code>; validate at startup.</li><li>Override <code>MaxPageSize</code> using <code>dotnet user-secrets</code> and confirm it takes effect.</li><li>Inject <code>IOptions&lt;AppOptions&gt;</code> into a <code>/config</code> endpoint and return the values as JSON.</li></ol>
+<h3>Self-check questions</h3><details><summary>Which config source wins when the same key appears in appsettings.json and an env var?</summary>The env var wins — it has higher priority in the default load order.</details><details><summary>How do you nest config keys in environment variables?</summary>Use double underscore <code>__</code> as the separator: <code>Smtp__Port=587</code> maps to <code>Smtp:Port</code>.</details><details><summary>What is ValidateOnStart?</summary>An options extension that triggers validation of the POCO at <code>Build()</code> time, so the app refuses to start rather than failing on the first request that uses the setting.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the options pattern in ASP.NET Core?</summary><div>A way to bind a named configuration section to a strongly typed POCO class and inject it via IOptions&lt;T&gt;, IOptionsSnapshot&lt;T&gt; or IOptionsMonitor&lt;T&gt;, giving compile-time safety instead of stringly typed config lookups.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When should you use IOptionsSnapshot vs IOptions?</summary><div>Use IOptions for settings that don't change while the app is running. Use IOptionsSnapshot when settings might be reloaded at runtime (e.g. appsettings.json edited without restart) — it re-reads per request because it's Scoped.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>How do you store secrets in development without committing them to git?</summary><div>Use <code>dotnet user-secrets</code>. Secrets are stored in a user-profile directory keyed to the project's UserSecretsId, never in the source tree.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does ValidateDataAnnotations do for options?</summary><div>It runs data annotation validators ([Required], [Range], [EmailAddress]) against the bound POCO when the options are first resolved. Combined with ValidateOnStart, it fails the app at startup if configuration is invalid.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does IOptionsMonitor support hot-reload?</summary><div>It monitors the config sources for changes and raises an OnChange callback whenever they reload. Services that need to react to live config changes (feature flags, connection pools) subscribe to that callback.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the config hierarchy in WebApplication.CreateBuilder?</summary><div>appsettings.json → appsettings.{Environment}.json → user secrets (dev) → environment variables → command-line args. Each source overrides the previous. Environment variables use __ for nesting on Linux.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Minimal APIs</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Map endpoints with MapGet/MapPost/MapPut/MapDelete, use route constraints and binding sources, return TypedResults, group endpoints with MapGroup, add endpoint filters, and shape ProblemDetails errors.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Minimal API</dt><dd>A lightweight way to define HTTP endpoints directly in Program.cs without controller classes.</dd></div><div class="def"><dt>MapGet / MapPost / MapPut / MapDelete / MapPatch</dt><dd>Extension methods that register an endpoint for the given HTTP verb and route pattern.</dd></div><div class="def"><dt>Route parameter</dt><dd>A segment in curly braces: <code>/todos/{{id}}</code>. Bound to a handler parameter by name.</dd></div><div class="def"><dt>Route constraint</dt><dd>A type or regex in a route segment: <code>{{id:int}}</code>, <code>{{slug:alpha}}</code>.</dd></div><div class="def"><dt>Binding source</dt><dd>Where ASP.NET Core looks for a parameter value: route, query, body, header, services.</dd></div><div class="def"><dt>[AsParameters]</dt><dd>Tells the binder to populate a struct/record's properties from the same sources as top-level params.</dd></div><div class="def"><dt>TypedResults</dt><dd>Static factory methods (<code>TypedResults.Ok</code>, <code>TypedResults.NotFound</code>) that return a typed <code>IResult</code>.</dd></div><div class="def"><dt>Results&lt;T1,T2&gt;</dt><dd>Union return type for endpoints that can return more than one result type (.NET 7+).</dd></div><div class="def"><dt>MapGroup</dt><dd>Groups endpoints under a shared prefix and lets you apply filters, auth, etc. once.</dd></div><div class="def"><dt>IEndpointFilter</dt><dd>An interface for middleware-like logic scoped to one endpoint or group.</dd></div><div class="def"><dt>ProblemDetails</dt><dd>RFC 7807 JSON error format: <code>type</code>, <code>title</code>, <code>status</code>, <code>detail</code>, <code>instance</code>.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Minimal APIs have no <code>[ApiController]</code> automatic model validation — you do it explicitly (Saturday).</li><li>Query strings are bound automatically when a parameter has no route segment or body attribute.</li><li><code>TypedResults.Ok(value)</code> sets Content-Type application/json + 200; prefer it over raw <code>Results.Ok</code> for OpenAPI schema.</li></ul></div>
+
+<h3>1. MapGet / MapPost / MapPut / MapDelete</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// The four verbs + a minimal route
+app.MapGet   ("/todos",        () =&gt; "list all");
+app.MapPost  ("/todos",        () =&gt; "create");
+app.MapPut   ("/todos/{{id}}",   (int id) =&gt; $"update {{id}}");
+app.MapDelete("/todos/{{id}}",   (int id) =&gt; $"delete {{id}}");
+app.MapPatch ("/todos/{{id}}",   (int id) =&gt; $"patch {{id}}");
+
+// Handler can be async
+app.MapGet("/todos/{{id}}", async (int id, AppDbContext db) =&gt;
+{{
+    var item = await db.Todos.FindAsync(id);
+    return item is null ? Results.NotFound() : Results.Ok(item);
+}});</code></pre></div>
+
+<h3>2. Route constraints and binding sources</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Route constraints — 400 if the value doesn't satisfy the constraint
+app.MapGet("/todos/{{id:int:min(1)}}", (int id) =&gt; $"id={{id}}");
+app.MapGet("/files/{{name:alpha:maxlength(50)}}", (string name) =&gt; $"file={{name}}");
+
+// Binding sources — where each parameter comes from
+app.MapGet("/search", (
+    string? title,                              // from query: /search?title=GST
+    [FromHeader(Name="X-Page")] int page = 1,  // from header
+    [FromRoute] int? categoryId = null          // explicitly from route
+) =&gt; $"title={{title}} page={{page}}");
+
+// Body binding — the SINGLE body is deserialized automatically
+app.MapPost("/todos", async (CreateTodoDto dto, AppDbContext db) =&gt;
+{{
+    // dto comes from the JSON body
+}});
+
+// [AsParameters] — bind a record from multiple sources at once (.NET 7+)
+public record TodoQuery([FromQuery] string? Title, [FromQuery] int Page = 1, [FromQuery] int PageSize = 20);
+
+app.MapGet("/todos", ([AsParameters] TodoQuery q) =&gt;
+    $"title={{q.Title}} page={{q.Page}} size={{q.PageSize}}");</code></pre></div>
+
+<h3>3. TypedResults and Results&lt;T1,T2&gt;</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Results.Ok() returns IResult — no schema info for OpenAPI
+// TypedResults.Ok() returns Ok&lt;T&gt; which carries the type for Swagger
+
+app.MapGet("/todos/{{id:int}}", async (int id, AppDbContext db) =&gt;
+{{
+    var item = await db.Todos.FindAsync(id);
+    return item is null
+        ? TypedResults.NotFound()
+        : TypedResults.Ok(item);
+    // return type inferred as Results&lt;Ok&lt;TodoItem&gt;, NotFound&gt;
+}});
+
+// Explicit union return type — good for OpenAPI documentation
+app.MapPost("/todos", async (CreateTodoDto dto, AppDbContext db)
+    : Task&lt;Results&lt;Created&lt;TodoItem&gt;, ValidationProblem&gt;&gt; =&gt;
+{{
+    if (string.IsNullOrWhiteSpace(dto.Title))
+        return TypedResults.ValidationProblem(new Dictionary&lt;string, string[]&gt;
+        {{
+            ["title"] = ["Title is required"]
+        }});
+
+    var item = new TodoItem {{ Title = dto.Title, DueDate = dto.DueDate, Priority = dto.Priority }};
+    db.Todos.Add(item);
+    await db.SaveChangesAsync();
+    return TypedResults.Created($"/todos/{{item.Id}}", item);
+}});</code></pre></div>
+<div class="tbl"><table><tr><th>Factory method</th><th>Status code</th><th>Content-Type</th></tr><tr><td><code>TypedResults.Ok(value)</code></td><td>200</td><td>application/json</td></tr><tr><td><code>TypedResults.Created(uri, value)</code></td><td>201</td><td>application/json</td></tr><tr><td><code>TypedResults.NoContent()</code></td><td>204</td><td>—</td></tr><tr><td><code>TypedResults.NotFound()</code></td><td>404</td><td>—</td></tr><tr><td><code>TypedResults.BadRequest(detail)</code></td><td>400</td><td>application/json</td></tr><tr><td><code>TypedResults.ValidationProblem(errors)</code></td><td>400</td><td>application/problem+json</td></tr><tr><td><code>TypedResults.Problem(detail, ...)</code></td><td>500</td><td>application/problem+json</td></tr></table></div>
+
+<h3>4. MapGroup — shared prefix and cross-cutting concerns</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// All todos endpoints grouped under /api/todos
+var todos = app.MapGroup("/api/todos")
+               .WithTags("Todos")            // Swagger tag
+               .RequireAuthorization();      // applied to every endpoint in the group
+
+todos.MapGet(   "/",          TodoHandlers.GetAll);
+todos.MapGet(   "/{{id:int}}", TodoHandlers.GetById);
+todos.MapPost(  "/",          TodoHandlers.Create);
+todos.MapPut(   "/{{id:int}}", TodoHandlers.Update);
+todos.MapDelete("/{{id:int}}", TodoHandlers.Delete);
+
+// Groups can be nested
+var v2 = app.MapGroup("/api/v2");
+var v2Todos = v2.MapGroup("/todos");</code></pre></div>
+
+<h3>5. Endpoint filters</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// A filter runs before and after the endpoint handler — like middleware for one route
+public class LoggingFilter : IEndpointFilter
+{{
+    public async ValueTask&lt;object?&gt; InvokeAsync(EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
+    {{
+        var method = ctx.HttpContext.Request.Method;
+        var path   = ctx.HttpContext.Request.Path;
+        Console.WriteLine($"→ {{method}} {{path}}");
+        var result = await next(ctx);                // calls the handler (or the next filter)
+        Console.WriteLine($"← {{ctx.HttpContext.Response.StatusCode}}");
+        return result;
+    }}
+}}
+
+// Attach to a group or a single endpoint
+todos.AddEndpointFilter&lt;LoggingFilter&gt;();
+
+// Inline filter
+todos.MapPost("/", TodoHandlers.Create)
+     .AddEndpointFilter(async (ctx, next) =&gt;
+     {{
+         Console.WriteLine("inline filter before");
+         var r = await next(ctx);
+         Console.WriteLine("inline filter after");
+         return r;
+     }});</code></pre></div>
+
+<h3>6. ProblemDetails</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Register ProblemDetails service — formats unhandled exceptions as RFC 7807 JSON
+builder.Services.AddProblemDetails();
+
+// In Program.cs pipeline — must be first
+app.UseExceptionHandler();     // catches exceptions and uses IProblemDetailsService
+app.UseStatusCodePages();      // turns 404/405 responses into problem+json
+
+// Manually return ProblemDetails
+app.MapGet("/bad", () =&gt;
+    TypedResults.Problem(
+        detail: "फाइल नहीं मिली",
+        statusCode: StatusCodes.Status422UnprocessableEntity,
+        title: "Unprocessable Entity",
+        type: "https://tools.ietf.org/html/rfc4918#section-11.2"
+    ));
+
+// Response:
+// HTTP 422
+// Content-Type: application/problem+json
+// {{
+//   "type":   "https://tools.ietf.org/html/rfc4918#section-11.2",
+//   "title":  "Unprocessable Entity",
+//   "status": 422,
+//   "detail": "फाइल नहीं मिली"
+// }}</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Returning a plain <code>string</code> from an endpoint and expecting JSON — it's served as text/plain.</li><li>Forgetting route constraints: <code>/todos/{id}</code> matches <code>/todos/abc</code>; use <code>{{id:int}}</code> to reject non-integers.</li><li>Using <code>Results.Ok</code> (no type info) instead of <code>TypedResults.Ok</code> (OpenAPI schema).</li><li>Calling <code>MapGroup</code> after the endpoint registrations — the group must be declared first.</li><li>Applying <code>RequireAuthorization</code> without registering the auth services.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Define <code>/api/todos</code> with MapGroup; add GET all, GET by id, POST, PUT, DELETE using TypedResults.</li><li>Add a route constraint <code>{{id:int:min(1)}}</code> and test it with curl for a string id.</li><li>Write an endpoint filter that validates the JSON Content-Type header on POST/PUT and returns 415 if missing.</li></ol>
+<h3>Self-check questions</h3><details><summary>How does query string binding work in minimal APIs?</summary>A handler parameter with no route segment and no binding attribute is bound from the query string automatically, e.g. <code>(string? search)</code> reads <code>?search=…</code>.</details><details><summary>What is the difference between TypedResults and Results?</summary>Both return IResult. TypedResults returns a typed IResult (e.g. Ok&lt;T&gt;) so the OpenAPI/Swagger schema is generated from it. Results returns a non-generic IResult with no schema info.</details><details><summary>What does MapGroup do?</summary>Groups endpoints under a shared route prefix, and lets you apply filters, auth, metadata and tags once instead of on every endpoint.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>How do you define a GET endpoint that returns JSON in a minimal API?</summary><div><code>app.MapGet("/path", () => new {{ name = "value" }})</code> — anonymous objects are serialised to JSON. Use TypedResults.Ok(value) for explicit typing and OpenAPI schema.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What are route constraints and why use them?</summary><div>Inline type checks in route patterns, like <code>{{id:int}}</code> or <code>{{name:alpha:maxlength(20)}}</code>. They return 404 or 400 before the handler runs if the value doesn't match, so the handler receives guaranteed-valid data.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is ProblemDetails?</summary><div>A standardised JSON error format defined by RFC 7807, returned by ASP.NET Core on errors. It has type, title, status, detail and instance fields. TypedResults.Problem() creates it.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is an endpoint filter and how does it differ from middleware?</summary><div>An endpoint filter (IEndpointFilter) is like middleware but scoped to a single endpoint or MapGroup, not the whole pipeline. It can inspect handler arguments (ctx.Arguments) and short-circuit before the handler. Middleware runs for every request regardless of the endpoint.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is [AsParameters] used for?</summary><div>It tells the minimal API binder to populate the properties of a record or struct from the same binding sources as individual handler parameters (route, query, header), so you can group them into a tidy request object without wrapping them in a body DTO.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do Results&lt;T1,T2&gt; improve OpenAPI documentation?</summary><div>The union return type gives Swashbuckle/NSwag the full list of possible response shapes and status codes for a single endpoint, instead of just IResult which produces no schema info.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Controllers</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Use [ApiController] attribute routing, understand automatic 400 validation, return ActionResult&lt;T&gt;, and choose between controllers and minimal APIs.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>[ApiController]</dt><dd>Attribute that enables API-specific behaviour on a controller class: auto 400, binding inference, attribute routing required.</dd></div><div class="def"><dt>ControllerBase</dt><dd>Base class for API controllers. Provides helper methods like Ok(), NotFound(), BadRequest(), CreatedAtAction().</dd></div><div class="def"><dt>[Route] attribute</dt><dd>Defines the route template for a controller or action.</dd></div><div class="def"><dt>[ApiController] automatic 400</dt><dd>When model binding or validation fails, [ApiController] returns a 400 ProblemDetails automatically — before the action runs.</dd></div><div class="def"><dt>ModelState</dt><dd>The validation dictionary populated by model binding and data annotations.</dd></div><div class="def"><dt>ActionResult&lt;T&gt;</dt><dd>A union return type that can be either T (auto 200) or any IActionResult (NotFound, BadRequest, etc.).</dd></div><div class="def"><dt>[FromBody]</dt><dd>Explicitly bind a parameter from the JSON request body (implicit with [ApiController]).</dd></div><div class="def"><dt>[FromRoute] / [FromQuery]</dt><dd>Explicit source binding on action parameters.</dd></div><div class="def"><dt>CreatedAtAction</dt><dd>Returns 201 with a Location header pointing to the GET endpoint for the new resource.</dd></div><div class="def"><dt>ProducesResponseType</dt><dd>Documents expected status codes on an action for Swagger.</dd></div><div class="def"><dt>ControllerRoute token</dt><dd><code>[controller]</code> in route templates is replaced by the controller class name minus 'Controller'.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li><code>[ApiController]</code> requires attribute routing — no convention-based routing.</li><li><code>ModelState.IsValid</code> is checked automatically; don't re-check it unless you have a reason.</li><li>Return <code>ActionResult&lt;T&gt;</code> (not <code>IActionResult</code>) so Swagger sees the response schema.</li><li>Keep controllers thin: they translate HTTP to service calls and back, nothing else.</li></ul></div>
+
+<h3>1. Controller anatomy</h3>
+<div class="code"><div class="fname">Controllers/TodosController.cs</div><pre><code class="language-csharp">using Microsoft.AspNetCore.Mvc;
+
+namespace TodoApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]          // → api/todos
+public class TodosController(TodoService svc) : ControllerBase
+{{
+    // GET api/todos
+    [HttpGet]
+    [ProducesResponseType&lt;IEnumerable&lt;TodoDto&gt;&gt;(200)]
+    public async Task&lt;ActionResult&lt;IEnumerable&lt;TodoDto&gt;&gt;&gt; GetAll([FromQuery] string? title)
+    {{
+        var items = await svc.GetAllAsync(title);
+        return Ok(items);
+    }}
+
+    // GET api/todos/5
+    [HttpGet("{{id:int}}")]
+    [ProducesResponseType&lt;TodoDto&gt;(200)]
+    [ProducesResponseType(404)]
+    public async Task&lt;ActionResult&lt;TodoDto&gt;&gt; GetById(int id)
+    {{
+        var item = await svc.GetByIdAsync(id);
+        return item is null ? NotFound() : Ok(item);
+    }}
+
+    // POST api/todos
+    [HttpPost]
+    [ProducesResponseType&lt;TodoDto&gt;(201)]
+    [ProducesResponseType(400)]
+    public async Task&lt;ActionResult&lt;TodoDto&gt;&gt; Create(CreateTodoDto dto)
+    {{
+        // [ApiController] already returned 400 if dto is invalid
+        var item = await svc.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new {{ id = item.Id }}, item);
+    }}
+
+    // PUT api/todos/5
+    [HttpPut("{{id:int}}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task&lt;IActionResult&gt; Update(int id, UpdateTodoDto dto)
+    {{
+        var updated = await svc.UpdateAsync(id, dto);
+        return updated ? NoContent() : NotFound();
+    }}
+
+    // DELETE api/todos/5
+    [HttpDelete("{{id:int}}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType(404)]
+    public async Task&lt;IActionResult&gt; Delete(int id)
+    {{
+        var deleted = await svc.DeleteAsync(id);
+        return deleted ? NoContent() : NotFound();
+    }}
+}}</code></pre></div>
+
+<h3>2. Automatic 400 — [ApiController] in action</h3>
+<div class="code"><div class="fname">Controllers/TodosController.cs</div><pre><code class="language-csharp">// DTO with data annotations
+public record CreateTodoDto(
+    [Required][MaxLength(200)] string Title,
+    DateOnly? DueDate,
+    Priority Priority = Priority.Medium
+);
+
+// Without [ApiController] you'd write:
+// if (!ModelState.IsValid) return BadRequest(ModelState);
+
+// WITH [ApiController] the framework does it automatically before the action runs.
+// Invalid request → HTTP 400 ProblemDetails:
+// {{
+//   "type": "...",
+//   "title": "One or more validation errors occurred.",
+//   "status": 400,
+//   "errors": {{
+//     "Title": ["The Title field is required."]
+//   }}
+// }}</code></pre></div>
+
+<h3>3. ActionResult&lt;T&gt; vs IActionResult</h3>
+<div class="code"><div class="fname">Controllers/TodosController.cs</div><pre><code class="language-csharp">// IActionResult — no schema info for Swagger
+[HttpGet("{{id}}")]
+public IActionResult GetOld(int id) =&gt; Ok(new TodoDto());    // Swagger: 200 → no schema
+
+// ActionResult&lt;T&gt; — Swagger sees the T schema + other response types
+[HttpGet("{{id}}")]
+public ActionResult&lt;TodoDto&gt; GetNew(int id) =&gt; Ok(new TodoDto());    // Swagger: 200 → TodoDto
+
+// ActionResult&lt;T&gt; implicit conversions:
+// return item;        → 200 Ok with item serialised  (implicit from T)
+// return Ok(item);    → same, explicit
+// return NotFound();  → 404 (implicit from IActionResult)</code></pre></div>
+
+<h3>4. Attribute routing tokens and sub-routes</h3>
+<div class="code"><div class="fname">Controllers/OrdersController.cs</div><pre><code class="language-csharp">[ApiController]
+[Route("api/v{{version:apiVersion}}/[controller]")]   // token + route constraint
+public class OrdersController : ControllerBase
+{{
+    // GET api/v1/orders/{{orderId}}/lines
+    [HttpGet("{{orderId:int}}/lines")]
+    public ActionResult&lt;IEnumerable&lt;OrderLineDto&gt;&gt; GetLines(int orderId) =&gt; Ok(Array.Empty&lt;OrderLineDto&gt;());
+
+    // POST api/v1/orders/{{orderId}}/lines
+    [HttpPost("{{orderId:int}}/lines")]
+    public ActionResult&lt;OrderLineDto&gt; AddLine(int orderId, CreateOrderLineDto dto) =&gt; CreatedAtAction(
+        nameof(GetLines), new {{ orderId }}, new OrderLineDto());
+}}</code></pre></div>
+
+<h3>5. Minimal APIs vs Controllers</h3>
+<div class="tbl"><table><tr><th></th><th>Minimal APIs</th><th>Controllers</th></tr><tr><td>Verbosity</td><td>Very low (3–5 lines per endpoint)</td><td>More ceremony (class + method + attributes)</td></tr><tr><td>Organisation</td><td>Groups via MapGroup; handlers in static classes</td><td>One class per resource or area</td></tr><tr><td>Automatic model validation</td><td>No (use endpoint filter or FluentValidation)</td><td>Yes — [ApiController] auto 400</td></tr><tr><td>Testability</td><td>Harder to unit-test (need WebApplicationFactory)</td><td>Easier to unit-test in isolation</td></tr><tr><td>OpenAPI/Swagger</td><td>Good (TypedResults, WithOpenApi())</td><td>Good ([ProducesResponseType], XML comments)</td></tr><tr><td>Filters / middleware scoping</td><td>Endpoint filters per route/group</td><td>Action filters, resource filters</td></tr><tr><td>Recommended for</td><td>Simple services, micro-services, rapid prototyping</td><td>Large APIs with many resources and business rules</td></tr><tr><td>Available since</td><td>.NET 6</td><td>ASP.NET Core 1.0</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> Both styles can coexist in one project. This week uses minimal APIs; Week 18 uses controllers for the product catalog API so you can compare them in practice.</div>
+
+<h3>Common mistakes</h3><ul><li>Using <code>Controller</code> (MVC base) instead of <code>ControllerBase</code> for an API — <code>Controller</code> includes View support you don't need.</li><li>Returning <code>IActionResult</code> instead of <code>ActionResult&lt;T&gt;</code> — Swagger loses the response schema.</li><li>Naming a DTO parameter the same as a route parameter — binding picks up the wrong source.</li><li>Calling <code>Ok(null)</code> for a not-found — return <code>NotFound()</code> for 404 semantics.</li><li>Forgetting <code>[ApiController]</code> and wondering why validation doesn't return 400 automatically.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Rewrite the minimal API todos endpoint from Thursday as a <code>TodosController</code>.</li><li>Add data annotations to <code>CreateTodoDto</code> and confirm that an empty Title returns a 400 ProblemDetails automatically.</li><li>Use <code>CreatedAtAction</code> for the POST response and verify the <code>Location</code> header with curl.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does [ApiController] do?</summary>Enables attribute routing requirement, automatic 400 on invalid ModelState, binding source inference (body for complex types, query for simple types), and improved error responses.</details><details><summary>Why return ActionResult&lt;T&gt; instead of IActionResult?</summary>ActionResult&lt;T&gt; has implicit conversions from both T and IActionResult. It carries the T type info so Swagger/OpenAPI can generate the response schema for the 200 response.</details><details><summary>What is CreatedAtAction?</summary>A ControllerBase helper that returns HTTP 201 Created with a Location header pointing to the action that retrieves the newly created resource.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is [ApiController] and what does it enable?</summary><div>An attribute applied to a controller class that enables API-specific behaviours: attribute routing is required (no convention routing), model validation failures return 400 automatically before the action runs, and binding sources are inferred (complex params from body, simple from query/route).</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between Ok(), NotFound(), and BadRequest()?</summary><div>Helper methods on ControllerBase that return ObjectResult / NotFoundResult / BadRequestResult with the appropriate HTTP status codes (200, 404, 400). They set Content-Type and serialise the value to JSON.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is ModelState?</summary><div>A dictionary that model binding fills with the parameter values and any validation errors from data annotations. [ApiController] automatically checks IsValid and returns 400 before your action runs.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does attribute routing work with [controller] token?</summary><div>[Route("api/[controller]")] replaces [controller] with the class name minus the 'Controller' suffix. TodosController → api/todos. You can also use [Route("api/todos")] explicitly.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you choose minimal APIs over controllers?</summary><div>Minimal APIs suit small services, micro-services and rapid prototyping where the per-endpoint code is a few lines. Controllers are better for large APIs where grouping by resource class, filters, action policies and unit-testing in isolation matter more.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you document multiple response types for Swagger?</summary><div>Decorate actions with [ProducesResponseType<T>(200)], [ProducesResponseType(404)] etc. For minimal APIs, use TypedResults and Results<T1,T2> union return types which carry the type info automatically.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>TodoApi — Minimal API with EF Core</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a full CRUD API for a TodoItem entity with SQLite (dev) or SQL Server (prod), DTOs, a /api/todos group, filtering, toggle, migrations and seed data.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>TodoItem</dt><dd>The entity: Id, Title, IsDone, DueDate, Priority (enum), CreatedAt.</dd></div><div class="def"><dt>Priority enum</dt><dd><code>Low = 0, Medium = 1, High = 2, Critical = 3</code>.</dd></div><div class="def"><dt>AppDbContext</dt><dd>EF Core DbContext exposing <code>DbSet&lt;TodoItem&gt; Todos</code>.</dd></div><div class="def"><dt>DTO</dt><dd>Data Transfer Object — exposes only what the API consumer needs; isolates the entity from the contract.</dd></div><div class="def"><dt>MapGroup</dt><dd>Groups all <code>/api/todos</code> endpoints to avoid repeating the prefix.</dd></div><div class="def"><dt>Toggle endpoint</dt><dd><code>PATCH /api/todos/{{id}}/toggle</code> flips IsDone.</dd></div><div class="def"><dt>Filter/search</dt><dd><code>GET /api/todos?title=GST&amp;isDone=false&amp;priority=High</code>.</dd></div><div class="def"><dt>Migration</dt><dd>EF Core command (<code>dotnet ef migrations add</code>) that generates a C# snapshot of a schema change.</dd></div><div class="def"><dt>Seed</dt><dd>Initial data inserted if the table is empty; makes the API immediately testable.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Use <code>&lt;FrameworkReference Include="Microsoft.AspNetCore.App" /&gt;</code> + <code>Microsoft.EntityFrameworkCore.Sqlite</code> NuGet.</li><li>Keep DTOs separate from entities — never expose navigation properties directly.</li><li><code>db.SaveChangesAsync()</code> must be awaited before reading back generated IDs.</li><li>Return 404 from both GetById and Update/Delete when the item doesn't exist.</li><li>Seed data only when the table is empty; use <code>db.Database.MigrateAsync()</code> to apply migrations at startup.</li></ul></div>
+
+<h3>Scaffold and project setup</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet new web -n TodoApi
+cd TodoApi
+
+# EF Core + SQLite for dev, SQL Server for prod
+dotnet add package Microsoft.EntityFrameworkCore.Sqlite      --version 8.0.*
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer   --version 8.0.*
+dotnet add package Microsoft.EntityFrameworkCore.Design      --version 8.0.*
+
+# Optional: Swashbuckle for Sunday
+dotnet add package Swashbuckle.AspNetCore --version 6.*</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">TodoApi/
+├── Controllers/            (empty this week — minimal API)
+├── Data/
+│   └── AppDbContext.cs
+├── DTOs/
+│   ├── CreateTodoDto.cs
+│   ├── UpdateTodoDto.cs
+│   └── TodoDto.cs
+├── Endpoints/
+│   └── TodoEndpoints.cs    (handler methods)
+├── Models/
+│   └── TodoItem.cs
+├── Middleware/
+│   └── RequestTimingMiddleware.cs
+├── Migrations/             (generated by dotnet ef)
+├── Properties/
+│   └── launchSettings.json
+├── appsettings.json
+├── appsettings.Development.json
+└── Program.cs</code></pre></div>
+
+<h3>Step 1 — TodoItem model</h3>
+<div class="code"><div class="fname">Models/TodoItem.cs</div><pre><code class="language-csharp">namespace TodoApi.Models;
+
+public enum Priority {{ Low = 0, Medium = 1, High = 2, Critical = 3 }}
+
+public class TodoItem
+{{
+    public int      Id        {{ get; set; }}
+    public string   Title     {{ get; set; }} = "";
+    public bool     IsDone    {{ get; set; }}
+    public DateOnly? DueDate  {{ get; set; }}
+    public Priority Priority  {{ get; set; }} = Priority.Medium;
+    public DateTime CreatedAt {{ get; set; }} = DateTime.UtcNow;
+}}</code></pre></div>
+
+<h3>Step 2 — AppDbContext</h3>
+<div class="code"><div class="fname">Data/AppDbContext.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using TodoApi.Models;
+
+namespace TodoApi.Data;
+
+public class AppDbContext(DbContextOptions&lt;AppDbContext&gt; options) : DbContext(options)
+{{
+    public DbSet&lt;TodoItem&gt; Todos =&gt; Set&lt;TodoItem&gt;();
+
+    protected override void OnModelCreating(ModelBuilder mb)
+    {{
+        mb.Entity&lt;TodoItem&gt;(e =&gt;
+        {{
+            e.Property(t =&gt; t.Title).HasMaxLength(200).IsRequired();
+            e.Property(t =&gt; t.Priority).HasConversion&lt;string&gt;();  // store enum as string
+            e.HasIndex(t =&gt; t.IsDone);                            // filter by done/not-done
+        }});
+    }}
+}}</code></pre></div>
+
+<h3>Step 3 — DTOs</h3>
+<div class="code"><div class="fname">DTOs/TodoDtos.cs</div><pre><code class="language-csharp">using System.ComponentModel.DataAnnotations;
+using TodoApi.Models;
+
+namespace TodoApi.DTOs;
+
+// What the client sends when creating
+public record CreateTodoDto(
+    [Required][MaxLength(200)] string Title,
+    DateOnly? DueDate,
+    Priority Priority = Priority.Medium
+);
+
+// What the client sends when updating
+public record UpdateTodoDto(
+    [Required][MaxLength(200)] string Title,
+    DateOnly? DueDate,
+    Priority Priority
+);
+
+// What the API returns
+public record TodoDto(int Id, string Title, bool IsDone, DateOnly? DueDate, Priority Priority, DateTime CreatedAt);
+
+public static class TodoMappings
+{{
+    public static TodoDto ToDto(this TodoItem t)
+        =&gt; new(t.Id, t.Title, t.IsDone, t.DueDate, t.Priority, t.CreatedAt);
+}}</code></pre></div>
+
+<h3>Step 4 — Endpoint handlers</h3>
+<div class="code"><div class="fname">Endpoints/TodoEndpoints.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using TodoApi.Data;
+using TodoApi.DTOs;
+using TodoApi.Models;
+
+namespace TodoApi.Endpoints;
+
+public static class TodoEndpoints
+{{
+    // GET /api/todos?title=&amp;isDone=&amp;priority=&amp;page=1&amp;pageSize=20
+    public static async Task&lt;IResult&gt; GetAll(
+        AppDbContext db,
+        string? title    = null,
+        bool?   isDone   = null,
+        string? priority = null,
+        int     page     = 1,
+        int     pageSize = 20)
+    {{
+        var q = db.Todos.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(title))
+            q = q.Where(t =&gt; t.Title.Contains(title));
+        if (isDone.HasValue)
+            q = q.Where(t =&gt; t.IsDone == isDone.Value);
+        if (Enum.TryParse&lt;Priority&gt;(priority, ignoreCase: true, out var p))
+            q = q.Where(t =&gt; t.Priority == p);
+
+        var items = await q
+            .OrderByDescending(t =&gt; t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(t =&gt; t.ToDto())
+            .ToListAsync();
+
+        return TypedResults.Ok(items);
+    }}
+
+    // GET /api/todos/{id}
+    public static async Task&lt;IResult&gt; GetById(int id, AppDbContext db)
+    {{
+        var item = await db.Todos.FindAsync(id);
+        return item is null ? TypedResults.NotFound() : TypedResults.Ok(item.ToDto());
+    }}
+
+    // POST /api/todos
+    public static async Task&lt;IResult&gt; Create(CreateTodoDto dto, AppDbContext db)
+    {{
+        var item = new TodoItem
+        {{
+            Title    = dto.Title,
+            DueDate  = dto.DueDate,
+            Priority = dto.Priority
+        }};
+        db.Todos.Add(item);
+        await db.SaveChangesAsync();
+        return TypedResults.Created($"/api/todos/{{item.Id}}", item.ToDto());
+    }}
+
+    // PUT /api/todos/{id}
+    public static async Task&lt;IResult&gt; Update(int id, UpdateTodoDto dto, AppDbContext db)
+    {{
+        var item = await db.Todos.FindAsync(id);
+        if (item is null) return TypedResults.NotFound();
+
+        item.Title    = dto.Title;
+        item.DueDate  = dto.DueDate;
+        item.Priority = dto.Priority;
+        await db.SaveChangesAsync();
+        return TypedResults.Ok(item.ToDto());
+    }}
+
+    // DELETE /api/todos/{id}
+    public static async Task&lt;IResult&gt; Delete(int id, AppDbContext db)
+    {{
+        var item = await db.Todos.FindAsync(id);
+        if (item is null) return TypedResults.NotFound();
+        db.Todos.Remove(item);
+        await db.SaveChangesAsync();
+        return TypedResults.NoContent();
+    }}
+
+    // PATCH /api/todos/{id}/toggle
+    public static async Task&lt;IResult&gt; Toggle(int id, AppDbContext db)
+    {{
+        var item = await db.Todos.FindAsync(id);
+        if (item is null) return TypedResults.NotFound();
+        item.IsDone = !item.IsDone;
+        await db.SaveChangesAsync();
+        return TypedResults.Ok(item.ToDto());
+    }}
+}}</code></pre></div>
+
+<h3>Step 5 — Program.cs</h3>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">using Microsoft.EntityFrameworkCore;
+using TodoApi.Data;
+using TodoApi.Endpoints;
+using TodoApi.Models;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// DB: SQLite in dev, SQL Server in prod (driven by config)
+var connStr = builder.Configuration.GetConnectionString("Default");
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddDbContext&lt;AppDbContext&gt;(o =&gt; o.UseSqlite("Data Source=todo.db"));
+else
+    builder.Services.AddDbContext&lt;AppDbContext&gt;(o =&gt; o.UseSqlServer(connStr));
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Migrate and seed on startup
+using (var scope = app.Services.CreateScope())
+{{
+    var db = scope.ServiceProvider.GetRequiredService&lt;AppDbContext&gt;();
+    await db.Database.MigrateAsync();
+
+    if (!await db.Todos.AnyAsync())
+    {{
+        db.Todos.AddRange(
+            new TodoItem {{ Title = "File GST return Q3",         DueDate = DateOnly.Parse("2026-01-20"), Priority = Priority.Critical }},
+            new TodoItem {{ Title = "Pay EMI for home loan",       DueDate = DateOnly.Parse("2026-01-05"), Priority = Priority.High }},
+            new TodoItem {{ Title = "Renew car insurance",         DueDate = DateOnly.Parse("2026-02-14"), Priority = Priority.Medium }},
+            new TodoItem {{ Title = "Book CA for ITR filing",      DueDate = DateOnly.Parse("2026-07-31"), Priority = Priority.High }},
+            new TodoItem {{ Title = "Transfer FD on maturity",     DueDate = DateOnly.Parse("2026-03-01"), Priority = Priority.Medium }},
+            new TodoItem {{ Title = "Pay advance tax Q4",          DueDate = DateOnly.Parse("2026-03-15"), Priority = Priority.Critical }}
+        );
+        await db.SaveChangesAsync();
+    }}
+}}
+
+if (app.Environment.IsDevelopment())
+{{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}}
+
+app.UseHttpsRedirection();
+
+// /api/todos group
+var todos = app.MapGroup("/api/todos").WithTags("Todos");
+
+todos.MapGet   ("/",              TodoEndpoints.GetAll);
+todos.MapGet   ("/{{id:int}}",      TodoEndpoints.GetById);
+todos.MapPost  ("/",              TodoEndpoints.Create);
+todos.MapPut   ("/{{id:int}}",      TodoEndpoints.Update);
+todos.MapDelete("/{{id:int}}",      TodoEndpoints.Delete);
+todos.MapPatch ("/{{id:int}}/toggle", TodoEndpoints.Toggle);
+
+app.Run();</code></pre></div>
+
+<h3>Step 6 — Migrations and run</h3>
+<div class="code nofile"><pre><code class="language-bash"># Add EF Tools if not already installed
+dotnet tool install --global dotnet-ef
+
+# Generate the initial migration
+dotnet ef migrations add InitialCreate
+
+# (The app auto-runs MigrateAsync on startup, so no need to dotnet ef database update)
+# Start the API
+dotnet run</code></pre></div>
+
+<h3>Step 7 — curl examples</h3>
+<div class="code nofile"><pre><code class="language-bash">BASE=http://localhost:5100/api/todos
+
+# Create a todo
+curl -s -X POST $BASE \
+  -H "Content-Type: application/json" \
+  -d '{{"title":"File GST return Q3","dueDate":"2026-01-20","priority":"Critical"}}' | jq
+
+# Expected:
+# {{"id":1,"title":"File GST return Q3","isDone":false,"dueDate":"2026-01-20","priority":"Critical","createdAt":"..."}}
+
+# List all
+curl -s $BASE | jq
+
+# Filter: only Critical items not done
+curl -s "$BASE?priority=Critical&amp;isDone=false" | jq
+
+# Search by title
+curl -s "$BASE?title=GST" | jq
+
+# Get by id
+curl -s $BASE/1 | jq
+
+# Toggle done
+curl -s -X PATCH $BASE/1/toggle | jq
+
+# Update
+curl -s -X PUT $BASE/1 \
+  -H "Content-Type: application/json" \
+  -d '{{"title":"File GSTR-3B Q3","dueDate":"2026-01-20","priority":"Critical"}}' | jq
+
+# Delete
+curl -s -X DELETE $BASE/2 -w "\\nHTTP %{{http_code}}\\n"
+
+# Request a non-existent item
+curl -s $BASE/999 -w "\\nHTTP %{{http_code}}\\n"
+# HTTP 404</code></pre></div>
+
+<h3>Stretch goals</h3>
+<ul><li>Add a <code>PATCH /api/todos/{id}/priority</code> endpoint that only changes priority.</li><li>Add pagination metadata (<code>totalCount</code>, <code>page</code>, <code>pageSize</code>, <code>totalPages</code>) to the GetAll response.</li><li>Add a <code>GET /api/todos/due-today</code> that returns items due today.</li><li>Support sorting via <code>?sort=dueDate&amp;dir=asc</code> using a switch expression.</li></ul>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is an EF Core migration?</summary><div>A C# file (and snapshot) generated by <code>dotnet ef migrations add</code> that describes one schema change. <code>MigrateAsync()</code> applies all pending migrations to the database.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why use DTOs instead of returning the entity directly?</summary><div>DTOs decouple the API contract from the database model: you can reshape, omit, or rename fields without changing the entity, avoid exposing navigation properties, and prevent over-posting (extra fields being saved).</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does IsDevelopment() change the database provider?</summary><div>We check <code>app.Environment.IsDevelopment()</code> in Program.cs and register <code>UseSqlite</code> for dev and <code>UseSqlServer</code> for other environments, keeping the development experience simple (file-based, no install) while using SQL Server in production.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does db.Database.MigrateAsync() do at startup?</summary><div>It applies any pending EF Core migrations to the target database, creating tables if they don't exist. This eliminates the need to run <code>dotnet ef database update</code> manually on each deployment, though for production you may prefer a separate migration step.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Validation, Swagger and Week Review</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Add endpoint-filter validation, wire up Swashbuckle with XML comments, run a try-to-break table, write the README and push; revise the full week.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Swashbuckle</dt><dd>The popular NuGet package that generates an OpenAPI spec from your ASP.NET Core app and serves Swagger UI.</dd></div><div class="def"><dt>XML documentation comments</dt><dd>Triple-slash comments (<code>/// &lt;summary&gt;</code>) on endpoints/DTOs that Swashbuckle picks up for the OpenAPI spec.</dd></div><div class="def"><dt>Endpoint filter (validation)</dt><dd>A reusable IEndpointFilter that runs data annotation validation on DTOs in minimal API endpoints, since [ApiController] auto-400 is not available.</dd></div><div class="def"><dt>OpenAPI / Swagger UI</dt><dd>A browser interface at <code>/swagger</code> that lets you try every endpoint interactively.</dd></div><div class="def"><dt>HttpContext.RequestServices</dt><dd>Access to the DI container within a filter, useful to resolve validators.</dd></div><div class="def"><dt>ProblemDetails (validation)</dt><dd>Return <code>TypedResults.ValidationProblem(errors)</code> for a 400 with an errors dictionary in the RFC 7807 format.</dd></div><div class="def"><dt>Git workflow</dt><dd><code>dotnet gitignore</code>, staging migrations, conventional commits for a learning project.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Add <code>&lt;GenerateDocumentationFile&gt;true&lt;/GenerateDocumentationFile&gt;</code> to .csproj for XML comments.</li><li>Suppress XML warnings for undocumented members with <code>&lt;NoWarn&gt;$(NoWarn);1591&lt;/NoWarn&gt;</code>.</li><li>The validation endpoint filter pattern validates any DTO annotated with data annotations.</li><li><code>AddSwaggerGen()</code> must come before <code>Build()</code>; <code>UseSwagger()</code> must come after.</li></ul></div>
+
+<h3>1. Validation endpoint filter</h3>
+<div class="code"><div class="fname">Filters/ValidateFilter.cs</div><pre><code class="language-csharp">using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+
+namespace TodoApi.Filters;
+
+// A generic filter that validates any DTO parameter with data annotations
+public class ValidateFilter&lt;T&gt; : IEndpointFilter where T : class
+{{
+    public async ValueTask&lt;object?&gt; InvokeAsync(EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
+    {{
+        // Find the first argument that is of type T
+        var dto = ctx.Arguments.OfType&lt;T&gt;().FirstOrDefault();
+        if (dto is null) return await next(ctx);
+
+        var results  = new List&lt;ValidationResult&gt;();
+        var valid    = Validator.TryValidateObject(dto, new ValidationContext(dto), results, validateAllProperties: true);
+        if (!valid)
+        {{
+            var errors = results
+                .GroupBy(r =&gt; r.MemberNames.FirstOrDefault() ?? "")
+                .ToDictionary(
+                    g =&gt; g.Key,
+                    g =&gt; g.Select(r =&gt; r.ErrorMessage ?? "Invalid value").ToArray());
+            return TypedResults.ValidationProblem(errors);
+        }}
+        return await next(ctx);
+    }}
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs (excerpt)</div><pre><code class="language-csharp">// Apply to the POST and PUT endpoints in Program.cs:
+todos.MapPost("/", TodoEndpoints.Create)
+     .AddEndpointFilter&lt;ValidateFilter&lt;CreateTodoDto&gt;&gt;();
+
+todos.MapPut("/{{id:int}}", TodoEndpoints.Update)
+     .AddEndpointFilter&lt;ValidateFilter&lt;UpdateTodoDto&gt;&gt;();</code></pre></div>
+<div class="code nofile"><pre><code class="language-bash"># Test: POST with no title
+curl -s -X POST http://localhost:5100/api/todos \
+  -H "Content-Type: application/json" \
+  -d '{{"title":""}}' | jq
+
+# Expected 400 ProblemDetails:
+# {{
+#   "type": "...",
+#   "title": "One or more validation errors occurred.",
+#   "status": 400,
+#   "errors": {{
+#     "Title": ["The Title field is required.", "The field Title must be a string with a maximum length of 200."]
+#   }}
+# }}</code></pre></div>
+
+<h3>2. Swashbuckle / Swagger setup</h3>
+<div class="code nofile"><pre><code class="language-xml">// .csproj additions
+// &lt;PropertyGroup&gt;
+//   &lt;GenerateDocumentationFile&gt;true&lt;/GenerateDocumentationFile&gt;
+//   &lt;NoWarn&gt;$(NoWarn);1591&lt;/NoWarn&gt;
+// &lt;/PropertyGroup&gt;</code></pre></div>
+<div class="code"><div class="fname">Program.cs</div><pre><code class="language-csharp">// Program.cs — configure Swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(o =&gt;
+{{
+    o.SwaggerDoc("v1", new() {{ Title = "TodoAPI", Version = "v1",
+        Description = "ASP.NET Core 8 minimal API — Week 17 project" }});
+
+    // Pick up XML documentation comments
+    var xml = Path.Combine(AppContext.BaseDirectory, $"{{Assembly.GetExecutingAssembly().GetName().Name}}.xml");
+    if (File.Exists(xml)) o.IncludeXmlComments(xml);
+}});
+
+// ...after builder.Build()...
+if (app.Environment.IsDevelopment())
+{{
+    app.UseSwagger();
+    app.UseSwaggerUI(o =&gt;
+    {{
+        o.SwaggerEndpoint("/swagger/v1/swagger.json", "TodoAPI v1");
+        o.RoutePrefix = "swagger";   // http://localhost:5100/swagger
+    }});
+}}</code></pre></div>
+<div class="code"><div class="fname">Program.cs (excerpt)</div><pre><code class="language-csharp">// Add WithOpenApi() and summary to each endpoint for Swagger
+todos.MapGet("/", TodoEndpoints.GetAll)
+     .WithSummary("List todos with optional filtering and paging")
+     .WithOpenApi();
+
+todos.MapPost("/", TodoEndpoints.Create)
+     .WithSummary("Create a new todo item")
+     .WithOpenApi()
+     .AddEndpointFilter&lt;ValidateFilter&lt;CreateTodoDto&gt;&gt;();</code></pre></div>
+
+<h3>3. Try-to-break table</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected behaviour</th></tr><tr><td>POST with empty title</td><td>400 ValidationProblem with 'Title is required'</td></tr><tr><td>POST with title > 200 chars</td><td>400 ValidationProblem with max-length error</td></tr><tr><td>GET /api/todos/0 (id = 0 fails :min(1))</td><td>404 — route constraint rejects 0</td></tr><tr><td>GET /api/todos/abc (non-integer id)</td><td>404 — route constraint rejects non-int</td></tr><tr><td>PUT /api/todos/999 (non-existent)</td><td>404</td></tr><tr><td>PATCH /api/todos/999/toggle</td><td>404</td></tr><tr><td>DELETE /api/todos/1 then GET /api/todos/1</td><td>404 — deleted</td></tr><tr><td>POST with invalid JSON body</td><td>400 — JSON deserialization error</td></tr><tr><td>GET /api/todos?priority=InvalidValue</td><td>Returns all items (Enum.TryParse returns false → no filter applied)</td></tr><tr><td>GET /api/todos?page=0</td><td>Returns first page (page gets defaulted to 1 by design; validate if strict)</td></tr><tr><td>PATCH /api/todos/1/toggle twice</td><td>IsDone toggles back to original value</td></tr><tr><td>Concurrent duplicate POST (same title)</td><td>Both succeed — no uniqueness constraint on title by design</td></tr></table></div>
+
+<h3>4. README template</h3>
+<div class="code nofile"><pre><code class="language-text"># TodoApi — Week 17 Project
+
+ASP.NET Core 8 minimal API for managing todo items.
+Built as part of the 74-week .NET full-stack roadmap.
+
+## Tech stack
+- .NET 8 / ASP.NET Core minimal APIs
+- EF Core 8 + SQLite (dev) / SQL Server (prod)
+- Swashbuckle / Swagger UI
+
+## Run locally
+```bash
+dotnet run
+# Swagger UI: http://localhost:5100/swagger
+```
+
+## Endpoints
+| Method | URL                        | Description              |
+|--------|----------------------------|--------------------------|
+| GET    | /api/todos                 | List (filter, paging)    |
+| GET    | /api/todos/{id}            | Get by id                |
+| POST   | /api/todos                 | Create                   |
+| PUT    | /api/todos/{id}            | Full update              |
+| DELETE | /api/todos/{id}            | Delete                   |
+| PATCH  | /api/todos/{id}/toggle     | Toggle IsDone            |
+
+## Configuration
+| Key                        | Default    | Override             |
+|----------------------------|------------|----------------------|
+| ConnectionStrings:Default  | todo.db    | env var / user-secret|
+| App:MaxPageSize            | 20         | appsettings / env    |</code></pre></div>
+
+<h3>5. Git setup</h3>
+<div class="code nofile"><pre><code class="language-bash"># From the project root
+dotnet new gitignore
+git init
+git add .
+git commit -m "feat: Week 17 TodoApi — minimal API with EF Core, SQLite, Swagger"
+
+# .gitignore already ignores: todo.db, obj/, bin/, .vs/, secrets.json</code></pre></div>
+
+<h3>6. Week 17 revision checklist</h3>
+<h4>Monday — Pipeline</h4>
+<ul><li>Program.cs: builder → Build() boundary</li><li>Use / Run / Map / MapWhen</li><li>Class-based middleware: InvokeAsync, scoped dependencies</li><li>Middleware order rules</li><li>launchSettings, ASPNETCORE_ENVIRONMENT</li></ul>
+<h4>Tuesday — DI</h4>
+<ul><li>Three lifetimes and their use cases</li><li>Captive dependency and ValidateScopes</li><li>IServiceScopeFactory for background services</li><li>IEnumerable&lt;T&gt; injection</li><li>Keyed services (.NET 8)</li></ul>
+<h4>Wednesday — Configuration</h4>
+<ul><li>Config source layering and priorities</li><li>__ separator for env vars</li><li>User secrets</li><li>Options pattern: Configure&lt;T&gt;, ValidateDataAnnotations, ValidateOnStart</li><li>IOptions vs IOptionsSnapshot vs IOptionsMonitor</li></ul>
+<h4>Thursday — Minimal APIs</h4>
+<ul><li>Map* verbs, route constraints</li><li>Binding sources: route, query, body, header, [AsParameters]</li><li>TypedResults vs Results</li><li>MapGroup, endpoint filters</li><li>ProblemDetails</li></ul>
+<h4>Friday — Controllers</h4>
+<ul><li>[ApiController], auto-400, attribute routing</li><li>ActionResult&lt;T&gt; vs IActionResult</li><li>CreatedAtAction, ProducesResponseType</li><li>Controllers vs Minimal APIs comparison</li></ul>
+<h4>Sat/Sun — TodoApi</h4>
+<ul><li>EF Core + SQLite, migrations, seed</li><li>CRUD + toggle + filter/search</li><li>Validation endpoint filter</li><li>Swashbuckle / Swagger UI</li><li>Try-to-break table</li></ul>
+
+<h3>7. Five-question quiz</h3>
+<details><summary>Q1. What does this code print?</summary>
+<div class="code nofile"><pre><code class="language-csharp">var builder = WebApplication.CreateBuilder(args);
+var app = builder.Build();
+int order = 0;
+app.Use(async (ctx, next) =&gt;
+{{
+    Console.Write($"{{++order}}in ");
+    await next(ctx);
+    Console.Write($"{{order}}out ");
+}});
+app.Use(async (ctx, next) =&gt;
+{{
+    Console.Write($"{{++order}}in ");
+    await next(ctx);
+    Console.Write($"{{order}}out ");
+}});
+app.Run(async ctx =&gt; {{ Console.Write("run "); await ctx.Response.WriteAsync("done"); }});</code></pre></div><b>1in 2in run 3out 3out</b> — each Use increments order on the way in; on the way out order is 3 for both. (Shared variable, not a copy.)</details>
+
+<details><summary>Q2. Does this compile and work correctly?</summary>
+<div class="code nofile"><pre><code class="language-csharp">builder.Services.AddSingleton&lt;ReportService&gt;();
+// ReportService constructor:
+public ReportService(AppDbContext db) {{ }}</code></pre></div><b>It compiles but throws at runtime (or at startup if ValidateScopes is on).</b> AppDbContext is Scoped; injecting it into a Singleton is a captive dependency. The error is: "Cannot consume scoped service 'AppDbContext' from singleton 'ReportService'."</details>
+
+<details><summary>Q3. Which wins — appsettings.json or env var?</summary>
+<div class="code nofile"><pre><code class="language-text">// appsettings.json: "App": {{ "MaxPageSize": 50 }}
+// Environment: App__MaxPageSize=200
+Console.WriteLine(config["App:MaxPageSize"]);</code></pre></div><b>200</b> — environment variables have higher priority in the default load order.</details>
+
+<details><summary>Q4. What HTTP status does this return for a missing id, and why?</summary>
+<div class="code nofile"><pre><code class="language-csharp">app.MapGet("/todos/{{id:int:min(1)}}", async (int id, AppDbContext db) =&gt;
+{{
+    var item = await db.Todos.FindAsync(id);
+    return item is null ? TypedResults.NotFound() : TypedResults.Ok(item);
+}});
+// Request: GET /todos/0</code></pre></div><b>404</b> — the route constraint <code>:min(1)</code> rejects 0, so the route never matches and ASP.NET Core returns 404 before the handler runs.</details>
+
+<details><summary>Q5. What is the lifetime of a service registered with AddScoped in a minimal API?</summary>
+<div class="code nofile"><pre><code class="language-csharp">builder.Services.AddScoped&lt;TodoService&gt;();
+app.MapGet("/todos", (TodoService svc) =&gt; svc.GetAll());</code></pre></div><b>One instance per HTTP request.</b> When the endpoint handler is invoked, the DI container creates a new TodoService for the request scope and disposes it when the response is sent. Two concurrent requests each get their own instance.</details>
+
+<div class="note tip"><b>Next week:</b> Week 18 — REST API design: resource naming, HTTP semantics, versioning, content negotiation, HATEOAS links, and the product catalog API with controllers.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does Swashbuckle do?</summary><div>Swashbuckle reads your ASP.NET Core app's routing metadata and generates an OpenAPI (Swagger) JSON spec, then serves a Swagger UI at /swagger where you can explore and try every endpoint interactively.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why do minimal API endpoints need an explicit validation filter while controllers don't?</summary><div>[ApiController] hooks into the model binding pipeline and returns 400 automatically on invalid ModelState. Minimal APIs don't use controllers, so there's no automatic 400 — you must add it via an IEndpointFilter.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you apply a filter to every endpoint in a group?</summary><div>Call <code>group.AddEndpointFilter&lt;TFilter&gt;()</code> on the MapGroup result. The filter runs for every endpoint registered on that group.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does db.Database.MigrateAsync() differ from EnsureCreated()?</summary><div>MigrateAsync applies all pending EF Core migrations in order, maintaining version history and supporting incremental schema changes. EnsureCreated creates the schema from the current model state in one shot, skipping migrations; it's simpler but cannot evolve the schema over time.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week17-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

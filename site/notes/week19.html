@@ -1,0 +1,1636 @@
+<title>.NET Notes · Week 19</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 19</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">IExceptionHandler</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Serilog</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">Health · CORS</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">RateLimit · Cache</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">File Upload</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">Project: BlogApi</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Finish &amp; Revise</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 2 · Week 19 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">SQL Server 2022</span><span class="chip">~18 hrs</span><span class="chip">Blog API</span></div>
+  <h1>Week 19 — Cross-cutting Concerns</h1>
+  <p>Real APIs don't just handle happy paths. This week you'll add the production scaffolding every ASP.NET Core API needs: centralised exception handling with RFC 7807 ProblemDetails, structured Serilog logging with Seq, health-check endpoints for Kubernetes, CORS policies for your front end, rate limiting to stop comment spam, server-side output caching with tag eviction, and safe file upload with magic-byte validation — all applied to the BlogApi micro-project.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>Global Exception Handling</h3><p>IExceptionHandler chain, ProblemDetails, domain→HTTP mapping, traceId.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>Structured Logging with Serilog</h3><p>Two-stage bootstrap, sinks, enrichers, request logging, level overrides.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Health Checks and CORS</h3><p>Liveness vs readiness, custom IHealthCheck, named CORS policies, preflight.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Rate Limiting and Output Caching</h3><p>Fixed/sliding/token-bucket, partitioned, 429, OutputCache tag eviction.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>File Upload and Download</h3><p>IFormFile, magic bytes, safe names, streaming, PhysicalFile, range.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>Micro-project: BlogApi</h3><p>Post/Comment/Tag, draft/publish, all cross-cutting concerns applied.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Finish, Try-to-Break and Revision</h3><p>Cover upload, try-to-break table, checklist, quiz, README, git.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>Global Exception Handling with IExceptionHandler</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Handle every unhandled exception in one place: map domain errors to HTTP status codes, return RFC 7807 ProblemDetails, and keep production safe while development stays informative.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>IExceptionHandler</dt><dd>ASP.NET Core 8 interface with a single TryHandleAsync method; replaces UseExceptionHandler lambda with a testable, injectable class.</dd></div><div class="def"><dt>ProblemDetails</dt><dd>RFC 7807 JSON error body with type, title, status, detail and extensions; returned by Problem() or typed as ValidationProblemDetails.</dd></div><div class="def"><dt>traceId</dt><dd>A unique string per request (from Activity.Current?.Id) added to ProblemDetails so you can correlate logs with errors reported by users.</dd></div><div class="def"><dt>Chained handlers</dt><dd>Multiple IExceptionHandler implementations registered in order; the first one to return true from TryHandleAsync wins.</dd></div><div class="def"><dt>UseExceptionHandler("/error")</dt><dd>Built-in middleware that invokes the handler chain and falls back to the /error endpoint if nothing handles the exception.</dd></div><div class="def"><dt>AddProblemDetails()</dt><dd>Registers the default ProblemDetails factory and writes Content-Type: application/problem+json.</dd></div><div class="def"><dt>IProblemDetailsService</dt><dd>Injected by AddProblemDetails(); call WriteAsync to serialize and send the response.</dd></div><div class="def"><dt>Domain exception</dt><dd>A business-rule violation that should map to a known HTTP status (e.g. NotFoundException → 404, ConflictException → 409).</dd></div><div class="def"><dt>Development vs Production</dt><dd>In development, include exception.ToString() in the detail field. In production, log it and return a generic message.</dd></div><div class="def"><dt>ExceptionHandlerMiddleware</dt><dd>The ASP.NET Core middleware that catches unhandled exceptions and invokes IExceptionHandler implementations.</dd></div><div class="def"><dt>StatusCodes.Status422UnprocessableEntity</dt><dd>Returned for domain-rule violations where the payload was valid JSON but breaks a business constraint.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Register IExceptionHandler implementations with <code>services.AddExceptionHandler&lt;T&gt;()</code> in dependency-injection order.</li><li>Call <code>app.UseExceptionHandler()</code> (no path) in .NET 8 to activate the IExceptionHandler chain.</li><li>Always add <code>app.UseExceptionHandler()</code> <em>before</em> <code>app.UseRouting()</code> so it catches routing errors too.</li><li>Return <code>false</code> from TryHandleAsync to let the next handler try; return <code>true</code> to short-circuit.</li><li>Enrich ProblemDetails with a traceId extension so your support team can find the log entry.</li><li>Test exception handling with integration tests that deliberately trigger each exception type.</li></ul></div>
+
+<h3>1. Why IExceptionHandler?</h3>
+<p>Before .NET 8 teams registered a <code>UseExceptionHandler("/error")</code> endpoint and scattered <code>try/catch</code> blocks across controllers. IExceptionHandler centralises the mapping, keeps it out of business logic, and is properly injectable and testable.</p>
+<div class="code nofile"><pre><code class="language-csharp">// Before .NET 8 — scattered catch blocks
+[HttpGet("{id}")]
+public IActionResult Get(int id)
+{
+    try { return Ok(_service.FindPost(id)); }
+    catch (NotFoundException ex) { return NotFound(ex.Message); }  // repeated everywhere
+}
+
+// .NET 8 — declare once in a handler class, controllers throw freely
+[HttpGet("{id}")]
+public IActionResult Get(int id) =&gt; Ok(_service.FindPost(id));  // exceptions flow up</code></pre></div>
+
+<h3>2. Domain exception hierarchy</h3>
+<div class="code"><div class="fname">Blog.Core/Exceptions/DomainException.cs</div><pre><code class="language-csharp">// Blog.Core/Exceptions/DomainException.cs
+namespace Blog.Core.Exceptions;
+
+public abstract class DomainException : Exception
+{
+    protected DomainException(string message) : base(message) { }
+}
+
+public sealed class NotFoundException     : DomainException
+{
+    public NotFoundException(string resource, object key)
+        : base($"{resource} '{key}' was not found.") { }
+}
+
+public sealed class ConflictException     : DomainException
+{
+    public ConflictException(string message) : base(message) { }
+}
+
+public sealed class UnprocessableException : DomainException
+{
+    public UnprocessableException(string message) : base(message) { }
+}</code></pre></div>
+
+<h3>3. Mapping domain exceptions to ProblemDetails</h3>
+<div class="code"><div class="fname">Blog.Api/Exceptions/DomainExceptionHandler.cs</div><pre><code class="language-csharp">// Blog.Api/Exceptions/DomainExceptionHandler.cs
+using Blog.Core.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Blog.Api.Exceptions;
+
+public sealed class DomainExceptionHandler(
+    IProblemDetailsService problemDetailsService,
+    ILogger&lt;DomainExceptionHandler&gt; logger) : IExceptionHandler
+{
+    private static readonly Dictionary&lt;Type, int&gt; StatusMap = new()
+    {
+        [typeof(NotFoundException)]      = StatusCodes.Status404NotFound,
+        [typeof(ConflictException)]      = StatusCodes.Status409Conflict,
+        [typeof(UnprocessableException)] = StatusCodes.Status422UnprocessableEntity,
+    };
+
+    public async ValueTask&lt;bool&gt; TryHandleAsync(
+        HttpContext ctx,
+        Exception exception,
+        CancellationToken ct)
+    {
+        if (exception is not DomainException domain) return false;  // let the next handler try
+
+        var status = StatusMap.GetValueOrDefault(exception.GetType(), StatusCodes.Status400BadRequest);
+        logger.LogWarning(exception, "Domain exception: {Message}", domain.Message);
+
+        ctx.Response.StatusCode = status;
+
+        await problemDetailsService.WriteAsync(new()
+        {
+            HttpContext = ctx,
+            ProblemDetails = new ProblemDetails
+            {
+                Status  = status,
+                Title   = exception.GetType().Name.Replace("Exception", ""),
+                Detail  = domain.Message,
+                Extensions = { ["traceId"] = System.Diagnostics.Activity.Current?.Id ?? ctx.TraceIdentifier }
+            }
+        });
+
+        return true;    // handled
+    }
+}</code></pre></div>
+
+<h3>4. Catch-all handler for unexpected exceptions</h3>
+<div class="code"><div class="fname">Blog.Api/Exceptions/GlobalExceptionHandler.cs</div><pre><code class="language-csharp">// Blog.Api/Exceptions/GlobalExceptionHandler.cs
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+
+namespace Blog.Api.Exceptions;
+
+public sealed class GlobalExceptionHandler(
+    IProblemDetailsService problemDetailsService,
+    ILogger&lt;GlobalExceptionHandler&gt; logger,
+    IHostEnvironment env) : IExceptionHandler
+{
+    public async ValueTask&lt;bool&gt; TryHandleAsync(
+        HttpContext ctx,
+        Exception exception,
+        CancellationToken ct)
+    {
+        logger.LogError(exception, "Unhandled exception on {Method} {Path}",
+            ctx.Request.Method, ctx.Request.Path);
+
+        ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+
+        // Show full stack trace only in Development
+        string detail = env.IsDevelopment()
+            ? exception.ToString()
+            : "An unexpected error occurred. Contact support with the traceId below.";
+
+        await problemDetailsService.WriteAsync(new()
+        {
+            HttpContext = ctx,
+            ProblemDetails = new ProblemDetails
+            {
+                Status  = 500,
+                Title   = "InternalServerError",
+                Detail  = detail,
+                Extensions = { ["traceId"] = System.Diagnostics.Activity.Current?.Id ?? ctx.TraceIdentifier }
+            }
+        });
+
+        return true;
+    }
+}</code></pre></div>
+
+<h3>5. Registration in Program.cs</h3>
+<div class="code"><div class="fname">Blog.Api/Program.cs (excerpt)</div><pre><code class="language-csharp">var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddProblemDetails();                               // must come first
+builder.Services.AddExceptionHandler&lt;DomainExceptionHandler&gt;();    // specific → general order
+builder.Services.AddExceptionHandler&lt;GlobalExceptionHandler&gt;();
+
+var app = builder.Build();
+
+app.UseExceptionHandler();   // .NET 8: no path — activates the IExceptionHandler chain
+app.UseHttpsRedirection();
+app.MapControllers();
+
+app.Run();</code></pre></div>
+<div class="note tip"><b>Tip.</b> Order matters: register the most specific handler first. If <code>DomainExceptionHandler</code> returns false, <code>GlobalExceptionHandler</code> handles the remainder.</div>
+<div class="note warn"><b>Avoid.</b> Never swallow exceptions silently. If you return true from TryHandleAsync the caller sees no error; at minimum log the exception at Error level.</div>
+
+<h3>6. What the response looks like</h3>
+<div class="code nofile"><pre><code class="language-json">// POST /api/posts  with a slug that already exists
+// HTTP 409 Conflict
+{
+  "type":   "https://tools.ietf.org/html/rfc7231#section-6.5.8",
+  "title":  "Conflict",
+  "status": 409,
+  "detail": "A post with slug 'mastering-linq-india' already exists.",
+  "traceId": "00-4e7a9c3d1b2f56a8e0b7c4d5e6f7a8b9-01"
+}</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Registering <code>UseExceptionHandler()</code> <em>after</em> <code>MapControllers()</code> — it must be first in the pipeline.</li><li>Forgetting <code>AddProblemDetails()</code> — IProblemDetailsService won't be available.</li><li>Returning <code>true</code> from TryHandleAsync without writing a response — the client receives 500 with no body.</li><li>Leaking stack traces in production — always check IHostEnvironment.IsProduction().</li><li>Throwing raw <code>Exception</code> from service layer — define a domain hierarchy so handlers can distinguish causes.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add four domain exceptions (NotFoundException, ConflictException, UnprocessableException, ForbiddenException) to a class library and write DomainExceptionHandler.</li><li>Register GlobalExceptionHandler after it and confirm that an unhandled ArithmeticException returns 500 with the traceId.</li><li>Write an integration test using WebApplicationFactory that GETs /api/posts/9999 and asserts the response body is application/problem+json with status 404.</li></ol>
+<h3>Self-check questions</h3><details><summary>What does TryHandleAsync returning false mean?</summary>It means this handler declines to handle the exception and ASP.NET Core passes it to the next registered IExceptionHandler.</details><details><summary>What is the advantage of ProblemDetails over a custom error DTO?</summary>ProblemDetails is an RFC 7807 standard that clients, proxies and monitoring tools already understand. It carries status, title, detail and extensions in a consistent shape.</details><details><summary>How do you stop stack traces appearing in production?</summary>Inject IHostEnvironment and check env.IsProduction(); only include exception.ToString() in the detail field for Development environments.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is IExceptionHandler in ASP.NET Core 8?</summary><div>An interface with TryHandleAsync that lets you map exceptions to HTTP responses in a testable, DI-friendly class. Multiple handlers are chained; the first to return true wins.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What HTTP status should a NotFoundException return and why?</summary><div>404 Not Found, because the requested resource genuinely does not exist. Using 500 for a missing record makes it impossible for callers to distinguish application bugs from missing data.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is ProblemDetails?</summary><div>An RFC 7807 JSON object with type, title, status and detail fields that standardises error responses across HTTP APIs. ASP.NET Core's AddProblemDetails() wires it up automatically.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you chain exception handlers in .NET 8?</summary><div>Register them in DI order with services.AddExceptionHandler&lt;T&gt;(). Call app.UseExceptionHandler() (no path). The middleware invokes each in registration order until one returns true.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you correlate an error report from a user to a log entry?</summary><div>Add Activity.Current?.Id (the distributed trace ID) to ProblemDetails.Extensions["traceId"]. The same ID appears in Serilog's structured logs via the enricher, so a support engineer can filter by it in Seq or Application Insights.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the difference between UseExceptionHandler("/error") and UseExceptionHandler() (no path) in .NET 8?</summary><div>The path variant re-executes the pipeline to an error endpoint, requiring a controller action. The no-path variant (new in .NET 8) calls the IExceptionHandler chain directly without a re-execution, which is simpler and doesn't expose an extra route.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Structured Logging with Serilog</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Replace the default ILogger with Serilog's structured pipeline: two-stage bootstrap, appsettings-driven sinks, enrichers, and request logging middleware for every HTTP call.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Serilog</dt><dd>A structured logging library for .NET; writes log events as key-value property bags rather than interpolated strings.</dd></div><div class="def"><dt>Sink</dt><dd>A destination for log events: Console, File, Seq, Application Insights, Elasticsearch, etc.</dd></div><div class="def"><dt>Two-stage bootstrap</dt><dd>Starting Serilog from code (Log.Logger) before the host is built, so startup errors are caught; then reconfiguring from appsettings.json once DI is ready.</dd></div><div class="def"><dt>Message template</dt><dd>A string with named holes like <code>{UserId}</code> that Serilog captures as structured properties, not raw string interpolation.</dd></div><div class="def"><dt>Enricher</dt><dd>A component that attaches extra properties to every log event: machine name, environment, thread ID, correlation ID.</dd></div><div class="def"><dt>Seq</dt><dd>A self-hosted log server that understands Serilog's structured format; great for development because you can filter by any property.</dd></div><div class="def"><dt>UseSerilogRequestLogging</dt><dd>Serilog middleware that logs one structured line per HTTP request, replacing the noisy built-in Microsoft HTTP logs.</dd></div><div class="def"><dt>Level override</dt><dd>Silencing verbose Microsoft.* or EF Core SQL logs by setting their minimum level higher than the global minimum.</dd></div><div class="def"><dt>Destructuring</dt><dd><code>@</code> prefix in a template: <code>{@User}</code> captures all object properties, not just ToString()</dd></div><div class="def"><dt>Log.Fatal + Log.CloseAndFlush</dt><dd>Flush sinks synchronously before the process exits so the last log entries reach sinks, especially async file sinks.</dd></div><div class="def"><dt>LogContext.PushProperty</dt><dd>Pushes a property into all subsequent log events within a using block (e.g. the request's tenant ID).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Use message templates with named holes, never string interpolation — it destroys the structure that makes filtering fast.</li><li>Always call <code>Log.CloseAndFlush()</code> in a try/catch/finally around <code>host.Run()</code> so final entries reach sinks on crashes.</li><li>Level overrides in appsettings.json silence <code>Microsoft.EntityFrameworkCore.*</code> and <code>Microsoft.AspNetCore.*</code> without changing the global level.</li><li>UseSerilogRequestLogging must come before UseRouting and UseAuthorization to capture the status code.</li><li><code>{:l}</code> after a hole logs without quotes; use it for single-word string properties in concise output templates.</li><li>Seq binds to localhost:5341 by default; run it with Docker for local development.</li></ul></div>
+
+<h3>1. Install and two-stage bootstrap</h3>
+<div class="code nofile"><pre><code class="language-bash">dotnet add package Serilog.AspNetCore          # pulls in Serilog + ASP.NET Core integration
+dotnet add package Serilog.Sinks.Seq           # Seq sink
+dotnet add package Serilog.Sinks.File          # rolling file sink
+dotnet add package Serilog.Enrichers.Environment
+dotnet add package Serilog.Enrichers.Thread</code></pre></div>
+<div class="code"><div class="fname">Blog.Api/Program.cs</div><pre><code class="language-csharp">// Blog.Api/Program.cs
+using Serilog;
+
+// Stage 1: minimal bootstrap logger to catch startup errors
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Warning()                // quiet for startup
+    .WriteTo.Console(outputTemplate:
+        "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateBootstrapLogger();
+
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Stage 2: replace with the full configuration from appsettings.json + DI
+    builder.Host.UseSerilog((ctx, services, cfg) =&gt;
+        cfg.ReadFrom.Configuration(ctx.Configuration)
+           .ReadFrom.Services(services)         // allows enrichers registered as services
+           .Enrich.FromLogContext()              // picks up LogContext.PushProperty
+           .Enrich.WithMachineName()
+           .Enrich.WithEnvironmentName());
+
+    // ... services and middleware
+
+    var app = builder.Build();
+    app.UseSerilogRequestLogging(opts =&gt;         // ONE structured line per request
+    {
+        opts.MessageTemplate =
+            "HTTP {RequestMethod} {RequestPath} → {StatusCode} in {Elapsed:0.0}ms";
+        opts.EnrichDiagnosticContext = (diag, ctx) =&gt;
+        {
+            diag.Set("ClientIp", ctx.Connection.RemoteIpAddress);
+            diag.Set("UserAgent", ctx.Request.Headers.UserAgent.FirstOrDefault());
+        };
+    });
+    app.UseExceptionHandler();
+    app.UseRouting();
+    app.MapControllers();
+    app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Application startup failed");
+}
+finally
+{
+    Log.CloseAndFlush();    // ensures async sinks (File, Seq) write their buffers
+}</code></pre></div>
+
+<h3>2. appsettings.json configuration</h3>
+<div class="code"><div class="fname">appsettings.json (Serilog section)</div><pre><code class="language-json">{
+  "Serilog": {
+    "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File", "Serilog.Sinks.Seq" ],
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft":                                 "Warning",
+        "Microsoft.Hosting.Lifetime":                "Information",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/blog-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 14,
+          "outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "Seq",
+        "Args": { "serverUrl": "http://localhost:5341" }
+      }
+    ],
+    "Enrich": [ "FromLogContext", "WithMachineName", "WithEnvironmentName", "WithThreadId" ],
+    "Properties": { "Application": "BlogApi" }
+  }
+}</code></pre></div>
+<div class="note warn"><b>Avoid.</b> Never use string interpolation in log calls: <code>_logger.LogInformation($"User {{Id}} logged in", id)</code> loses structure. The correct form is <code>_logger.LogInformation("User {Id} logged in", id)</code>.</div>
+
+<h3>3. Using ILogger in a controller and service</h3>
+<div class="code"><div class="fname">Blog.Api/Controllers/PostsController.cs</div><pre><code class="language-csharp">// Blog.Api/Controllers/PostsController.cs
+[ApiController]
+[Route("api/[controller]")]
+public class PostsController(IPostService service, ILogger&lt;PostsController&gt; logger) : ControllerBase
+{
+    [HttpGet("{slug}")]
+    public async Task&lt;IActionResult&gt; GetBySlug(string slug, CancellationToken ct)
+    {
+        // Message template — structured; slug is captured as a property
+        logger.LogInformation("Fetching post {Slug}", slug);
+
+        var post = await service.GetBySlugAsync(slug, ct);
+        return Ok(post);
+    }
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; Create(CreatePostRequest req, CancellationToken ct)
+    {
+        // Destructuring with @ captures all PostRequest fields
+        logger.LogInformation("Creating post {@Request}", req);
+        var post = await service.CreateAsync(req, ct);
+        logger.LogInformation("Post {PostId} created for author {AuthorId}", post.Id, post.AuthorId);
+        return CreatedAtAction(nameof(GetBySlug), new { slug = post.Slug }, post);
+    }
+}</code></pre></div>
+
+<h3>4. Pushing contextual properties with LogContext</h3>
+<div class="code nofile"><pre><code class="language-csharp">// Blog.Api/Middleware/TenantLoggingMiddleware.cs
+// Adds TenantId to every log event within the request
+public class TenantLoggingMiddleware(RequestDelegate next)
+{
+    public async Task InvokeAsync(HttpContext ctx)
+    {
+        var tenantId = ctx.Request.Headers["X-Tenant-Id"].FirstOrDefault() ?? "default";
+
+        using (LogContext.PushProperty("TenantId", tenantId))
+        using (LogContext.PushProperty("UserId", ctx.User.FindFirst("sub")?.Value))
+        {
+            await next(ctx);
+        }
+    }
+}
+
+// In Program.cs:
+app.UseMiddleware&lt;TenantLoggingMiddleware&gt;();</code></pre></div>
+<div class="note tip"><b>Tip.</b> Run Seq with Docker for a great local experience: <code>docker run --rm -p 5341:5341 -p 5342:80 datalust/seq:latest</code> then browse http://localhost:5342.</div>
+
+<h3>5. Seq sink in action — filtering structured logs</h3>
+<div class="code nofile"><pre><code class="language-text">// In Seq's web UI you can filter by any property:
+//
+// StatusCode = 500                      (find server errors)
+// Slug = "mastering-linq-india"         (trace one post)
+// @Level = "Warning" and AuthorId = 42 (warnings for one author)
+// Elapsed &gt; 500                         (slow requests)
+//
+// All possible because {Slug}, {StatusCode}, {AuthorId} etc. are stored
+// as properties, not embedded in a message string.</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Using <code>_logger.LogInformation($"Found {{Id}}: {{Name}}", id, name)</code> — the $ makes it a plain string; drop the $ and let Serilog do the templating.</li><li>Forgetting <code>Log.CloseAndFlush()</code> — async file/Seq sinks drop the last few events on shutdown.</li><li>Calling <code>UseSerilogRequestLogging</code> after <code>UseRouting</code> — it won't see the matched endpoint.</li><li>Not overriding Microsoft.* log levels — the console floods with framework noise at Information.</li><li>Using <code>{@LargeObject}</code> destructuring on a 100-field EF entity — it logs every property; select only what you need.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add Serilog to the BlogApi with the Console and rolling-File sinks; confirm that a request to GET /api/posts writes one structured line from UseSerilogRequestLogging.</li><li>Start Seq via Docker and add the Seq sink; observe the TenantId property appearing on every request log.</li><li>Override <code>Microsoft.EntityFrameworkCore.Database.Command</code> to Warning so SQL queries are silenced, then set it to Debug and confirm EF's SQL appears in the Seq stream.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is a Serilog message template?</summary>A string with named holes like {OrderId} that Serilog captures as structured key-value properties, stored separately from the message text so you can filter and search on them.</details><details><summary>Why call Log.CloseAndFlush() on shutdown?</summary>Serilog sinks are often asynchronous; without an explicit flush the last buffered events may never reach the sink, losing logs on crashes.</details><details><summary>What does UseSerilogRequestLogging replace?</summary>Microsoft.AspNetCore.Hosting.Internal.WebHost's built-in request logging, which emits two verbose lines per request. Serilog replaces them with one structured line containing method, path, status code and elapsed time.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why prefer Serilog message templates over string interpolation?</summary><div>Templates keep properties as typed values in the log event. Serilog and sinks like Seq index and filter on them directly. Interpolation collapses everything into a string, losing queryability.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the two-stage bootstrap pattern?</summary><div>A minimal Log.Logger is built before the host so startup exceptions are captured. Once DI is configured, Host.UseSerilog() replaces it with the full configuration from appsettings.json and registered services.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does UseSerilogRequestLogging add?</summary><div>One structured log event per request with method, path, status code and elapsed milliseconds. It enriches the event with endpoint information and replaces the noisier built-in Microsoft HTTP logging.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is a Serilog enricher?</summary><div>An enricher attaches extra properties to every log event: machine name, environment, thread ID, correlation ID. Enrichers are registered in the LoggerConfiguration and run for every event written to any sink.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you silence EF Core's SQL query logs without changing the global minimum level?</summary><div>Add an override in appsettings.json Serilog.MinimumLevel.Override: set Microsoft.EntityFrameworkCore.Database.Command to Warning (or higher). The logger for that namespace uses Warning as its threshold, while everything else stays at Information.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does LogContext.PushProperty work?</summary><div>It pushes a named property into the ambient log context for the duration of a using block. Any log events written inside that scope (including those in called services) automatically carry the property. The scope is AsyncLocal, so it flows correctly across awaits.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Health Checks and CORS</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Expose liveness and readiness endpoints that orchestrators can poll, write a custom DbContext health check, and configure CORS policies that allow the right origins without opening the API to everyone.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Health check</dt><dd>An endpoint that reports whether the application is Healthy, Degraded or Unhealthy, used by Kubernetes, Azure Load Balancer, or a monitoring dashboard.</dd></div><div class="def"><dt>Liveness</dt><dd>Probe: is the process alive? Return Healthy unless the app is deadlocked or needs a restart.</dd></div><div class="def"><dt>Readiness</dt><dd>Probe: can the app serve traffic? Return Unhealthy while warming up, running migrations or when a dependency (DB, Redis) is unreachable.</dd></div><div class="def"><dt>IHealthCheck</dt><dd>Interface with a single CheckHealthAsync method; return HealthCheckResult.Healthy/Degraded/Unhealthy.</dd></div><div class="def"><dt>HealthCheckContext</dt><dd>Passed to CheckHealthAsync; holds the registration (name, tags, failure status).</dd></div><div class="def"><dt>AddDbContextCheck&lt;T&gt;</dt><dd>Extension from Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore; pings the DB with a lightweight query.</dd></div><div class="def"><dt>HealthCheckOptions</dt><dd>Configures the /health response: response writer, predicate to filter by tag, result status codes.</dd></div><div class="def"><dt>CORS</dt><dd>Cross-Origin Resource Sharing: browser policy that blocks JS on origin A from calling an API on origin B unless B sends the right headers.</dd></div><div class="def"><dt>AllowedOrigins</dt><dd>The specific scheme+host+port combos a policy permits, e.g. https://blogfront.example.com.</dd></div><div class="def"><dt>Preflight</dt><dd>An HTTP OPTIONS request the browser sends before a cross-origin non-simple request; the API must reply with Access-Control headers.</dd></div><div class="def"><dt>Named policy</dt><dd>A CORS policy registered with AddCors and applied by name, allowing different rules for different endpoint groups.</dd></div><div class="def"><dt>Credentials pitfall</dt><dd>You cannot combine AllowAnyOrigin() with AllowCredentials() — the browser refuses; always specify exact origins for credentialled requests.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Use tags ("live", "ready") to route Kubernetes liveness and readiness probes to separate endpoints.</li><li>Return Degraded (not Unhealthy) when a non-critical dependency is slow; orchestrators restart the pod on Unhealthy.</li><li>Never call <code>AllowAnyOrigin().AllowCredentials()</code> — it throws at startup since .NET 5.</li><li>Put CORS before UseRouting (or at minimum before UseAuthorization) to ensure preflight OPTIONS requests are handled.</li><li>Use <code>RequireCors("policy")</code> per endpoint, or <code>app.MapControllers().RequireCors("policy")</code> globally.</li><li>Return health check results within 10 seconds; set a timeout on slow DB checks with cts.CancelAfter().</li></ul></div>
+
+<h3>1. Liveness and readiness with built-in checks</h3>
+<div class="code"><div class="fname">Blog.Api/Program.cs (health checks)</div><pre><code class="language-csharp">// Blog.Api/Program.cs — health check registration
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck&lt;BlogDbContext&gt;(
+        name:          "database",
+        failureStatus: HealthStatus.Unhealthy,
+        tags:          ["ready"])                     // only on the readiness endpoint
+    .AddCheck&lt;SlugCacheHealthCheck&gt;(
+        name:          "slug-cache",
+        failureStatus: HealthStatus.Degraded,
+        tags:          ["ready"]);                    // non-critical: Degraded, not Unhealthy
+
+// Map two separate endpoints
+app.MapHealthChecks("/health/live",  new HealthCheckOptions
+{
+    // Liveness: only the checks tagged "live" (or no tag filter = process is up)
+    Predicate = _ =&gt; false,                           // skip all checks; just return Healthy
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check =&gt; check.Tags.Contains("ready"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});</code></pre></div>
+<div class="note tip"><b>Tip.</b> Add the <code>AspNetCore.HealthChecks.UI.Client</code> NuGet package for the richer JSON format; the basic checks work without it.</div>
+
+<h3>2. Custom IHealthCheck — checking the EF Core DB</h3>
+<div class="code"><div class="fname">Blog.Api/HealthChecks/DatabaseHealthCheck.cs</div><pre><code class="language-csharp">// Blog.Api/HealthChecks/DatabaseHealthCheck.cs
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+namespace Blog.Api.HealthChecks;
+
+public sealed class DatabaseHealthCheck(BlogDbContext db) : IHealthCheck
+{
+    public async Task&lt;HealthCheckResult&gt; CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            // Lightweight: just runs "SELECT 1" via CanConnectAsync
+            bool canConnect = await db.Database.CanConnectAsync(ct);
+
+            if (!canConnect)
+                return HealthCheckResult.Unhealthy("Cannot connect to SQL Server.");
+
+            // Check post count as a quick sanity test
+            int count = await db.Posts.CountAsync(ct);
+            return HealthCheckResult.Healthy($"DB reachable. Posts: {count}.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("DB check threw.", ex);
+        }
+    }
+}</code></pre></div>
+
+<h3>3. Health check response format</h3>
+<div class="code nofile"><pre><code class="language-json">// GET /health/ready
+{
+  "status": "Healthy",
+  "totalDuration": "00:00:00.0423117",
+  "entries": {
+    "database": {
+      "data":     {},
+      "description": "DB reachable. Posts: 42.",
+      "duration": "00:00:00.0391043",
+      "status":   "Healthy",
+      "tags":     ["ready"]
+    },
+    "slug-cache": {
+      "data":     {},
+      "status":   "Healthy",
+      "tags":     ["ready"]
+    }
+  }
+}</code></pre></div>
+
+<h3>4. CORS — named policies</h3>
+<div class="code"><div class="fname">Blog.Api/Program.cs (CORS)</div><pre><code class="language-csharp">// Blog.Api/Program.cs — CORS registration
+const string FrontendPolicy = "AllowBlogFrontend";
+const string PublicApiPolicy = "AllowAll";
+
+builder.Services.AddCors(opts =&gt;
+{
+    opts.AddPolicy(FrontendPolicy, policy =&gt;
+        policy.WithOrigins(
+                "https://blog.example.in",
+                "https://dev.blog.example.in",
+                "http://localhost:3000")          // local React dev server
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()                 // cookies / auth headers
+              .SetPreflightMaxAge(TimeSpan.FromHours(1)));
+
+    opts.AddPolicy(PublicApiPolicy, policy =&gt;
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .WithMethods("GET")                 // read-only public endpoints
+              .SetPreflightMaxAge(TimeSpan.FromHours(1)));
+              // ⚠ AllowAnyOrigin means NO AllowCredentials — that would throw
+});
+
+// Apply policies in the pipeline
+app.UseCors();         // must be before UseRouting for minimal API; for controllers either order works
+app.UseRouting();
+app.UseAuthorization();
+
+// Controller-level: attribute
+// [EnableCors(FrontendPolicy)]
+// or on the route group at mapping:
+app.MapControllers().RequireCors(FrontendPolicy);</code></pre></div>
+<div class="note warn"><b>Avoid.</b> Combining <code>AllowAnyOrigin()</code> with <code>AllowCredentials()</code> throws <code>InvalidOperationException</code> at app.Build() since .NET 5. For credentialled requests always enumerate exact origins.</div>
+
+<h3>5. CORS in action — preflight</h3>
+<div class="code nofile"><pre><code class="language-text">// Browser sends (automatically, before the real POST):
+OPTIONS /api/posts HTTP/1.1
+Origin: https://blog.example.in
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type, Authorization
+
+// ASP.NET Core replies (if the request origin matches the policy):
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin:  https://blog.example.in
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, ...
+Access-Control-Allow-Headers: Content-Type, Authorization
+Access-Control-Allow-Credentials: true
+Access-Control-Max-Age: 3600
+Vary: Origin</code></pre></div>
+<div class="tbl"><table><tr><th>Scenario</th><th>Use</th></tr><tr><td>Public read-only API (CDN-served)</td><td>AllowAnyOrigin + WithMethods(GET)</td></tr><tr><td>SPA hitting a backend it owns</td><td>WithOrigins(exact list) + AllowCredentials</td></tr><tr><td>Dev: local SPA + local API</td><td>WithOrigins(localhost:3000, localhost:5173)</td></tr><tr><td>Multi-tenant SaaS</td><td>Read the allowed origins from appsettings per tenant at startup</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Putting health check endpoints inside the authenticated route group — monitoring agents can't reach them.</li><li>Using <code>AllowAnyOrigin</code> for a production API that sets cookies (browsers will block it).</li><li>Not tagging checks — without tags you can't split liveness from readiness probes.</li><li>Registering <code>AddHealthChecks()</code> but not calling <code>app.MapHealthChecks("/health")</code> — the endpoint never exists.</li><li>Forgetting <code>app.UseCors()</code> — CORS policies are registered but never applied.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Register a DatabaseHealthCheck and a custom MemoryHealthCheck (flag as Degraded when GC total memory &gt; 200 MB). Map them to /health/live (memory only) and /health/ready (db + memory).</li><li>Add a 'BlogFrontend' CORS policy that allows http://localhost:3000 and use curl to send an OPTIONS preflight and confirm the Access-Control-Allow-Origin header.</li><li>Intentionally break the DB connection string and confirm /health/ready returns 503 while /health/live returns 200.</li></ol>
+<h3>Self-check questions</h3><details><summary>What is the difference between liveness and readiness?</summary>Liveness checks whether the process is alive and should restart. Readiness checks whether the process is ready to serve traffic — a pod can be alive but not ready if the DB is unavailable.</details><details><summary>Why can't you use AllowAnyOrigin with AllowCredentials?</summary>The CORS specification forbids the wildcard origin (*) with credentials because it would allow any website to send authenticated requests. Browsers block it, and ASP.NET Core throws at startup.</details><details><summary>What HTTP method does a CORS preflight use?</summary>OPTIONS. The browser sends OPTIONS before a non-simple cross-origin request; the server must respond with the allowed-origin, methods, and headers headers, with no body.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does AddDbContextCheck do?</summary><div>It registers a health check that calls db.Database.CanConnectAsync() — essentially sending SELECT 1 to SQL Server — and returns Healthy if it succeeds, or Unhealthy/Degraded depending on the configured failureStatus.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a named CORS policy?</summary><div>A CORS configuration registered with a string name in AddCors. You can apply different policies to different endpoints — a permissive public-read policy on /api/feed and a strict credentialled policy on /api/admin — rather than a single global rule.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What tags are conventionally used for Kubernetes health checks?</summary><div>'live' for liveness probes and 'ready' for readiness probes. Kubernetes calls /health/live every few seconds to decide whether to restart the pod, and /health/ready to decide whether to route traffic to it.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you prevent unauthenticated access to the /health endpoint in production?</summary><div>Two options: (1) filter at the network level (only allow the load balancer IP), or (2) add .RequireAuthorization() with an AllowAnonymous exception for health checks. Many teams exclude the /health path at the reverse proxy level.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the Vary: Origin header and why does ASP.NET Core add it?</summary><div>It tells CDNs and proxies that the response content varies by the Origin header, so they cache separate responses for each origin rather than serving cached CORS headers intended for one origin to a different origin.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does SetPreflightMaxAge work?</summary><div>It sets Access-Control-Max-Age, instructing the browser to cache the preflight response for that many seconds and skip sending OPTIONS for repeat requests in that window. Reduces preflight overhead for high-traffic APIs.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Rate Limiting and Output Caching</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Protect your API from abuse with .NET 8's built-in rate limiters and speed it up with OutputCache policies that support tag-based eviction — no extra infrastructure required.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>AddRateLimiter</dt><dd>ASP.NET Core 8 service registration that enables the rate-limiting middleware and policies.</dd></div><div class="def"><dt>FixedWindowLimiter</dt><dd>Allows N requests per fixed time window (e.g. 10 req / 60 sec); resets at the window boundary.</dd></div><div class="def"><dt>SlidingWindowLimiter</dt><dd>Allows N requests per rolling window divided into segments; smoother than fixed window.</dd></div><div class="def"><dt>TokenBucketLimiter</dt><dd>Tokens replenish at a fixed rate; allows bursts up to the bucket size.</dd></div><div class="def"><dt>ConcurrencyLimiter</dt><dd>Caps the number of requests processed at the same time regardless of time.</dd></div><div class="def"><dt>PartitionedRateLimiter</dt><dd>A rate limiter keyed by a partition (e.g. user ID, IP address) so each user gets their own bucket.</dd></div><div class="def"><dt>429 Too Many Requests</dt><dd>The HTTP status code returned when a request is rejected by the rate limiter.</dd></div><div class="def"><dt>Retry-After</dt><dd>Response header telling the client how many seconds to wait before retrying.</dd></div><div class="def"><dt>OutputCache</dt><dd>ASP.NET Core 7+ middleware that caches full HTTP responses in-process (or Redis in .NET 8+).</dd></div><div class="def"><dt>Cache policy</dt><dd>Named configuration for OutputCache: duration, vary-by headers/query, tags.</dd></div><div class="def"><dt>Tag eviction</dt><dd>Calling OutputCacheStore.EvictByTagAsync("tag") removes all cached responses labelled with that tag.</dd></div><div class="def"><dt>ResponseCaching</dt><dd>Older middleware that respects Cache-Control headers; less control, no server-side eviction.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Use PartitionedRateLimiter keyed by user ID in authenticated APIs to give each user their own quota.</li><li>On rejection, write Retry-After in OnRejected so clients back off correctly.</li><li>OutputCache stores the full response body; only cache idempotent GET/HEAD endpoints.</li><li>Add a tag to every cached endpoint in a resource group; on write, evict by that tag to invalidate the whole group.</li><li>ResponseCaching is controlled by Cache-Control headers from the client — OutputCache is controlled by the server, making it more secure.</li><li>Set a short base duration (e.g. 60 s) and vary by query string or user claim for personalised content.</li></ul></div>
+
+<h3>1. Registering rate limit policies</h3>
+<div class="code"><div class="fname">Blog.Api/Program.cs (rate limiting)</div><pre><code class="language-csharp">// Blog.Api/Program.cs
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
+
+builder.Services.AddRateLimiter(opts =&gt;
+{
+    // --- Global fixed-window policy ---
+    opts.AddFixedWindowLimiter("global", o =&gt;
+    {
+        o.PermitLimit         = 100;
+        o.Window              = TimeSpan.FromMinutes(1);
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit          = 10;
+    });
+
+    // --- Per-user sliding window (authenticated endpoint) ---
+    opts.AddPolicy("perUser", httpCtx =&gt;
+        RateLimitPartition.GetSlidingWindowLimiter(
+            partitionKey: httpCtx.User.FindFirst("sub")?.Value ?? "anon",
+            factory: _ =&gt; new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit    = 20,
+                Window         = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueLimit     = 0,
+            }));
+
+    // --- Token bucket for comment creation ---
+    opts.AddTokenBucketLimiter("commentCreate", o =&gt;
+    {
+        o.TokenLimit           = 5;
+        o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        o.QueueLimit           = 0;
+        o.ReplenishmentPeriod  = TimeSpan.FromMinutes(1);
+        o.TokensPerPeriod      = 2;
+        o.AutoReplenishment    = true;
+    });
+
+    // 429 response with Retry-After header
+    opts.OnRejected = async (ctx, ct) =&gt;
+    {
+        ctx.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            ctx.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString();
+
+        await ctx.HttpContext.Response.WriteAsync(
+            "Too many requests. Please try again later.", ct);
+    };
+});</code></pre></div>
+
+<h3>2. Applying policies to endpoints</h3>
+<div class="code nofile"><pre><code class="language-csharp">// In Program.cs middleware order:
+app.UseRateLimiter();     // before UseRouting for best coverage
+
+// Controller-level attribute:
+[EnableRateLimiting("commentCreate")]
+[HttpPost("{postId}/comments")]
+public async Task&lt;IActionResult&gt; AddComment(int postId, CreateCommentRequest req, CancellationToken ct)
+{
+    var comment = await _commentService.CreateAsync(postId, req, ct);
+    return CreatedAtAction(null, new { id = comment.Id }, comment);
+}
+
+// Or on a minimal-API route:
+app.MapGet("/api/posts/{slug}", handler)
+   .RequireRateLimiting("global");</code></pre></div>
+<div class="note tip"><b>Tip.</b> Use <code>[DisableRateLimiting]</code> on health-check and internal endpoints so monitoring agents are never throttled.</div>
+
+<h3>3. OutputCache policies</h3>
+<div class="code"><div class="fname">Blog.Api/Program.cs (output cache)</div><pre><code class="language-csharp">builder.Services.AddOutputCache(opts =&gt;
+{
+    // Base policy: cache GET responses for 60 seconds
+    opts.AddBasePolicy(b =&gt; b.Expire(TimeSpan.FromSeconds(60)));
+
+    // Post-list policy: 2 min, vary by page/pageSize query params, tagged "posts"
+    opts.AddPolicy("postList", b =&gt;
+        b.Expire(TimeSpan.FromMinutes(2))
+         .SetVaryByQuery("page", "pageSize", "tag")
+         .Tag("posts"));
+
+    // Single post: 5 min, vary by route slug, tagged "posts" and "post-{slug}"
+    opts.AddPolicy("singlePost", b =&gt;
+        b.Expire(TimeSpan.FromMinutes(5))
+         .SetVaryByRouteValue("slug")
+         .Tag("posts"));
+
+    // No cache for admin writes
+    opts.AddPolicy("noCache", b =&gt; b.NoStore());
+});</code></pre></div>
+
+<h3>4. Applying OutputCache and evicting on write</h3>
+<div class="code"><div class="fname">Blog.Api/Controllers/PostsController.cs</div><pre><code class="language-csharp">// Blog.Api/Controllers/PostsController.cs
+[OutputCache(PolicyName = "postList")]
+[HttpGet]
+public async Task&lt;IActionResult&gt; GetPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+{
+    var result = await _service.ListAsync(page, pageSize, ct);
+    return Ok(result);
+}
+
+[OutputCache(PolicyName = "singlePost")]
+[HttpGet("{slug}")]
+public async Task&lt;IActionResult&gt; GetBySlug(string slug, CancellationToken ct)
+{
+    var post = await _service.GetBySlugAsync(slug, ct);
+    return Ok(post);
+}
+
+// On POST / PUT / DELETE — evict the "posts" tag so stale responses are removed
+[OutputCache(PolicyName = "noCache")]
+[HttpPost]
+public async Task&lt;IActionResult&gt; Create(
+    CreatePostRequest req,
+    [FromServices] IOutputCacheStore cacheStore,
+    CancellationToken ct)
+{
+    var post = await _service.CreateAsync(req, ct);
+    await cacheStore.EvictByTagAsync("posts", ct);       // invalidates all cached post responses
+    return CreatedAtAction(nameof(GetBySlug), new { slug = post.Slug }, post);
+}</code></pre></div>
+
+<h3>5. ResponseCaching vs OutputCache comparison</h3>
+<div class="tbl"><table><tr><th></th><th>ResponseCaching</th><th>OutputCache (.NET 7+)</th></tr><tr><td>Control</td><td>Cache-Control headers (client + server)</td><td>Server-side policies only</td></tr><tr><td>Store</td><td>In-process only</td><td>In-process or distributed (Redis in .NET 8)</td></tr><tr><td>Tag eviction</td><td>Not supported</td><td>EvictByTagAsync()</td></tr><tr><td>Vary by route</td><td>Not supported</td><td>SetVaryByRouteValue()</td></tr><tr><td>Authorization bypass</td><td>Cache bypassed if Authorize is present</td><td>Explicit NoStore needed</td></tr><tr><td>Recommended for</td><td>Public pages respecting CDN headers</td><td>API responses needing server control</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Caching POST responses with OutputCache — the middleware only caches GET/HEAD by default; apply <code>NoStore</code> policy on write endpoints.</li><li>Using FixedWindow for comment creation — it allows bursts at the window boundary; prefer TokenBucket for smooth rate control.</li><li>Forgetting <code>app.UseRateLimiter()</code> — policies are registered but never enforced.</li><li>Not evicting cache on writes — stale data served until the policy duration expires.</li><li>Partitioning by IP address without null checks — a null partition key throws NullReferenceException in the limiter factory.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Add a fixed-window policy (50 req / min) globally and a token-bucket policy (5 tokens, 2 per minute) on POST /api/posts/{id}/comments. Use curl in a loop to trigger the 429.</li><li>Add an OutputCache policy on GET /api/posts with a 2-minute expiry, vary by page and tag query params, and the 'posts' tag. Confirm the response includes X-Cache hit headers on the second request.</li><li>On POST /api/posts call EvictByTagAsync('posts') and confirm the subsequent GET returns fresh data (no cache hit).</li></ol>
+<h3>Self-check questions</h3><details><summary>What is the difference between FixedWindow and SlidingWindow rate limiters?</summary>FixedWindow resets the counter at a fixed boundary (e.g. every 60 s exactly), allowing a burst at the reset point. SlidingWindow tracks a rolling period in segments, distributing the limit more evenly.</details><details><summary>What does EvictByTagAsync do?</summary>It removes all cached response entries that were tagged with the given string from the OutputCache store, forcing subsequent requests to hit the origin.</details><details><summary>Why is OutputCache better than ResponseCaching for most APIs?</summary>OutputCache runs server-side logic regardless of Cache-Control headers sent by clients, supports tag eviction and vary-by-route-value, and in .NET 8 can use a distributed store like Redis.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What HTTP status code does the rate limiter return on rejection?</summary><div>429 Too Many Requests. The response should include a Retry-After header indicating how many seconds to wait.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a partitioned rate limiter?</summary><div>A rate limiter that creates a separate bucket per partition key — typically the authenticated user ID or IP address — so each user has an independent quota rather than sharing one global counter.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is tag-based eviction in OutputCache?</summary><div>Tagging a cached response with a string and later calling EvictByTagAsync on that string removes all responses with that tag. Useful for invalidating all posts on a create/update without knowing the exact cache keys.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>When would you choose TokenBucket over FixedWindow?</summary><div>TokenBucket is better when you want to allow short bursts (up to the bucket size) but limit the sustained rate. FixedWindow can be gamed by sending all requests just before and just after the reset boundary; TokenBucket naturally prevents this.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the difference between OutputCache and a distributed cache like Redis used manually?</summary><div>OutputCache is response-level: it stores and serves the full HTTP response transparently with no code changes in controllers. Manual Redis caching is data-level: you cache DTOs or query results and still run controller logic. OutputCache is simpler; manual caching gives more granular control.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does SetVaryByQuery work in an OutputCache policy?</summary><div>It creates a separate cache entry for each distinct combination of the specified query parameter values. GET /api/posts?page=1&pageSize=10 and GET /api/posts?page=2&pageSize=10 are stored and served independently.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>File Upload and Download</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Accept IFormFile uploads safely (size limits, content-type whitelist, magic bytes), store files outside wwwroot, and serve them with range-request support.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>IFormFile</dt><dd>ASP.NET Core's abstraction for an uploaded file; exposes FileName, ContentType, Length, OpenReadStream().</dd></div><div class="def"><dt>ContentType whitelist</dt><dd>Checking IFormFile.ContentType against allowed MIME types; necessary but not sufficient — always verify magic bytes too.</dd></div><div class="def"><dt>Magic bytes</dt><dd>The first few bytes of a file that identify its real format, regardless of the file name or declared Content-Type.</dd></div><div class="def"><dt>Safe file name</dt><dd>A server-generated GUID (or slug + GUID) used as the stored name; never trust IFormFile.FileName from the client.</dd></div><div class="def"><dt>wwwroot</dt><dd>The static-file root served directly by the web server; uploaded files should NOT be stored here to prevent direct execution.</dd></div><div class="def"><dt>PhysicalFile</dt><dd>An ActionResult that streams a file from a physical path, setting Content-Type and Content-Disposition headers.</dd></div><div class="def"><dt>VirtualFileResult</dt><dd>Streams from the web root; not suitable for files outside wwwroot.</dd></div><div class="def"><dt>Range request</dt><dd>HTTP Range header support for resumable downloads; FileStreamResult and PhysicalFile handle this automatically.</dd></div><div class="def"><dt>IFormFile.OpenReadStream</dt><dd>Returns a stream you can read and copy without loading the whole file into memory.</dd></div><div class="def"><dt>Antiforgery</dt><dd>For browser form uploads, include a CSRF token; pure JSON/REST APIs use the Authorization header instead, so antiforgery is typically skipped.</dd></div><div class="def"><dt>MaxRequestBodySize</dt><dd>Kestrel and IIS limit the HTTP request body; set it per endpoint to override the default 30 MB.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Never trust <code>IFormFile.FileName</code> or <code>IFormFile.ContentType</code> from the client — they're user-controlled strings.</li><li>Check magic bytes by opening the stream and reading the first 4–16 bytes before saving.</li><li>Store uploaded files in a folder outside the content root (e.g. /data/uploads) and serve via a controller, not static files.</li><li>Use <code>Path.GetRandomFileName()</code> or <code>Guid.NewGuid()</code> for the stored file name; keep the original name in a database column.</li><li>Stream large files directly to disk with <code>CopyToAsync</code>; don't buffer them in memory with <code>IFormFile.OpenReadStream().ToArray()</code>.</li><li>Set <code>[RequestSizeLimit]</code> and <code>[RequestFormLimits]</code> at the action level, not globally, so only upload endpoints bear the larger limit.</li></ul></div>
+
+<h3>1. Accepting a file upload</h3>
+<div class="code"><div class="fname">Blog.Api/Controllers/UploadsController.cs</div><pre><code class="language-csharp">// Blog.Api/Controllers/UploadsController.cs
+[ApiController]
+[Route("api/[controller]")]
+public class UploadsController(IFileStorage storage, ILogger&lt;UploadsController&gt; logger) : ControllerBase
+{
+    private static readonly string[] AllowedContentTypes =
+        ["image/jpeg", "image/png", "image/webp"];
+
+    private static readonly Dictionary&lt;string, byte[]&gt; MagicBytes = new()
+    {
+        ["image/jpeg"] = [0xFF, 0xD8, 0xFF],
+        ["image/png"]  = [0x89, 0x50, 0x4E, 0x47],
+        ["image/webp"] = [0x52, 0x49, 0x46, 0x46],   // "RIFF"
+    };
+
+    [HttpPost("cover")]
+    [RequestSizeLimit(2 * 1024 * 1024)]                // 2 MB max
+    [RequestFormLimits(MultipartBodyLengthLimit = 2 * 1024 * 1024)]
+    public async Task&lt;IActionResult&gt; UploadCoverImage(
+        IFormFile file,
+        CancellationToken ct)
+    {
+        // 1. Content-type whitelist
+        if (!AllowedContentTypes.Contains(file.ContentType))
+            return BadRequest($"Only JPEG, PNG and WebP are allowed.");
+
+        // 2. File size guard (belt + suspenders alongside the attribute)
+        if (file.Length == 0 || file.Length &gt; 2 * 1024 * 1024)
+            return BadRequest("File must be 1 byte – 2 MB.");
+
+        // 3. Magic-byte check
+        if (!await HasValidMagicBytesAsync(file))
+            return BadRequest("File content does not match its declared type.");
+
+        // 4. Store with a safe, server-generated name
+        string stored = await storage.SaveAsync(file, ct);
+
+        logger.LogInformation("Cover image uploaded: {FileName} → {StoredPath}",
+            file.FileName, stored);
+
+        return Ok(new { url = $"/api/uploads/{stored}" });
+    }
+
+    private static async Task&lt;bool&gt; HasValidMagicBytesAsync(IFormFile file)
+    {
+        if (!MagicBytes.TryGetValue(file.ContentType, out byte[]? magic)) return false;
+
+        byte[] header = new byte[magic.Length];
+        await using var stream = file.OpenReadStream();
+        int read = await stream.ReadAsync(header.AsMemory(0, magic.Length));
+        return read == magic.Length &amp;&amp; header.SequenceEqual(magic);
+    }
+}</code></pre></div>
+
+<h3>2. IFileStorage abstraction and local implementation</h3>
+<div class="code"><div class="fname">Blog.Core/Interfaces/IFileStorage.cs</div><pre><code class="language-csharp">// Blog.Core/Interfaces/IFileStorage.cs
+namespace Blog.Core.Interfaces;
+
+public interface IFileStorage
+{
+    Task&lt;string&gt; SaveAsync(IFormFile file, CancellationToken ct);
+    string GetPhysicalPath(string storedName);
+    Task DeleteAsync(string storedName, CancellationToken ct);
+}</code></pre></div>
+<div class="code"><div class="fname">Blog.Infrastructure/Storage/LocalFileStorage.cs</div><pre><code class="language-csharp">// Blog.Infrastructure/Storage/LocalFileStorage.cs
+using Blog.Core.Interfaces;
+
+namespace Blog.Infrastructure.Storage;
+
+public sealed class LocalFileStorage : IFileStorage
+{
+    private readonly string _root;
+
+    public LocalFileStorage(IConfiguration cfg)
+    {
+        // Stored outside wwwroot: "StoragePath": "/data/blog-uploads" in appsettings
+        _root = cfg["StoragePath"] ?? Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+        Directory.CreateDirectory(_root);
+    }
+
+    public async Task&lt;string&gt; SaveAsync(IFormFile file, CancellationToken ct)
+    {
+        // Server-generated safe name; keep original extension only after re-checking content
+        string ext = file.ContentType switch
+        {
+            "image/jpeg" =&gt; ".jpg",
+            "image/png"  =&gt; ".png",
+            "image/webp" =&gt; ".webp",
+            _            =&gt; throw new InvalidOperationException("Unsupported type")
+        };
+
+        string stored = $"{Guid.NewGuid():N}{ext}";
+        string full   = Path.Combine(_root, stored);
+
+        await using var dest = new FileStream(full, FileMode.CreateNew, FileAccess.Write,
+            FileShare.None, bufferSize: 81920, useAsync: true);
+        await file.CopyToAsync(dest, ct);         // streaming: doesn't buffer in RAM
+
+        return stored;
+    }
+
+    public string GetPhysicalPath(string storedName) =&gt;
+        Path.GetFullPath(Path.Combine(_root, storedName));  // GetFullPath prevents path traversal
+
+    public async Task DeleteAsync(string storedName, CancellationToken ct)
+    {
+        string path = GetPhysicalPath(storedName);
+        if (File.Exists(path))
+            await Task.Run(() =&gt; File.Delete(path), ct);
+    }
+}</code></pre></div>
+
+<h3>3. Downloading a file (range requests)</h3>
+<div class="code nofile"><pre><code class="language-csharp">// Blog.Api/Controllers/UploadsController.cs (download action)
+[HttpGet("{storedName}")]
+public IActionResult Download(string storedName)
+{
+    // Prevent path traversal: only allow simple file names
+    if (storedName.Contains('/') || storedName.Contains('\\') || storedName.Contains(".."))
+        return BadRequest("Invalid file name.");
+
+    string path = _storage.GetPhysicalPath(storedName);
+    if (!System.IO.File.Exists(path))
+        return NotFound();
+
+    // PhysicalFile automatically handles Range requests (resumable downloads)
+    string contentType = Path.GetExtension(storedName).ToLowerInvariant() switch
+    {
+        ".jpg" or ".jpeg" =&gt; "image/jpeg",
+        ".png"  =&gt; "image/png",
+        ".webp" =&gt; "image/webp",
+        _       =&gt; "application/octet-stream"
+    };
+
+    return PhysicalFile(path, contentType, enableRangeProcessing: true);
+}</code></pre></div>
+<div class="note tip"><b>Tip.</b> Set <code>enableRangeProcessing: true</code> in PhysicalFile so browsers and download managers can resume partial downloads with the HTTP Range header.</div>
+
+<h3>4. Size limit configuration in Kestrel</h3>
+<div class="code nofile"><pre><code class="language-json">// appsettings.json — Kestrel limits
+{
+  "Kestrel": {
+    "Limits": {
+      "MaxRequestBodySize": 2097152    // 2 MB global max (can be overridden per action)
+    }
+  }
+}</code></pre></div>
+<div class="note warn"><b>Avoid.</b> Path traversal attack: if you ever use user-supplied file names in Path.Combine, an attacker can supply '../../../etc/passwd'. Always use Path.GetFullPath and verify the result starts with the allowed root, or store only the GUID name and look up the real path in a database.</div>
+
+<h3>Common mistakes</h3><ul><li>Storing uploaded files inside wwwroot — the web server serves them directly, bypassing your auth check.</li><li>Trusting IFormFile.ContentType — it's a client-supplied header; always verify magic bytes.</li><li>Using IFormFile.FileName in Path.Combine — allows path traversal attacks.</li><li>Buffering the whole file into a byte[] with ReadToEndAsync — exhausts memory on large uploads.</li><li>Forgetting [RequestSizeLimit] — the default 30 MB Kestrel limit may be too large.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Implement LocalFileStorage and wire it into the BlogApi. Upload a JPEG via curl and verify the file lands on disk with a GUID name.</li><li>Modify the magic-byte check to also reject files whose first bytes claim to be an image but whose extension says .exe — confirm it returns 400.</li><li>Add a GET download endpoint that serves the file with PhysicalFile. Use curl --range 0-99 to download only the first 100 bytes and confirm the response is 206 Partial Content.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why should uploaded files be stored outside wwwroot?</summary>Files in wwwroot are served directly by the static-files middleware, bypassing controllers and authentication. A malicious .aspx or .php file (on IIS) could be executed. Store uploads outside wwwroot and serve them through a controller that checks permissions.</details><details><summary>What are magic bytes?</summary>Fixed byte sequences at the start of a file that identify its format. E.g. JPEG files start 0xFF 0xD8 0xFF. Verifying them prevents an attacker from renaming a script file as image.jpg and uploading it.</details><details><summary>What HTTP status code is returned for a partial content download?</summary>206 Partial Content, with Content-Range and ETag headers.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is IFormFile?</summary><div>An ASP.NET Core abstraction for a file part in a multipart/form-data HTTP request. It exposes the file name, content type, length and a stream to read its bytes.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why not use the original file name when storing uploads?</summary><div>Client-supplied names can contain path separators ('..', '/'), reserved characters, or executable extensions. Use a server-generated GUID as the stored name and keep the original in a database column for display only.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does enableRangeProcessing in PhysicalFile do?</summary><div>Causes ASP.NET Core to process the HTTP Range header, returning a 206 Partial Content response with only the requested byte range. This enables resumable and parallel downloads.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you prevent path traversal in a download endpoint?</summary><div>1) Reject stored names that contain '/', '\\' or '..'. 2) Call Path.GetFullPath on the combined path. 3) Assert that the result starts with the allowed root directory. Only one of these checks alone is insufficient.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you stream a large file upload without buffering it in memory?</summary><div>Use file.CopyToAsync(destination, ct) where destination is a FileStream opened with useAsync: true. This copies the multipart body stream directly to disk in fixed-size chunks, keeping memory usage flat regardless of file size.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is the relationship between [RequestSizeLimit] and Kestrel's MaxRequestBodySize?</summary><div>[RequestSizeLimit] overrides the Kestrel limit for a single action. It must be set at or below the Kestrel limit unless you also configure Kestrel's per-endpoint MaxRequestBodySize. Setting [RequestSizeLimit] alone does not raise the Kestrel ceiling.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>Micro-project: BlogApi</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Build a full Blog REST API applying every cross-cutting concern from this week: Post/Comment/Tag with EF Core, IExceptionHandler, Serilog, health checks, CORS, rate limiting, output cache, and file upload. Budget: about 4 hours.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>BlogApi</dt><dd>The week's micro-project: a production-ready ASP.NET Core 8 Blog API with cross-cutting concerns applied from the start.</dd></div><div class="def"><dt>Slug</dt><dd>A URL-safe string derived from the post title: 'Mastering LINQ in India' → 'mastering-linq-in-india'.</dd></div><div class="def"><dt>Publish workflow</dt><dd>Posts are created as Draft and explicitly published, changing their status and setting PublishedAt.</dd></div><div class="def"><dt>Nested comments</dt><dd>Comments have an optional ParentCommentId enabling threaded replies up to arbitrary depth.</dd></div><div class="def"><dt>Many-to-many tags</dt><dd>A Post can have many Tags and a Tag can belong to many Posts; EF Core maps this via a join table.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Apply the DomainExceptionHandler and GlobalExceptionHandler from Day 1.</li><li>Wire in Serilog with two-stage bootstrap and UseSerilogRequestLogging from Day 2.</li><li>Map /health/live and /health/ready with database and memory checks from Day 3.</li><li>Set up a CORS policy for http://localhost:3000 from Day 3.</li><li>Apply a token-bucket rate limiter on comment creation from Day 4.</li><li>Apply OutputCache with tag eviction on the post list and single-post endpoints from Day 4.</li></ul></div>
+
+<h3>Scaffold</h3>
+<div class="code nofile"><pre><code class="language-bash">mkdir BlogApi &amp;&amp; cd BlogApi
+dotnet new sln
+dotnet new classlib -n Blog.Core            &amp;&amp; dotnet sln add Blog.Core
+dotnet new classlib -n Blog.Infrastructure  &amp;&amp; dotnet sln add Blog.Infrastructure
+dotnet new webapi   -n Blog.Api             &amp;&amp; dotnet sln add Blog.Api
+
+cd Blog.Core &amp;&amp; dotnet add package Microsoft.Extensions.DependencyInjection.Abstractions
+cd ../Blog.Infrastructure
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+dotnet add package Microsoft.EntityFrameworkCore.Design
+cd ../Blog.Api
+dotnet add reference ../Blog.Core
+dotnet add reference ../Blog.Infrastructure
+dotnet add package Serilog.AspNetCore
+dotnet add package Serilog.Sinks.File
+dotnet add package Serilog.Sinks.Seq
+dotnet add package Serilog.Enrichers.Environment
+dotnet add package Serilog.Enrichers.Thread
+dotnet add package Microsoft.AspNetCore.Diagnostics.HealthChecks</code></pre></div>
+
+<h3>Folder structure</h3>
+<div class="code nofile"><pre><code class="language-text">BlogApi/
+├── Blog.Core/
+│   ├── Exceptions/     (DomainException, NotFoundException, ConflictException, UnprocessableException)
+│   ├── Interfaces/     (IPostService, ICommentService, IFileStorage)
+│   └── Models/         (Post, Comment, Tag, PostStatus)
+├── Blog.Infrastructure/
+│   ├── Data/           (BlogDbContext)
+│   ├── Repositories/   (PostRepository, CommentRepository)
+│   └── Storage/        (LocalFileStorage)
+└── Blog.Api/
+    ├── Controllers/    (PostsController, CommentsController, UploadsController)
+    ├── Exceptions/     (DomainExceptionHandler, GlobalExceptionHandler)
+    ├── HealthChecks/   (DatabaseHealthCheck)
+    └── Program.cs</code></pre></div>
+
+<h3>Core models</h3>
+<div class="code"><div class="fname">Blog.Core/Models/Post.cs</div><pre><code class="language-csharp">// Blog.Core/Models/Post.cs
+namespace Blog.Core.Models;
+
+public enum PostStatus { Draft, Published }
+
+public class Post
+{
+    public int    Id          { get; set; }
+    public string Title       { get; set; } = "";
+    public string Slug        { get; set; } = "";
+    public string Content     { get; set; } = "";
+    public string AuthorName  { get; set; } = "";   // e.g. "Priya Sharma"
+    public string? CoverImage { get; set; }
+    public PostStatus Status  { get; set; } = PostStatus.Draft;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? PublishedAt { get; set; }
+
+    public ICollection&lt;Comment&gt; Comments { get; set; } = [];
+    public ICollection&lt;Tag&gt;     Tags     { get; set; } = [];
+}
+
+public class Comment
+{
+    public int    Id              { get; set; }
+    public string Body            { get; set; } = "";
+    public string AuthorName      { get; set; } = "";
+    public DateTime CreatedAt     { get; set; } = DateTime.UtcNow;
+    public int    PostId          { get; set; }
+    public Post   Post            { get; set; } = null!;
+    public int?   ParentCommentId { get; set; }
+    public Comment? Parent        { get; set; }
+    public ICollection&lt;Comment&gt; Replies { get; set; } = [];
+}
+
+public class Tag
+{
+    public int    Id    { get; set; }
+    public string Name  { get; set; } = "";
+    public string Slug  { get; set; } = "";
+    public ICollection&lt;Post&gt; Posts { get; set; } = [];
+}</code></pre></div>
+
+<h3>EF Core DbContext</h3>
+<div class="code"><div class="fname">Blog.Infrastructure/Data/BlogDbContext.cs</div><pre><code class="language-csharp">// Blog.Infrastructure/Data/BlogDbContext.cs
+using Blog.Core.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Blog.Infrastructure.Data;
+
+public class BlogDbContext(DbContextOptions&lt;BlogDbContext&gt; opts) : DbContext(opts)
+{
+    public DbSet&lt;Post&gt;    Posts    =&gt; Set&lt;Post&gt;();
+    public DbSet&lt;Comment&gt; Comments =&gt; Set&lt;Comment&gt;();
+    public DbSet&lt;Tag&gt;     Tags     =&gt; Set&lt;Tag&gt;();
+
+    protected override void OnModelCreating(ModelBuilder mb)
+    {
+        mb.Entity&lt;Post&gt;(b =&gt;
+        {
+            b.HasIndex(p =&gt; p.Slug).IsUnique();
+            b.Property(p =&gt; p.Title).HasMaxLength(300);
+            b.Property(p =&gt; p.Slug).HasMaxLength(300);
+            b.HasMany(p =&gt; p.Comments).WithOne(c =&gt; c.Post)
+             .HasForeignKey(c =&gt; c.PostId).OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(p =&gt; p.Tags).WithMany(t =&gt; t.Posts)
+             .UsingEntity("PostTag");
+        });
+
+        mb.Entity&lt;Comment&gt;(b =&gt;
+        {
+            b.HasOne(c =&gt; c.Parent).WithMany(c =&gt; c.Replies)
+             .HasForeignKey(c =&gt; c.ParentCommentId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        mb.Entity&lt;Tag&gt;(b =&gt;
+        {
+            b.HasIndex(t =&gt; t.Slug).IsUnique();
+            b.Property(t =&gt; t.Name).HasMaxLength(80);
+        });
+    }
+}</code></pre></div>
+
+<h3>PostsController — full implementation</h3>
+<div class="code"><div class="fname">Blog.Api/Controllers/PostsController.cs</div><pre><code class="language-csharp">// Blog.Api/Controllers/PostsController.cs
+using Blog.Core.Exceptions;
+using Blog.Core.Models;
+using Blog.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.EntityFrameworkCore;
+
+namespace Blog.Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class PostsController(BlogDbContext db, IOutputCacheStore cacheStore, ILogger&lt;PostsController&gt; logger)
+    : ControllerBase
+{
+    [HttpGet]
+    [OutputCache(PolicyName = "postList")]
+    public async Task&lt;IActionResult&gt; List(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? tag = null,
+        CancellationToken ct = default)
+    {
+        var query = db.Posts
+            .Include(p =&gt; p.Tags)
+            .Where(p =&gt; p.Status == PostStatus.Published);
+
+        if (!string.IsNullOrWhiteSpace(tag))
+            query = query.Where(p =&gt; p.Tags.Any(t =&gt; t.Slug == tag));
+
+        int total = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(p =&gt; p.PublishedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p =&gt; new { p.Id, p.Title, p.Slug, p.AuthorName, p.PublishedAt,
+                               Tags = p.Tags.Select(t =&gt; t.Name) })
+            .ToListAsync(ct);
+
+        return Ok(new { page, pageSize, total, items });
+    }
+
+    [HttpGet("{slug}")]
+    [OutputCache(PolicyName = "singlePost")]
+    public async Task&lt;IActionResult&gt; Get(string slug, CancellationToken ct)
+    {
+        var post = await db.Posts
+            .Include(p =&gt; p.Tags)
+            .Include(p =&gt; p.Comments.Where(c =&gt; c.ParentCommentId == null))
+                .ThenInclude(c =&gt; c.Replies)
+            .FirstOrDefaultAsync(p =&gt; p.Slug == slug &amp;&amp; p.Status == PostStatus.Published, ct);
+
+        if (post is null) throw new NotFoundException("Post", slug);
+
+        return Ok(post);
+    }
+
+    [HttpPost]
+    public async Task&lt;IActionResult&gt; Create(CreatePostRequest req, CancellationToken ct)
+    {
+        string slug = Slugify(req.Title);
+
+        if (await db.Posts.AnyAsync(p =&gt; p.Slug == slug, ct))
+            throw new ConflictException($"A post with slug '{slug}' already exists.");
+
+        var post = new Post
+        {
+            Title      = req.Title,
+            Slug       = slug,
+            Content    = req.Content,
+            AuthorName = req.AuthorName,
+            Status     = PostStatus.Draft
+        };
+        db.Posts.Add(post);
+        await db.SaveChangesAsync(ct);
+        await cacheStore.EvictByTagAsync("posts", ct);
+        logger.LogInformation("Post {Slug} created by {Author}", slug, req.AuthorName);
+        return CreatedAtAction(nameof(Get), new { slug = post.Slug }, new { post.Id, post.Slug });
+    }
+
+    [HttpPost("{id:int}/publish")]
+    public async Task&lt;IActionResult&gt; Publish(int id, CancellationToken ct)
+    {
+        var post = await db.Posts.FindAsync([id], ct)
+            ?? throw new NotFoundException("Post", id);
+
+        if (post.Status == PostStatus.Published)
+            throw new ConflictException($"Post '{post.Slug}' is already published.");
+
+        post.Status      = PostStatus.Published;
+        post.PublishedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        await cacheStore.EvictByTagAsync("posts", ct);
+        return NoContent();
+    }
+
+    private static string Slugify(string title) =&gt;
+        System.Text.RegularExpressions.Regex.Replace(
+            title.Trim().ToLowerInvariant(), @"[^a-z0-9]+", "-")
+        .Trim('-');
+
+    public record CreatePostRequest(string Title, string Content, string AuthorName);
+}</code></pre></div>
+
+<h3>CommentsController with rate limiting</h3>
+<div class="code"><div class="fname">Blog.Api/Controllers/CommentsController.cs</div><pre><code class="language-csharp">// Blog.Api/Controllers/CommentsController.cs
+using Blog.Core.Exceptions;
+using Blog.Core.Models;
+using Blog.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+
+namespace Blog.Api.Controllers;
+
+[ApiController]
+[Route("api/posts/{{postId}}/comments")]
+public class CommentsController(BlogDbContext db) : ControllerBase
+{
+    [HttpGet]
+    public async Task&lt;IActionResult&gt; List(int postId, CancellationToken ct)
+    {
+        bool exists = await db.Posts.AnyAsync(p =&gt; p.Id == postId, ct);
+        if (!exists) throw new NotFoundException("Post", postId);
+
+        var comments = await db.Comments
+            .Where(c =&gt; c.PostId == postId &amp;&amp; c.ParentCommentId == null)
+            .Include(c =&gt; c.Replies)
+            .OrderByDescending(c =&gt; c.CreatedAt)
+            .ToListAsync(ct);
+
+        return Ok(comments);
+    }
+
+    [HttpPost]
+    [EnableRateLimiting("commentCreate")]   // token-bucket from Program.cs
+    public async Task&lt;IActionResult&gt; Create(int postId, CreateCommentRequest req, CancellationToken ct)
+    {
+        var post = await db.Posts.FindAsync([postId], ct)
+            ?? throw new NotFoundException("Post", postId);
+
+        if (post.Status != PostStatus.Published)
+            throw new UnprocessableException("Cannot comment on a draft post.");
+
+        if (req.ParentCommentId.HasValue)
+        {
+            bool parentExists = await db.Comments
+                .AnyAsync(c =&gt; c.Id == req.ParentCommentId &amp;&amp; c.PostId == postId, ct);
+            if (!parentExists)
+                throw new NotFoundException("Comment", req.ParentCommentId);
+        }
+
+        var comment = new Comment
+        {
+            PostId          = postId,
+            Body            = req.Body,
+            AuthorName      = req.AuthorName,
+            ParentCommentId = req.ParentCommentId
+        };
+        db.Comments.Add(comment);
+        await db.SaveChangesAsync(ct);
+        return CreatedAtAction(nameof(List), new { postId }, new { comment.Id });
+    }
+
+    public record CreateCommentRequest(string Body, string AuthorName, int? ParentCommentId);
+}</code></pre></div>
+
+<h3>Program.cs — full wiring</h3>
+<div class="code"><div class="fname">Blog.Api/Program.cs</div><pre><code class="language-csharp">// Blog.Api/Program.cs
+using System.Threading.RateLimiting;
+using Blog.Api.Exceptions;
+using Blog.Api.HealthChecks;
+using Blog.Core.Interfaces;
+using Blog.Infrastructure.Data;
+using Blog.Infrastructure.Storage;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Warning()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((ctx, _, cfg) =&gt;
+        cfg.ReadFrom.Configuration(ctx.Configuration)
+           .Enrich.FromLogContext()
+           .Enrich.WithMachineName()
+           .Enrich.WithEnvironmentName());
+
+    builder.Services.AddDbContext&lt;BlogDbContext&gt;(opts =&gt;
+        opts.UseSqlServer(builder.Configuration.GetConnectionString("Blog")));
+
+    builder.Services.AddSingleton&lt;IFileStorage, LocalFileStorage&gt;();
+
+    builder.Services.AddProblemDetails();
+    builder.Services.AddExceptionHandler&lt;DomainExceptionHandler&gt;();
+    builder.Services.AddExceptionHandler&lt;GlobalExceptionHandler&gt;();
+
+    builder.Services.AddHealthChecks()
+        .AddCheck&lt;DatabaseHealthCheck&gt;("database", tags: ["ready"])
+        .AddCheck&lt;MemoryHealthCheck&gt;("memory",    tags: ["live", "ready"]);
+
+    builder.Services.AddCors(opts =&gt;
+        opts.AddPolicy("Frontend", p =&gt;
+            p.WithOrigins("http://localhost:3000", "https://blog.example.in")
+             .AllowAnyHeader()
+             .AllowAnyMethod()
+             .AllowCredentials()));
+
+    builder.Services.AddRateLimiter(opts =&gt;
+    {
+        opts.AddTokenBucketLimiter("commentCreate", o =&gt;
+        {
+            o.TokenLimit          = 5;
+            o.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
+            o.TokensPerPeriod     = 2;
+            o.AutoReplenishment   = true;
+        });
+        opts.OnRejected = async (ctx, ct) =&gt;
+        {
+            ctx.HttpContext.Response.StatusCode = 429;
+            if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var wait))
+                ctx.HttpContext.Response.Headers.RetryAfter = ((int)wait.TotalSeconds).ToString();
+            await ctx.HttpContext.Response.WriteAsync("Too many requests.", ct);
+        };
+    });
+
+    builder.Services.AddOutputCache(opts =&gt;
+    {
+        opts.AddPolicy("postList",   b =&gt; b.Expire(TimeSpan.FromMinutes(2))
+                                           .SetVaryByQuery("page", "pageSize", "tag")
+                                           .Tag("posts"));
+        opts.AddPolicy("singlePost", b =&gt; b.Expire(TimeSpan.FromMinutes(5))
+                                           .SetVaryByRouteValue("slug")
+                                           .Tag("posts"));
+        opts.AddPolicy("noCache",    b =&gt; b.NoStore());
+    });
+
+    builder.Services.AddControllers();
+
+    var app = builder.Build();
+
+    app.UseExceptionHandler();
+    app.UseSerilogRequestLogging();
+    app.UseCors("Frontend");
+    app.UseRateLimiter();
+    app.UseOutputCache();
+    app.MapControllers();
+    app.MapHealthChecks("/health/live",  new() { Predicate = c =&gt; c.Tags.Contains("live")  });
+    app.MapHealthChecks("/health/ready", new() { Predicate = c =&gt; c.Tags.Contains("ready") });
+
+    app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "BlogApi startup failed");
+}
+finally
+{
+    Log.CloseAndFlush();
+}</code></pre></div>
+
+<h3>Migration and run commands</h3>
+<div class="code nofile"><pre><code class="language-bash"># Start SQL Server in Docker
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Blog@12345" \
+  -p 1433:1433 --name blog-sql \
+  mcr.microsoft.com/mssql/server:2022-latest
+
+# In Blog.Infrastructure:
+dotnet ef migrations add InitialCreate --startup-project ../Blog.Api
+dotnet ef database update  --startup-project ../Blog.Api
+
+# Run the API
+cd Blog.Api &amp;&amp; dotnet run</code></pre></div>
+
+<h3>curl smoke tests</h3>
+<div class="code nofile"><pre><code class="language-bash"># Create a post
+curl -s -X POST http://localhost:5000/api/posts \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Mastering LINQ in India","content":"LINQ makes data access elegant...","authorName":"Priya Sharma"}'
+# → {"id":1,"slug":"mastering-linq-in-india"}
+
+# Publish it
+curl -s -X POST http://localhost:5000/api/posts/1/publish
+
+# List posts (cached after first hit)
+curl -s http://localhost:5000/api/posts
+curl -v http://localhost:5000/api/posts   # second hit shows Age header
+
+# Add a comment (rate-limited)
+curl -s -X POST http://localhost:5000/api/posts/1/comments \
+  -H "Content-Type: application/json" \
+  -d '{"body":"Great article!","authorName":"Ravi Kumar","parentCommentId":null}'
+
+# Trigger 429 by running the comment POST 6+ times in quick succession
+for i in {1..7}; do
+  curl -s -o /dev/null -w "%{http_code}\n" \
+    -X POST http://localhost:5000/api/posts/1/comments \
+    -H "Content-Type: application/json" \
+    -d '{"body":"Spam","authorName":"Bot","parentCommentId":null}'
+done
+# Expected: 201 201 201 201 201 429 429
+
+# Health checks
+curl http://localhost:5000/health/live
+curl http://localhost:5000/health/ready
+
+# 404 via IExceptionHandler
+curl -s http://localhost:5000/api/posts/nonexistent-slug
+# → {"title":"NotFound","status":404,"detail":"Post 'nonexistent-slug' was not found.","traceId":"..."}</code></pre></div>
+
+<h3>Stretch goals</h3>
+<div class="code nofile"><pre><code class="language-csharp">// 1. Add PUT /api/posts/{id} that updates title + content and evicts cache
+// 2. Add DELETE /api/posts/{id} (soft-delete: set Status = Archived)
+// 3. Add tag management: POST /api/tags, GET /api/posts?tag=linq
+// 4. Rate-limit the GET /api/posts list to 60 req/min globally using FixedWindow
+// 5. Add ApproximateCount to MemoryHealthCheck using GC.GetTotalMemory(false)</code></pre></div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>Why is the two-stage Serilog bootstrap necessary?</summary><div>Without it, exceptions during host.Build() (e.g. a misconfigured connection string) would swallow silently. The bootstrap logger writes to Console before the host is ready, so startup failures are always visible.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Why is UseExceptionHandler() placed first in the pipeline?</summary><div>Middleware runs in registration order. Placing UseExceptionHandler first ensures it wraps all subsequent middleware, catching exceptions from routing, authentication, controllers and output caching.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you prevent OutputCache from serving stale post data after a write?</summary><div>Assign a tag to all post-list and single-post policies (e.g. 'posts'). After any create/update/delete call cacheStore.EvictByTagAsync('posts', ct). This removes all entries with that tag from the in-process store atomically.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does the token-bucket rate limiter differ from a fixed-window limiter for comment spam prevention?</summary><div>Token bucket replenishes at a smooth rate and allows short bursts up to the bucket size; a fixed window resets entirely and can be gamed by sending all requests at the boundary. For comment creation, token bucket distributes limits more fairly over time and is harder to abuse.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Finish BlogApi, Try-to-Break, README and Revision</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Complete the cover-image upload feature, run a systematic try-to-break table, write the project README, commit, and revise the week's cross-cutting concepts.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Cross-cutting concern</dt><dd>A behaviour that spans all layers and features — logging, error handling, security, caching, rate limiting — applied once, consistently, without polluting business logic.</dd></div><div class="def"><dt>Middleware pipeline order</dt><dd>The sequence in which ASP.NET Core middleware executes; order matters because each middleware wraps the next.</dd></div><div class="def"><dt>Defense in depth</dt><dd>Applying multiple independent checks (content-type + file size + magic bytes) so breaking one check alone is not sufficient.</dd></div><div class="def"><dt>Idempotent caching</dt><dd>Only caching GET/HEAD endpoints; write operations (POST/PUT/DELETE) must be NoStore so they never serve stale mutating responses.</dd></div><div class="def"><dt>Graceful degradation</dt><dd>Using HealthStatus.Degraded for non-critical checks so the pod isn't restarted for minor issues.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Health checks, CORS, rate limiting and output cache are configured in services, applied in middleware, and used in endpoints — always check all three layers.</li><li>Serilog's two-stage bootstrap + Log.CloseAndFlush() protects both startup and shutdown.</li><li>Magic-byte validation must rewind the stream to position 0 after reading — or use the approach of opening a fresh stream for validation.</li><li>Tag eviction from OutputCache is synchronous within the request; don't fire it in a background thread without a CancellationToken safety net.</li><li>The correct middleware order: ExceptionHandler → Serilog → CORS → RateLimit → OutputCache → Routing → Auth → Controllers.</li></ul></div>
+
+<h3>1. Cover-image upload — complete feature</h3>
+<div class="code"><div class="fname">Blog.Api/Controllers/PostsController.cs (cover)</div><pre><code class="language-csharp">// Blog.Api/Controllers/PostsController.cs — add upload action
+[HttpPost("{id:int}/cover")]
+[RequestSizeLimit(2 * 1024 * 1024)]
+[RequestFormLimits(MultipartBodyLengthLimit = 2 * 1024 * 1024)]
+public async Task&lt;IActionResult&gt; UploadCover(
+    int id,
+    IFormFile file,
+    [FromServices] IFileStorage storage,
+    CancellationToken ct)
+{
+    var post = await db.Posts.FindAsync([id], ct)
+        ?? throw new NotFoundException("Post", id);
+
+    // Validate content type
+    string[] allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.Contains(file.ContentType))
+        throw new UnprocessableException("Only JPEG, PNG and WebP images are accepted.");
+
+    if (file.Length &gt; 2 * 1024 * 1024)
+        throw new UnprocessableException("Cover image must be 2 MB or smaller.");
+
+    // Magic-byte check
+    byte[] buf = new byte[8];
+    await using (var s = file.OpenReadStream()) await s.ReadAsync(buf.AsMemory(0, 8), ct);
+
+    bool valid = file.ContentType switch
+    {
+        "image/jpeg" =&gt; buf[0] == 0xFF &amp;&amp; buf[1] == 0xD8 &amp;&amp; buf[2] == 0xFF,
+        "image/png"  =&gt; buf[0] == 0x89 &amp;&amp; buf[1] == 0x50 &amp;&amp; buf[2] == 0x4E &amp;&amp; buf[3] == 0x47,
+        "image/webp" =&gt; buf[0] == 0x52 &amp;&amp; buf[1] == 0x49 &amp;&amp; buf[2] == 0x46 &amp;&amp; buf[3] == 0x46,
+        _            =&gt; false
+    };
+    if (!valid) throw new UnprocessableException("File content does not match declared type.");
+
+    // Delete old cover if present
+    if (post.CoverImage is not null)
+        await storage.DeleteAsync(post.CoverImage, ct);
+
+    string stored = await storage.SaveAsync(file, ct);
+    post.CoverImage = stored;
+    await db.SaveChangesAsync(ct);
+    await cacheStore.EvictByTagAsync("posts", ct);
+
+    return Ok(new { url = $"/api/uploads/{stored}" });
+}</code></pre></div>
+
+<h3>2. MemoryHealthCheck</h3>
+<div class="code"><div class="fname">Blog.Api/HealthChecks/MemoryHealthCheck.cs</div><pre><code class="language-csharp">// Blog.Api/HealthChecks/MemoryHealthCheck.cs
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+namespace Blog.Api.HealthChecks;
+
+public sealed class MemoryHealthCheck : IHealthCheck
+{
+    private const long DegradedThreshold = 200 * 1024 * 1024;  // 200 MB
+
+    public Task&lt;HealthCheckResult&gt; CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken ct = default)
+    {
+        long usedBytes = GC.GetTotalMemory(forceFullCollection: false);
+
+        return Task.FromResult(usedBytes &lt; DegradedThreshold
+            ? HealthCheckResult.Healthy($"Memory: {usedBytes / 1024 / 1024} MB")
+            : HealthCheckResult.Degraded($"Memory high: {usedBytes / 1024 / 1024} MB (&gt; 200 MB)"));
+    }
+}</code></pre></div>
+
+<h3>3. Try-to-break table</h3>
+<div class="tbl"><table><tr><th>Scenario</th><th>Expected behaviour</th></tr><tr><td>POST /api/posts with duplicate slug</td><td>409 Conflict with ProblemDetails</td></tr><tr><td>GET /api/posts/nonexistent-slug</td><td>404 Not Found with ProblemDetails + traceId</td></tr><tr><td>POST /api/posts/1/comments 7 times in 60 s</td><td>First 5 succeed (201), next 2 return 429 + Retry-After</td></tr><tr><td>GET /api/posts (cached), then POST new post, then GET again</td><td>First GET cached; after POST cache evicted; second GET is a fresh DB query</td></tr><tr><td>POST /api/posts/1/cover with a text/plain file</td><td>400 or 422 with 'Only JPEG/PNG/WebP' message</td></tr><tr><td>POST /api/posts/1/cover with a JPEG renamed to .exe but correct magic bytes</td><td>422 from content-type whitelist check (ContentType will be application/octet-stream)</td></tr><tr><td>POST /api/posts/1/cover with a file renamed image.jpg but containing a PHP script (wrong magic bytes)</td><td>422 Unprocessable: magic-byte check fails</td></tr><tr><td>Shut down SQL Server; GET /health/ready</td><td>503 Service Unavailable, entries show database: Unhealthy</td></tr><tr><td>Shut down SQL Server; GET /health/live</td><td>200 Healthy (liveness only checks memory)</td></tr><tr><td>OPTIONS /api/posts from http://evil.example.com</td><td>No Access-Control-Allow-Origin header in response (origin not in policy)</td></tr><tr><td>Throw new Exception("unexpected") in a service</td><td>500 with generic message in production; stack trace only in Development</td></tr><tr><td>POST /api/posts/1/comments on a draft post</td><td>422 Unprocessable via UnprocessableException → DomainExceptionHandler</td></tr></table></div>
+
+<h3>4. Week-19 checklist</h3>
+<div class="code nofile"><pre><code class="language-text">[ ] IExceptionHandler — domain hierarchy, chained handlers, ProblemDetails + traceId
+[ ] Serilog — two-stage bootstrap, appsettings sinks, UseSerilogRequestLogging, Log.CloseAndFlush
+[ ] Health checks — IHealthCheck, liveness vs readiness, DbContext check, /health/live + /health/ready
+[ ] CORS — named policy, AllowAnyOrigin pitfall, preflight (OPTIONS)
+[ ] Rate limiting — FixedWindow / SlidingWindow / TokenBucket, partitioned, 429 + Retry-After
+[ ] OutputCache — policies, vary-by, tag eviction, noCache on writes
+[ ] File upload — IFormFile, content-type whitelist, magic bytes, safe names, streaming, range download
+[ ] BlogApi built — Post/Comment/Tag, draft/publish, nested comments, all concerns applied
+[ ] curl smoke tests pass for posts, comments, health, 429, ProblemDetails</code></pre></div>
+
+<h3>5. README template</h3>
+<div class="code nofile"><pre><code class="language-text"># BlogApi
+
+A production-ready ASP.NET Core 8 Blog REST API demonstrating cross-cutting concerns.
+
+## Features
+- Post CRUD with draft/publish workflow and URL slugs
+- Nested comments (threaded replies) with token-bucket rate limiting
+- Many-to-many Tags
+- Cover-image upload with magic-byte validation (JPEG/PNG/WebP, max 2 MB)
+- Global exception handling (IExceptionHandler, ProblemDetails, traceId)
+- Structured logging (Serilog → Console + File + Seq)
+- Health checks: /health/live (memory) and /health/ready (db + memory)
+- CORS for http://localhost:3000 and https://blog.example.in
+- Output cache on post list and single post, tag eviction on write
+
+## Prerequisites
+- .NET 8 SDK
+- Docker (SQL Server 2022, Seq)
+
+## Quickstart
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=Blog@12345" -p 1433:1433 \\
+  mcr.microsoft.com/mssql/server:2022-latest
+
+docker run --rm -p 5341:5341 -p 5342:80 datalust/seq:latest
+
+cd Blog.Infrastructure
+dotnet ef database update --startup-project ../Blog.Api
+
+cd ../Blog.Api
+dotnet run
+```
+
+## Cross-cutting middleware order
+ExceptionHandler → Serilog → CORS → RateLimiter → OutputCache → Routing → Controllers</code></pre></div>
+
+<h3>6. Git</h3>
+<div class="code nofile"><pre><code class="language-bash">cd BlogApi
+git init &amp;&amp; git add .
+git commit -m "Week 19: BlogApi with cross-cutting concerns"
+git remote add origin https://github.com/YOUR_HANDLE/dotnet-roadmap.git
+git push -u origin main</code></pre></div>
+
+<h3>7. Week-19 quiz — predict the output or does it compile?</h3>
+
+<details><summary>Q1. How many IExceptionHandler implementations are invoked for a NotFoundException?</summary>
+<div class="code nofile"><pre><code class="language-text">// DomainExceptionHandler is registered first; NotFoundException IS a DomainException.
+// DomainExceptionHandler.TryHandleAsync returns true.
+// GlobalExceptionHandler is never called.</code></pre></div>
+<b>One — only DomainExceptionHandler.</b> It matches the exception type and returns true, short-circuiting the chain.</details>
+
+<details><summary>Q2. What does this Serilog call log?</summary>
+<div class="code nofile"><pre><code class="language-csharp">string slug = "mastering-linq-in-india";
+int views = 1420;
+logger.LogInformation($"Post {slug} has {views} views");</code></pre></div><b>A plain string: "Post mastering-linq-in-india has 1420 views".</b> The $ makes this string interpolation; Serilog receives a pre-built string with no structured properties. Drop the $ to capture Slug and Views as filterable fields.</details>
+
+<details><summary>Q3. Does this compile and what does it do at startup?</summary>
+<div class="code nofile"><pre><code class="language-csharp">builder.Services.AddCors(opts =&gt;
+    opts.AddPolicy("Open", p =&gt;
+        p.AllowAnyOrigin().AllowCredentials()));</code></pre></div><b>It compiles but throws InvalidOperationException at app.Build().</b> AllowAnyOrigin combined with AllowCredentials violates the CORS spec; ASP.NET Core 5+ rejects this combination at startup.</details>
+
+<details><summary>Q4. A GET /api/posts request comes in. What determines whether OutputCache serves a cached response or hits the DB?</summary>
+<div class="code nofile"><pre><code class="language-text">// The policy is: Expire(2 min), SetVaryByQuery("page","pageSize","tag"), Tag("posts")
+// Request 1: GET /api/posts?page=1&amp;pageSize=10 → DB hit, response cached under key (page=1,pageSize=10)
+// Request 2: GET /api/posts?page=1&amp;pageSize=10 within 2 min → cache hit
+// Request 3: GET /api/posts?page=2&amp;pageSize=10 → different vary-by key → DB hit
+// After POST /api/posts and EvictByTagAsync("posts") → all entries removed → next request is DB hit</code></pre></div>
+<b>The vary-by query parameters and the tag eviction state.</b> Each combination of page/pageSize/tag is a separate cache entry; eviction by tag removes them all.</details>
+
+<details><summary>Q5. A user sends 6 comment POST requests in 10 seconds. The token-bucket policy is: TokenLimit=5, ReplenishmentPeriod=1 min, TokensPerPeriod=2. What happens?</summary>
+<div class="code nofile"><pre><code class="language-text">// Bucket starts at 5. Each request costs 1 token.
+// Requests 1–5: tokens 5→4→3→2→1→0, all succeed (HTTP 201)
+// Request 6:    bucket is at 0, no token available → HTTP 429
+// After 30 s:   1 token replenished (2 per 60 s = 1 per 30 s) → next request succeeds</code></pre></div>
+<b>Requests 1–5 get 201; request 6 gets 429 Too Many Requests with Retry-After ~30 s.</b></details>
+
+<div class="note tip"><b>Next week:</b> Week 20 — Authentication and Authorization: JWT bearer tokens, ASP.NET Core Identity, role-based and policy-based authorization, refresh tokens, and securing the BlogApi with user accounts and author-only endpoints.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the correct middleware order for a production ASP.NET Core 8 API?</summary><div>UseExceptionHandler → UseSerilogRequestLogging → UseCors → UseRateLimiter → UseOutputCache → UseRouting → UseAuthentication → UseAuthorization → MapControllers. ExceptionHandler must be first so it catches all subsequent errors; CORS must precede auth so OPTIONS preflights aren't rejected.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What are magic bytes and why are they checked in addition to ContentType?</summary><div>Magic bytes are file-format signatures at the start of a file, independent of its declared MIME type. An attacker can upload a PHP script as image.jpg with ContentType: image/jpeg; magic-byte verification catches this by reading the actual file header.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does IExceptionHandler compose with the existing UseExceptionHandler middleware?</summary><div>UseExceptionHandler() (no path) in .NET 8 wraps the pipeline and, on an unhandled exception, iterates the registered IExceptionHandler implementations in DI order, calling TryHandleAsync on each until one returns true. If none handles it, a default 500 response is generated.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Why should OutputCache policies on write endpoints use NoStore?</summary><div>An endpoint that modifies data must never serve a cached response — it would return stale data to the client and might skip executing the mutation. NoStore tells the middleware to bypass the cache entirely for that endpoint, both for reading and writing.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week19-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>

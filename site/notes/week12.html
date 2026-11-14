@@ -1,0 +1,1374 @@
+<title>.NET Notes · Week 12</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Layout: sticky left rail of days (stacks to a top strip on phones) + one reading column of ~70ch per day */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --fg:#1a2230; --muted:#5b6676; --line:#dfe3ea;
+  --accent:#2c6e8f; --accent-soft:#e3eff5; --code-bg:#eef1f5; --code-fg:#1f2a37;
+  --good:#2f7a4a; --good-soft:#e4f3e9; --warn:#9a5b12; --warn-soft:#fbf0de;
+  --k:#7a3ea8; --s:#a3501a; --c:#6b7a8c; --n:#1d6f8a; --t:#2c6e8f; --f:#3c5aa6;
+  --display:"Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11151b; --surface:#171c24; --fg:#dde3eb; --muted:#93a0b1; --line:#2a313c;
+  --accent:#6fb4d4; --accent-soft:#1c2c37; --code-bg:#1b212a; --code-fg:#dbe2ea;
+  --good:#79c796; --good-soft:#1a2c22; --warn:#e3a95c; --warn-soft:#2e2416;
+  --k:#c99bf0; --s:#e8a36f; --c:#7f8c9c; --n:#7cc8de; --t:#6fb4d4; --f:#97aef0; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--body);margin:0}
+.wrap{display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:32px 80px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px}
+.brand{font:700 13px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.brand b{color:var(--accent)}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:6px;color:var(--fg);text-decoration:none;font-size:14px}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail a .d{font:500 12px var(--mono);color:var(--muted);min-width:30px}
+.rail a.done .t::after{content:" ✓";color:var(--good)}
+.progress{margin-top:16px;font-size:13px;color:var(--muted)}
+.bar{height:4px;background:var(--line);border-radius:4px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+
+main{min-width:0;max-width:760px}
+header.top h1{font:700 clamp(28px,4vw,40px)/1.15 var(--display);margin:0 0 8px;text-wrap:balance}
+header.top p{color:var(--muted);margin:0 0 8px;max-width:65ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 8px}
+.chip{font:500 12px var(--mono);padding:4px 8px;border:1px solid var(--line);border-radius:4px;color:var(--muted);background:var(--surface)}
+
+section.day{padding-top:48px;scroll-margin-top:16px}
+section.day[hidden]{display:none!important}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:20px}
+.dayhead .num{font:500 13px var(--mono);color:var(--accent);letter-spacing:.04em}
+.dayhead h2{font:700 26px/1.2 var(--display);margin:0;flex:1 1 300px;text-wrap:balance}
+.dayhead label{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;cursor:pointer}
+h3{font:600 19px/1.3 var(--display);margin:32px 0 10px}
+h4{font:600 15px var(--body);margin:20px 0 6px}
+p,li{max-width:68ch}
+ul,ol{padding-left:22px}
+li{margin:4px 0}
+code{font:500 .9em var(--mono);background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 18px}
+.goal strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:4px}
+.code{position:relative;margin:14px 0}
+.code .fname{font:500 12px var(--mono);color:var(--muted);padding:6px 14px;background:var(--code-bg);border-radius:8px 8px 0 0;border-bottom:1px solid var(--line)}
+.code pre{margin:0;background:var(--code-bg);color:var(--code-fg);border-radius:0 0 8px 8px;padding:14px;overflow-x:auto;font:13.5px/1.6 var(--mono)}
+.code.nofile pre{border-radius:8px}
+.code pre code{background:none;padding:0;font:inherit}
+.copy{position:absolute;top:4px;right:6px;font:500 11px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:4px;padding:3px 8px;cursor:pointer}
+.copy:focus-visible,.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{border-radius:8px;padding:12px 16px;margin:14px 0;font-size:15px}
+.note.tip{background:var(--good-soft)} .note.tip b{color:var(--good)}
+.note.warn{background:var(--warn-soft)} .note.warn b{color:var(--warn)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code{white-space:nowrap}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+summary{cursor:pointer;font-weight:500}
+details[open] summary{margin-bottom:8px}
+.ex{counter-reset:ex}
+.ex li{list-style:none;position:relative;padding-left:4px}
+.ex li::before{counter-increment:ex;content:counter(ex);position:absolute;left:-22px;font:500 12px var(--mono);color:var(--accent)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:40px;flex-wrap:wrap}
+.pager button{font:500 14px var(--body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.hljs-keyword,.hljs-built_in,.hljs-literal{color:var(--k)}
+.hljs-string,.hljs-template-variable{color:var(--s)}
+.hljs-comment{color:var(--c);font-style:italic}
+.hljs-number{color:var(--n)}
+.hljs-type,.hljs-class .hljs-title,.hljs-title.class_{color:var(--t)}
+.hljs-title.function_,.hljs-function .hljs-title{color:var(--f)}
+.hljs-meta{color:var(--c)}
+
+.defs{display:grid;grid-template-columns:1fr;gap:0;margin:8px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.def{display:grid;grid-template-columns:minmax(120px,200px) minmax(0,1fr);gap:16px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.def:last-child{border-bottom:0}
+.def dt{font-weight:600;color:var(--accent);font-size:14.5px}
+.def dd{margin:0;font-size:15px}
+@media (max-width:560px){.def{grid-template-columns:1fr;gap:2px}}
+.notes{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:8px 0 8px}
+.notes strong{font:600 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.notes ul{margin:6px 0 0}
+.muted{color:var(--muted);font-size:14px;margin:-4px 0 10px}
+.iq summary{display:flex;gap:10px;align-items:baseline}
+.iq > div{padding-top:4px}
+.lvl{font:600 10.5px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex:0 0 auto}
+.lvl.basic{background:var(--good-soft);color:var(--good)}
+.lvl.intermediate{background:var(--warn-soft);color:var(--warn)}
+.home-hero{padding-top:8px}
+.home-hero h1{font:700 clamp(30px,4.4vw,44px)/1.1 var(--display);margin:0 0 10px;text-wrap:balance}
+.home-hero p{color:var(--muted);max-width:62ch;margin:0}
+.daygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:28px}
+.daycard{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg);text-decoration:none;min-width:0;transition:border-color .15s, transform .15s}
+.daycard:hover{border-color:var(--accent);transform:translateY(-1px)}
+.daycard:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.daycard .k{font:500 12px var(--mono);color:var(--accent);display:flex;justify-content:space-between}
+.daycard .k .ok{color:var(--good)}
+.daycard h3{font:600 17px/1.3 var(--display);margin:0}
+.daycard p{font-size:13.5px;color:var(--muted);margin:0}
+.daycard .hrs{font:500 12px var(--mono);color:var(--muted);margin-top:auto;padding-top:6px}
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;font-size:14px;color:var(--muted)}
+.legend b{color:var(--fg)}
+.rail a.homelink{margin-bottom:6px}
+
+pre.mermaid{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;font:12px var(--mono)}
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:16px}
+  nav.rail{position:static;flex-direction:row;overflow-x:auto;gap:4px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  .brand,.progress{display:none}
+  .rail a{flex:0 0 auto}
+  .rail a .t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Days">
+  <div class="brand"><b>.NET</b> Full-Stack · Week 12</div>
+  <a href="#home" data-day="0" class="homelink"><span class="d">◆</span><span class="t">Home</span></a>
+  <a href="#day1" data-day="1"><span class="d">MON</span><span class="t">GROUP BY</span></a>
+  <a href="#day2" data-day="2"><span class="d">TUE</span><span class="t">Subqueries</span></a>
+  <a href="#day3" data-day="3"><span class="d">WED</span><span class="t">CTEs</span></a>
+  <a href="#day4" data-day="4"><span class="d">THU</span><span class="t">Window functions</span></a>
+  <a href="#day5" data-day="5"><span class="d">FRI</span><span class="t">Views &amp; TVFs</span></a>
+  <a href="#day6" data-day="6"><span class="d">SAT</span><span class="t">20 HR queries</span></a>
+  <a href="#day7" data-day="7"><span class="d">SUN</span><span class="t">Revision</span></a>
+  <a href="../index.html" id="allweeks" hidden><span class="d">↩</span><span class="t">All weeks</span></a>
+  <div class="progress"><span id="pcount">0 of 7 days done</span><div class="bar"><i id="pbar"></i></div></div>
+</nav>
+
+<main>
+<section class="day" id="home">
+<div class="home-hero">
+  <div class="meta" style="margin-top:0"><span class="chip">Phase 2 · Week 12 of 74</span><span class="chip">.NET 8 LTS / 9</span><span class="chip">SQL Server 2022</span><span class="chip">~18 hrs</span><span class="chip">20 HR queries</span></div>
+  <h1>Week 12 — Advanced T-SQL</h1>
+  <p>Every real query you write in production — finding outliers, ranking employees, computing running totals, traversing org charts — relies on the techniques in this week: GROUP BY with HAVING, subqueries at every level, CTEs including recursive ones, window functions and table-valued functions. By Sunday you will have written 20 non-trivial HR queries from scratch.</p>
+</div>
+<div class="daygrid"><a class="daycard" href="#day1" data-card="1"><span class="k"><span>DAY 1 · MON</span><span class="ok" data-ok="1"></span></span><h3>GROUP BY, HAVING and aggregates</h3><p>Aggregates, COUNT(DISTINCT), WHERE vs HAVING, multi-column groups, ROLLUP awareness.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day2" data-card="2"><span class="k"><span>DAY 2 · TUE</span><span class="ok" data-ok="2"></span></span><h3>Subqueries</h3><p>Scalar, column, table, correlated, EXISTS vs IN, NOT IN NULL trap, derived tables.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day3" data-card="3"><span class="k"><span>DAY 3 · WED</span><span class="ok" data-ok="3"></span></span><h3>Common Table Expressions</h3><p>Chained CTEs, recursive org charts, MAXRECURSION, CTE vs temp table.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day4" data-card="4"><span class="k"><span>DAY 4 · THU</span><span class="ok" data-ok="4"></span></span><h3>Window functions</h3><p>ROW_NUMBER/RANK/DENSE_RANK/NTILE, LAG/LEAD, running totals, moving averages, top-N per group.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day5" data-card="5"><span class="k"><span>DAY 5 · FRI</span><span class="ok" data-ok="5"></span></span><h3>Views, TVFs and APPLY</h3><p>SCHEMABINDING, ITVF vs MSTVF, scalar UDF inlining, CROSS/OUTER APPLY.</p><span class="hrs">2 hrs</span></a><a class="daycard" href="#day6" data-card="6"><span class="k"><span>DAY 6 · SAT</span><span class="ok" data-ok="6"></span></span><h3>20 HR Practice Queries</h3><p>Full HR schema + 20 progressive queries from aggregates to window functions.</p><span class="hrs">4 hrs</span></a><a class="daycard" href="#day7" data-card="7"><span class="k"><span>DAY 7 · SUN</span><span class="ok" data-ok="7"></span></span><h3>Revise and redo the hardest queries</h3><p>Redo 5 hardest from memory, hints then solutions, 5-question quiz.</p><span class="hrs">4 hrs</span></a></div>
+<div class="legend"><span><b>Every day has:</b> Key definitions · Quick notes · Concepts with code · Common mistakes · Exercise · Self-check · Interview questions</span></div>
+</section>
+<section class="day" id="day1"><div class="dayhead"><span class="num">DAY 1 · MON</span><h2>GROUP BY, HAVING and aggregates</h2><label><input type="checkbox" id="done1" data-done="1"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Master multi-column grouping, choose the right aggregate, understand WHERE vs HAVING, and get a first look at GROUPING SETS and ROLLUP.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Aggregate function</dt><dd>Collapses many rows to one value per group: SUM, AVG, MIN, MAX, COUNT.</dd></div><div class="def"><dt>GROUP BY</dt><dd>Splits the result into groups and runs one aggregate per group.</dd></div><div class="def"><dt>COUNT(*)</dt><dd>Counts all rows in the group, including NULLs.</dd></div><div class="def"><dt>COUNT(col)</dt><dd>Counts non-NULL values in that column.</dd></div><div class="def"><dt>COUNT(DISTINCT col)</dt><dd>Counts distinct non-NULL values — deduplicated count.</dd></div><div class="def"><dt>SUM / AVG / MIN / MAX</dt><dd>Ignore NULLs automatically. SUM of an all-NULL column returns NULL.</dd></div><div class="def"><dt>HAVING</dt><dd>Filters groups <i>after</i> aggregation, the way WHERE filters rows before. Can reference aggregate results.</dd></div><div class="def"><dt>Multi-column GROUP BY</dt><dd>Groups on the unique combination of several columns.</dd></div><div class="def"><dt>GROUPING SETS</dt><dd>(SQL:1999) Lets one SELECT compute several grouping combinations at once; not covered in depth until DW week.</dd></div><div class="def"><dt>ROLLUP</dt><dd>Shorthand for a hierarchy of GROUPING SETS from most detailed to grand total.</dd></div><div class="def"><dt>Logical query order</dt><dd>FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY; SELECT aliases are not visible in HAVING.</dd></div><div class="def"><dt>NULL in grouping</dt><dd>All NULLs form their own group — they don't match, they collect.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>WHERE filters rows, HAVING filters groups — the difference is important for performance because WHERE reduces the data before grouping.</li><li>Column aliases defined in SELECT cannot be used in HAVING or GROUP BY in SQL Server; repeat the expression or use a derived table.</li><li>Every non-aggregated column in SELECT must appear in GROUP BY.</li><li>COUNT(DISTINCT col) scans a full sort pass; on large tables it can be slow — an index helps.</li><li>AVG of integers truncates to an integer in SQL Server; CAST one side to DECIMAL(18,4) first.</li><li>ROLLUP is awareness-level here; detail is in a later data-warehouse week.</li></ul></div>
+
+<h3>1. Basic aggregates</h3>
+<div class="code"><div class="fname">01_basic_aggregates.sql</div><pre><code class="language-sql">USE CompanyDb;
+GO
+-- How many employees per department?
+SELECT   d.department_name,
+         COUNT(*)                        AS total_employees,
+         COUNT(e.manager_id)             AS has_a_manager,     -- NULLs not counted
+         COUNT(DISTINCT e.job_id)        AS distinct_jobs,
+         CAST(AVG(CAST(e.salary AS DECIMAL(14,4))) AS DECIMAL(10,2))
+                                         AS avg_salary,
+         MIN(e.salary)                   AS min_salary,
+         MAX(e.salary)                   AS max_salary,
+         SUM(e.salary)                   AS total_payroll
+FROM     hr.employees    AS e
+JOIN     hr.departments  AS d ON d.department_id = e.department_id
+GROUP BY d.department_name
+ORDER BY total_payroll DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  total_employees  has_a_manager  distinct_jobs  avg_salary  min_salary  max_salary  total_payroll
+---------------  ---------------  -------------  -------------  ----------  ----------  ----------  -------------
+Engineering      12               11             4              95000.00    62000       180000      1140000
+Sales             8                8             2              72500.00    55000       120000       580000
+Finance           5                5             3              88000.00    70000       115000       440000
+HR                4                3             2              68000.00    55000        85000       272000
+(example output)</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> AVG(e.salary) with salary as INT gives an integer average due to integer division. Always CAST to DECIMAL before AVG when you want paise precision.</div>
+
+<h3>2. WHERE vs HAVING</h3>
+<div class="code"><div class="fname">02_where_vs_having.sql</div><pre><code class="language-sql">-- ❌ Syntactically wrong: WHERE can't see aggregates
+-- SELECT department_id, COUNT(*) AS cnt
+-- FROM hr.employees
+-- WHERE COUNT(*) &gt; 3
+-- GROUP BY department_id;
+
+-- ✓ HAVING filters groups, WHERE filters rows first (much cheaper)
+SELECT   e.department_id,
+         COUNT(*)   AS cnt
+FROM     hr.employees AS e
+WHERE    e.hire_date &gt;= '2022-01-01'       -- filters rows BEFORE grouping
+GROUP BY e.department_id
+HAVING   COUNT(*) &gt; 2;                     -- filters groups AFTER grouping</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>WHERE</th><th>HAVING</th></tr><tr><td>When it runs</td><td>Before GROUP BY (on individual rows)</td><td>After GROUP BY (on groups)</td></tr><tr><td>Can reference aggregates?</td><td>No</td><td>Yes</td></tr><tr><td>Performance</td><td>Better — fewer rows to aggregate</td><td>Worse if used to filter what WHERE could</td></tr><tr><td>NULL handling</td><td>Filters out NULLs normally</td><td>Same</td></tr></table></div>
+<div class="note tip"><b>Tip.</b> If a condition doesn't involve an aggregate, put it in WHERE. Only move a condition to HAVING when it references an aggregate (SUM, COUNT, AVG, etc.).</div>
+
+<h3>3. Multi-column GROUP BY</h3>
+<div class="code"><div class="fname">03_multi_group.sql</div><pre><code class="language-sql">-- Headcount and average salary by department AND job title
+SELECT   d.department_name,
+         j.job_title,
+         COUNT(*)                                            AS headcount,
+         CAST(AVG(CAST(e.salary AS DECIMAL(14,4))) AS DECIMAL(10,2))
+                                                            AS avg_salary
+FROM     hr.employees   AS e
+JOIN     hr.departments AS d ON d.department_id = e.department_id
+JOIN     hr.jobs        AS j ON j.job_id        = e.job_id
+GROUP BY d.department_name, j.job_title
+HAVING   COUNT(*) &gt;= 2
+ORDER BY d.department_name, avg_salary DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  job_title          headcount  avg_salary
+---------------  -----------------  ---------  ----------
+Engineering      Software Engineer  5          92000.00
+Engineering      Senior Engineer    4         120000.00
+Sales            Sales Executive    6          70000.00
+(example output)</code></pre></div>
+
+<h3>4. COUNT(DISTINCT) — unique-value counts</h3>
+<div class="code"><div class="fname">04_count_distinct.sql</div><pre><code class="language-sql">-- How many employees joined per year, and how many DISTINCT job titles existed that year?
+SELECT   YEAR(hire_date)            AS hire_year,
+         COUNT(*)                   AS new_hires,
+         COUNT(DISTINCT job_id)     AS distinct_jobs_hired_into
+FROM     hr.employees
+GROUP BY YEAR(hire_date)
+ORDER BY hire_year;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">hire_year  new_hires  distinct_jobs_hired_into
+---------  ---------  ------------------------
+2019       3          2
+2020       7          4
+2021       5          3
+2022       8          5
+2023       6          3
+2024       4          2
+(example output)</code></pre></div>
+
+<h3>5. ROLLUP and GROUPING SETS (awareness)</h3>
+<p>ROLLUP adds subtotal and grand-total rows automatically. The GROUPING() function distinguishes a real NULL value from a "total" NULL produced by ROLLUP.</p>
+<div class="code"><div class="fname">05_rollup.sql</div><pre><code class="language-sql">-- Payroll by department, with a grand total row (awareness only — detail in the DW week)
+SELECT   COALESCE(d.department_name, 'ALL DEPARTMENTS') AS dept,
+         COUNT(*)                AS headcount,
+         SUM(e.salary)           AS total_payroll
+FROM     hr.employees   AS e
+JOIN     hr.departments AS d ON d.department_id = e.department_id
+GROUP BY ROLLUP(d.department_name);
+-- Last row: dept='ALL DEPARTMENTS', headcount=total, total_payroll=grand total</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">dept              headcount  total_payroll
+----------------  ---------  -------------
+Engineering       12         1140000
+Finance            5          440000
+HR                 4          272000
+Sales              8          580000
+ALL DEPARTMENTS   29         2432000      ← ROLLUP grand total row
+(example output)</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Putting a non-aggregated column in SELECT but not in GROUP BY — SQL Server error 8120.</li><li>Using a column alias from SELECT in HAVING (not allowed in SQL Server; repeat the expression).</li><li>Forgetting that AVG of INTs is integer division.</li><li>COUNT(*) vs COUNT(col) — the difference matters when that column has NULLs.</li><li>Using HAVING where WHERE would do — extra rows go through the aggregation engine unnecessarily.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Count employees per department and show only departments with average salary above ₹70,000, ordered by average salary descending.</li><li>Show each job title with its minimum and maximum salary from hr.employees (not from hr.jobs), and flag jobs where the max is more than 1.5× the min.</li><li>Use ROLLUP to produce a summary: hiring count per year, per department, and grand total. Use COALESCE to label the totals.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why can't you use a SELECT alias in HAVING?</summary>SQL Server evaluates HAVING before SELECT aliases are computed (logical query order: FROM → WHERE → GROUP BY → HAVING → SELECT). Repeat the expression or wrap the query in a CTE/derived table.</details><details><summary>What does COUNT(*) count that COUNT(col) doesn't?</summary>COUNT(*) counts every row including NULLs. COUNT(col) counts only non-NULL values in that column.</details><details><summary>What is the logical query processing order?</summary>FROM, then WHERE (filter rows), then GROUP BY (form groups), then HAVING (filter groups), then SELECT (compute output columns), then ORDER BY.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between WHERE and HAVING?</summary><div>WHERE filters individual rows before grouping; it cannot reference aggregates. HAVING filters groups after GROUP BY; it can reference aggregates. Putting a non-aggregate condition in HAVING instead of WHERE forces SQL Server to aggregate more rows unnecessarily.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What does COUNT(DISTINCT col) return?</summary><div>The number of distinct non-NULL values in that column within each group. It's useful for questions like 'how many different products were ordered per customer'. It costs more than COUNT(*) because it requires a sort or hash to deduplicate.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Every non-aggregated column in SELECT must appear in GROUP BY — why?</summary><div>Because one group contains many rows with potentially different values for that column; without grouping it, there's no single value to show. SQL Server enforces this with error 8120.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>A query returns NULL rows from GROUP BY you didn't expect. What could cause it?</summary><div>Two common reasons: (1) the grouping column contains actual NULL values — SQL Server groups them together; (2) an outer join produced NULL-padded rows on the outer side that you're now grouping. Add IS NULL checks in WHERE, or use INNER JOIN.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you calculate the percentage of total salary each department represents?</summary><div>Either a window function (SUM(salary) OVER ()) in a derived table, or a subquery in HAVING/SELECT: <code>SUM(salary) * 100.0 / (SELECT SUM(salary) FROM hr.employees)</code>.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is ROLLUP and when would you use it?</summary><div>ROLLUP is shorthand for a hierarchy of GROUPING SETS that adds subtotals and a grand total. It's most common in reporting and dashboards: GROUP BY ROLLUP(dept, team) produces one group per dept+team, one per dept (summing teams), and one overall total. Full detail in the data-warehouse week.</div></details>
+</section>
+<section class="day" id="day2"><div class="dayhead"><span class="num">DAY 2 · TUE</span><h2>Subqueries</h2><label><input type="checkbox" id="done2" data-done="2"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Write scalar, column, table, and correlated subqueries; understand when EXISTS wins over IN; and know the derived table pattern.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Subquery</dt><dd>A SELECT nested inside another SQL statement, enclosed in parentheses.</dd></div><div class="def"><dt>Scalar subquery</dt><dd>Returns exactly one row and one column; used wherever a single value is expected (SELECT list, WHERE, HAVING).</dd></div><div class="def"><dt>Column subquery</dt><dd>Returns one column but potentially many rows; used with IN / NOT IN / ANY / ALL.</dd></div><div class="def"><dt>Table subquery (derived table)</dt><dd>Returns a full table result; appears in FROM and must be aliased. Called an <i>inline view</i> in some databases.</dd></div><div class="def"><dt>Correlated subquery</dt><dd>References a column from the outer query. Re-executes once per outer row (usually replaced by EXISTS or a join).</dd></div><div class="def"><dt>EXISTS</dt><dd>Returns TRUE if the subquery produces at least one row. Short-circuits after the first match.</dd></div><div class="def"><dt>NOT EXISTS</dt><dd>Anti-join: TRUE when the subquery returns no rows. NULL-safe — preferred over NOT IN.</dd></div><div class="def"><dt>IN / NOT IN</dt><dd>IN is equivalent to = ANY; NOT IN has the NULL trap — one NULL in the list makes NOT IN return nothing.</dd></div><div class="def"><dt>ANY / ALL</dt><dd>Rarely needed: = ANY is IN, > ALL means greater than the max, < ALL means less than the min.</dd></div><div class="def"><dt>Semi-join</dt><dd>Filters rows using a match in another table but adds no columns from it — cleanest with EXISTS.</dd></div><div class="def"><dt>Anti-join</dt><dd>Filters to rows that have no match — cleanest with NOT EXISTS.</dd></div><div class="def"><dt>Inline view</dt><dd>Another name for a derived table: a subquery in FROM.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Scalar subqueries must return at most one row or SQL Server raises an error at runtime.</li><li>Correlated subqueries are often slow on large tables — test whether a join or window function is faster.</li><li>Use EXISTS/NOT EXISTS instead of IN/NOT IN when the inner column is nullable.</li><li>A derived table (subquery in FROM) can reference its own aggregates in WHERE — unlike the outer SELECT.</li><li>Name all derived table aliases clearly: 'dept_avg', 'top_earners', not 'x', 'y'.</li></ul></div>
+
+<h3>1. Scalar subquery</h3>
+<div class="code"><div class="fname">01_scalar_subquery.sql</div><pre><code class="language-sql">-- Employees earning more than the company-wide average salary
+SELECT  e.employee_id,
+        e.first_name + ' ' + e.last_name  AS employee_name,
+        e.salary,
+        (SELECT AVG(CAST(salary AS DECIMAL(14,4))) FROM hr.employees)  AS company_avg
+FROM    hr.employees AS e
+WHERE   e.salary &gt; (SELECT AVG(salary) FROM hr.employees);</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_id  employee_name     salary    company_avg
+-----------  ----------------  --------  -----------
+3            Asha Joshi         180000    88000.00
+7            Vikram Nair        145000    88000.00
+...
+(example output)</code></pre></div>
+<div class="note tip"><b>Tip.</b> When the same scalar subquery is referenced more than once in a query, extract it into a CTE (tomorrow) or a derived table so it only runs once.</div>
+
+<h3>2. Column subquery and IN</h3>
+<div class="code"><div class="fname">02_in_subquery.sql</div><pre><code class="language-sql">-- Employees in departments located in Maharashtra
+SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        e.department_id
+FROM    hr.employees AS e
+WHERE   e.department_id IN
+        (
+            SELECT  d.department_id
+            FROM    hr.departments AS d
+            JOIN    hr.locations   AS l ON l.location_id = d.location_id
+            WHERE   l.state = N'Maharashtra'
+        );</code></pre></div>
+
+<h3>3. NOT IN — the NULL trap</h3>
+<div class="code"><div class="fname">03_not_in_trap.sql</div><pre><code class="language-sql">-- Managers (employees who manage at least one person)
+-- ❌ NULL trap: if any employee has manager_id NULL, NOT IN returns zero rows
+SELECT employee_id, first_name + ' ' + last_name AS name
+FROM   hr.employees
+WHERE  employee_id NOT IN (SELECT manager_id FROM hr.employees);  -- manager_id can be NULL!
+
+-- ✓ NOT EXISTS is always NULL-safe
+SELECT employee_id, first_name + ' ' + last_name AS name
+FROM   hr.employees AS e
+WHERE  NOT EXISTS
+       (SELECT 1 FROM hr.employees AS m WHERE m.manager_id = e.employee_id);</code></pre></div>
+<div class="note warn"><b>Gotcha.</b> If the column in the IN subquery can be NULL, NOT IN may silently return zero rows because NULL &lt;&gt; x is UNKNOWN, not FALSE. Use NOT EXISTS or add WHERE col IS NOT NULL to the inner SELECT.</div>
+
+<h3>4. EXISTS and NOT EXISTS</h3>
+<div class="code"><div class="fname">04_exists.sql</div><pre><code class="language-sql">-- Departments that have at least one employee (EXISTS = semi-join)
+SELECT d.department_id, d.department_name
+FROM   hr.departments AS d
+WHERE  EXISTS
+       (SELECT 1 FROM hr.employees AS e WHERE e.department_id = d.department_id);
+
+-- Departments with no employees (NOT EXISTS = anti-join)
+SELECT d.department_id, d.department_name
+FROM   hr.departments AS d
+WHERE  NOT EXISTS
+       (SELECT 1 FROM hr.employees AS e WHERE e.department_id = d.department_id);</code></pre></div>
+<p>The inner SELECT of an EXISTS only needs to return at least one row. Convention is <code>SELECT 1</code> to make intent clear; <code>SELECT *</code> works too but looks like you care about the data.</p>
+
+<h3>5. Correlated subquery</h3>
+<div class="code"><div class="fname">05_correlated_to_join.sql</div><pre><code class="language-sql">-- Employees earning more than their department's average
+SELECT  e.employee_id,
+        e.first_name + ' ' + e.last_name  AS employee_name,
+        e.salary                           AS salary,
+        dept_avg.avg_sal                   AS dept_avg_salary
+FROM    hr.employees AS e
+JOIN    (
+            SELECT  department_id,
+                    AVG(CAST(salary AS DECIMAL(14,4)))  AS avg_sal
+            FROM    hr.employees
+            GROUP BY department_id
+        ) AS dept_avg ON dept_avg.department_id = e.department_id
+WHERE   e.salary &gt; dept_avg.avg_sal
+ORDER BY e.department_id, e.salary DESC;
+-- Note: rewritten as a join to derived table, which is faster than a correlated subquery
+-- (the correlated version re-runs the subquery for every outer row)</code></pre></div>
+<div class="code nofile"><pre><code class="language-sql">-- ❌ Slow correlated version (re-executes per row):
+SELECT  e.first_name + ' ' + e.last_name AS employee_name,
+        e.salary
+FROM    hr.employees AS e
+WHERE   e.salary &gt; (SELECT AVG(CAST(salary AS DECIMAL(14,4)))
+                    FROM   hr.employees AS inner_e
+                    WHERE  inner_e.department_id = e.department_id);  -- references outer e</code></pre></div>
+
+<h3>6. Derived tables (table subquery in FROM)</h3>
+<div class="code"><div class="fname">06_derived_table.sql</div><pre><code class="language-sql">-- Top 3 earners per department using a derived table (window functions tomorrow are cleaner)
+SELECT  ranked.department_name,
+        ranked.employee_name,
+        ranked.salary
+FROM    (
+            SELECT  d.department_name,
+                    e.first_name + ' ' + e.last_name  AS employee_name,
+                    e.salary,
+                    ROW_NUMBER() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)
+                        AS rn
+            FROM    hr.employees   AS e
+            JOIN    hr.departments AS d ON d.department_id = e.department_id
+        ) AS ranked
+WHERE   ranked.rn &lt;= 3
+ORDER BY ranked.department_name, ranked.salary DESC;</code></pre></div>
+<div class="note tip"><b>Tip.</b> Derived tables can reference their own aliases in WHERE but cannot be referenced more than once in the query. When you need to reference the same derived result twice, use a CTE (tomorrow).</div>
+
+<h3>Common mistakes</h3><ul><li>Scalar subquery returning more than one row — runtime error 512. Add TOP(1) or ensure uniqueness.</li><li>NOT IN over a nullable column — the classic NULL trap.</li><li>Correlated subqueries on millions of rows — test with execution plans; often replaceable by a window function or derived table join.</li><li>Forgetting to alias a derived table — SQL Server error: every derived table must have an alias.</li><li>Nesting more than two or three subquery levels — CTEs will make the same logic readable.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a query showing departments whose total payroll exceeds the average departmental payroll (use a scalar subquery or derived table in HAVING).</li><li>List employees who have never had a salary change (NOT EXISTS against hr.salary_history).</li><li>Rewrite the correlated subquery in section 5 as a derived table join and check both give identical results.</li></ol>
+<h3>Self-check questions</h3><details><summary>Scalar vs column vs table subquery?</summary>Scalar returns one value (one row, one column); used where a value is expected. Column returns one column, many rows; used with IN/ANY/ALL. Table returns rows and columns; used in FROM as a derived table.</details><details><summary>EXISTS vs IN for performance?</summary>EXISTS short-circuits after finding the first match and doesn't pull all values into memory. IN evaluates the whole subquery and builds a list. For large sets EXISTS is often faster, especially when the inner column is nullable.</details><details><summary>Why alias a derived table?</summary>SQL Server requires every table in FROM to have a name (alias or its own name). A subquery has no name of its own, so an alias is mandatory: <code>(...) AS alias_name</code>.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a correlated subquery?</summary><div>A subquery that references a column from the outer query. It re-executes once per row of the outer query, making it logically like a function called per row. This is powerful but slow at scale — a join or window function is usually faster.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>When would you choose EXISTS over IN?</summary><div>When the inner column may contain NULLs (NOT IN's NULL trap), when you only need to check existence (not use the value), and when the subquery returns many rows (EXISTS short-circuits). Use IN when the list is small, static and NULL-free.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a derived table?</summary><div>A subquery in the FROM clause, enclosed in parentheses and given an alias. It acts as a temporary named result set for that query only — not persisted like a view or temp table.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you rewrite a correlated subquery to avoid per-row re-execution?</summary><div>Promote the inner query to a derived table or CTE grouped on the correlated column, then JOIN the outer query to that derived result once. The optimiser can then choose a hash join or merge join rather than a nested loop per row.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What does ANY / ALL do?</summary><div>ANY (synonym: SOME) makes a comparison true if it's true for at least one value; ALL requires it to be true for every value. <code>salary > ALL (SELECT …)</code> means salary is greater than every value returned — equivalent to salary > MAX. These are rarely written directly; using MAX/MIN with a plain comparison is more readable.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Can a subquery appear in the SELECT clause?</summary><div>Yes, as a scalar subquery — it must return at most one row and one column, and it's re-evaluated for every output row (similar to a correlated subquery). If the same value is needed in many columns, compute it once in a CTE or derived table.</div></details>
+</section>
+<section class="day" id="day3"><div class="dayhead"><span class="num">DAY 3 · WED</span><h2>Common Table Expressions (CTEs)</h2><label><input type="checkbox" id="done3" data-done="3"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Write chained CTEs for readability, recursive CTEs for org charts, and understand when to use a CTE vs temp table vs derived table.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>CTE (Common Table Expression)</dt><dd>A named temporary result set defined with WITH and usable in the query that follows. Scoped to that single statement.</dd></div><div class="def"><dt>Non-recursive CTE</dt><dd>A simple named derived table; can be chained (multiple CTEs in one WITH).</dd></div><div class="def"><dt>Recursive CTE</dt><dd>A CTE that references itself via UNION ALL, used for hierarchical or graph traversals.</dd></div><div class="def"><dt>Anchor member</dt><dd>The base case of a recursive CTE — the rows that start the traversal.</dd></div><div class="def"><dt>Recursive member</dt><dd>The part that JOINs the CTE to itself to find the next level.</dd></div><div class="def"><dt>MAXRECURSION</dt><dd>Query hint controlling the recursion depth limit; default 100. <code>OPTION (MAXRECURSION 0)</code> removes the limit.</dd></div><div class="def"><dt>WITH TIES</dt><dd>Used with TOP to include rows that tie for the last position (requires ORDER BY).</dd></div><div class="def"><dt>Chained CTEs</dt><dd>Multiple CTEs in one WITH clause, each building on those defined before it.</dd></div><div class="def"><dt>Hierarchy</dt><dd>A parent-child tree structure: employees and their managers, categories and subcategories.</dd></div><div class="def"><dt>Level / depth</dt><dd>Computed column in a recursive CTE tracking how deep in the tree the current row is.</dd></div><div class="def"><dt>Path</dt><dd>A string column accumulating the route from root to current node, useful for cycle detection.</dd></div><div class="def"><dt>Cycle detection</dt><dd>Ensuring a recursive CTE doesn't loop forever on a graph with cycles (SQL Server's default MAXRECURSION 100 stops it after 100 levels).</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>CTEs do not create any physical object — they're scoped to the single statement they precede.</li><li>You can reference a CTE more than once in the query that follows (unlike a derived table).</li><li>The anchor and recursive members must have the same number of columns with compatible types.</li><li>UNION ALL is required in recursive CTEs; UNION would deduplicate and is disallowed.</li><li>Keep recursion depth reasonable in production; a cycle in the data can hit MAXRECURSION 100.</li><li>CTEs do not auto-materialise — SQL Server may evaluate them multiple times; use a temp table if the same data is needed repeatedly in a large batch.</li></ul></div>
+
+<h3>1. Single CTE for readability</h3>
+<div class="code"><div class="fname">01_chained_cte.sql</div><pre><code class="language-sql">-- Departments where average salary exceeds the company-wide average
+WITH dept_averages AS (
+    SELECT  department_id,
+            AVG(CAST(salary AS DECIMAL(14,4))) AS avg_sal
+    FROM    hr.employees
+    GROUP BY department_id
+),
+company_avg AS (
+    SELECT AVG(CAST(salary AS DECIMAL(14,4))) AS overall_avg
+    FROM   hr.employees
+)
+SELECT  d.department_name,
+        da.avg_sal               AS dept_avg,
+        ca.overall_avg           AS company_avg,
+        da.avg_sal - ca.overall_avg AS difference
+FROM    hr.departments AS d
+JOIN    dept_averages  AS da ON da.department_id = d.department_id
+CROSS JOIN company_avg AS ca
+WHERE  da.avg_sal &gt; ca.overall_avg
+ORDER BY da.avg_sal DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  dept_avg    company_avg  difference
+---------------  ----------  -----------  ----------
+Engineering      95000.00    88000.00      7000.00
+Finance          88800.00    88000.00       800.00
+(example output)</code></pre></div>
+<div class="note tip"><b>Tip.</b> Chain CTEs in a single WITH clause separated by commas. Each CTE can reference CTEs defined earlier in the same WITH. The final SELECT (or INSERT/UPDATE/DELETE) uses all of them.</div>
+
+<h3>2. Recursive CTE — org chart</h3>
+<div class="code"><div class="fname">02_recursive_cte.sql</div><pre><code class="language-sql">-- Walk the management hierarchy from the top down, tracking level and path
+WITH org_chart AS (
+    -- Anchor: employees with no manager (top of the tree)
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name           AS employee_name,
+            e.manager_id,
+            e.salary,
+            e.department_id,
+            0                                          AS level,
+            CAST(e.first_name + ' ' + e.last_name AS NVARCHAR(1000))
+                                                       AS path
+    FROM    hr.employees AS e
+    WHERE   e.manager_id IS NULL              -- anchor: the CEO / top-level managers
+
+    UNION ALL
+
+    -- Recursive member: direct reports of the rows already in the CTE
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name           AS employee_name,
+            e.manager_id,
+            e.salary,
+            e.department_id,
+            oc.level + 1                               AS level,
+            CAST(oc.path + ' &gt; ' + e.first_name + ' ' + e.last_name AS NVARCHAR(1000))
+                                                       AS path
+    FROM    hr.employees AS e
+    JOIN    org_chart    AS oc ON oc.employee_id = e.manager_id
+)
+SELECT  REPLICATE('    ', level) + employee_name  AS indented_name,
+        level,
+        path
+FROM    org_chart
+ORDER BY path;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">indented_name                           level  path
+--------------------------------------  -----  ----------------------------------------
+Priya Sharma                            0      Priya Sharma
+    Asha Joshi                          1      Priya Sharma &gt; Asha Joshi
+        Karan Mehta                     2      Priya Sharma &gt; Asha Joshi &gt; Karan Mehta
+        Riya Desai                      2      Priya Sharma &gt; Asha Joshi &gt; Riya Desai
+    Vikram Nair                         1      Priya Sharma &gt; Vikram Nair
+        Meena Pillai                    2      Priya Sharma &gt; Vikram Nair &gt; Meena Pillai
+(example output)</code></pre></div>
+<div class="note warn"><b>Watch out.</b> The default MAXRECURSION is 100. Add <code>OPTION (MAXRECURSION 200)</code> at the end of the statement for deeper trees, or <code>MAXRECURSION 0</code> to remove the limit entirely (risk on cyclic data). Data cycles (A manages B who manages A) are stopped only by MAXRECURSION — add a cycle-guard path check in production.</div>
+
+<h3>3. MAXRECURSION and cycle guard</h3>
+<div class="code"><div class="fname">03_maxrecursion.sql</div><pre><code class="language-sql">-- Query hint at the end of the whole statement (not inside the CTE):
+WITH org_chart AS (
+    -- ... same as above ...
+    SELECT employee_id, first_name + ' ' + last_name AS nm, manager_id, 0 AS lvl,
+           CAST(employee_id AS VARCHAR(500)) AS id_path
+    FROM   hr.employees WHERE manager_id IS NULL
+    UNION ALL
+    SELECT e.employee_id, e.first_name + ' ' + e.last_name, e.manager_id, oc.lvl + 1,
+           CAST(oc.id_path + ',' + CAST(e.employee_id AS VARCHAR(10)) AS VARCHAR(500))
+    FROM   hr.employees e
+    JOIN   org_chart    oc ON oc.employee_id = e.manager_id
+    WHERE  CHARINDEX(',' + CAST(e.employee_id AS VARCHAR(10)) + ',',
+                     ',' + oc.id_path + ',') = 0  -- cycle guard: stop if already visited
+)
+SELECT indented = REPLICATE('  ', lvl) + nm, lvl FROM org_chart ORDER BY id_path
+OPTION (MAXRECURSION 500);    -- hint at statement end</code></pre></div>
+
+<h3>4. CTE vs temp table vs derived table</h3>
+<div class="tbl"><table><tr><th></th><th>CTE</th><th>Derived table</th><th>Temp table (#t)</th></tr><tr><td>Scope</td><td>Single statement</td><td>Single query</td><td>Session or scope</td></tr><tr><td>Reuse in same query</td><td>Yes (all CTEs)</td><td>No</td><td>Yes (many statements)</td></tr><tr><td>Indexable</td><td>No</td><td>No</td><td>Yes (great for multi-step ETL)</td></tr><tr><td>Automatic materialisation</td><td>No (may re-evaluate)</td><td>No</td><td>Yes (fully computed once)</td></tr><tr><td>Readable for hierarchy/recursion</td><td>Excellent</td><td>Hard to read</td><td>Wordy</td></tr><tr><td>Statistics available</td><td>No</td><td>No</td><td>Yes</td></tr><tr><td>Recommended for</td><td>Readability, recursive queries</td><td>One-off ad-hoc sub-results</td><td>Multi-step logic, repeated use, large intermediate results</td></tr></table></div>
+<div class="code"><div class="fname">04_temp_table.sql</div><pre><code class="language-sql">-- Temp table version of the same CTE (use when the intermediate result is large
+-- and referenced in several later queries in the same batch):
+DROP TABLE IF EXISTS #dept_averages;
+SELECT  department_id,
+        AVG(CAST(salary AS DECIMAL(14,4))) AS avg_sal
+INTO    #dept_averages
+FROM    hr.employees
+GROUP BY department_id;
+
+-- Now any number of queries can join to #dept_averages:
+SELECT d.department_name, da.avg_sal
+FROM   hr.departments AS d
+JOIN   #dept_averages AS da ON da.department_id = d.department_id;</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Using UNION instead of UNION ALL in the recursive member — SQL Server rejects it.</li><li>Referencing a CTE from a different statement — out of scope; use a view or temp table.</li><li>Not casting path/accumulated columns to sufficient length — results silently truncate.</li><li>Forgetting the MAXRECURSION hint on deep hierarchies (> 100 levels).</li><li>Believing CTEs materialise once — they don't; a temp table is needed if you need guaranteed single evaluation.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a chained CTE that first calculates each employee's latest salary change from hr.salary_history, then joins it back to hr.employees to show employees whose current salary differs from what hr.salary_history records (data quality check).</li><li>Write a recursive CTE that returns the full chain of managers for a given employee_id, stopping at the top. Add a level column.</li><li>Compare the query plan of a chained CTE vs the equivalent temp table approach and note which uses a clustered index scan vs a Clustered Index Seek.</li></ol>
+<h3>Self-check questions</h3><details><summary>What's the difference between a CTE and a temp table?</summary>A CTE lives for one statement only and may be re-evaluated by the optimiser; it has no statistics or indexes. A temp table persists for the session, is physically created in tempdb, can be indexed and has statistics — better for large intermediate results referenced many times.</details><details><summary>How do you stop a recursive CTE from looping?</summary>Either by SQL Server's MAXRECURSION setting (default 100), or by adding a WHERE guard in the recursive member that checks the path string doesn't already contain the current row's ID. The MAXRECURSION hint is added at the end of the statement: OPTION (MAXRECURSION n).</details><details><summary>Can you INSERT/UPDATE/DELETE using a CTE?</summary>Yes. Write a CTE that identifies the rows, then use an INSERT/UPDATE/DELETE after the closing parenthesis that references the CTE. This is common for batch updates with complex filtering.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a CTE and when would you use it instead of a subquery?</summary><div>A CTE is a named temporary result defined with WITH before the main query. Use it instead of a nested subquery when: (1) the same derived result is referenced more than once; (2) a subquery would be deeply nested; (3) you need recursion. CTEs improve readability without changing the execution plan.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain the structure of a recursive CTE.</summary><div>A recursive CTE has two parts joined by UNION ALL: the anchor member (the base case returning the starting rows) and the recursive member (a SELECT that JOINs the CTE to itself to find the next level). SQL Server executes the anchor once, then repeatedly executes the recursive member against the latest level's rows until it returns no more rows or hits MAXRECURSION.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What happens if MAXRECURSION is exceeded?</summary><div>SQL Server raises error 530: 'The statement terminated. The maximum recursion 100 has been exhausted before statement completion.' You can raise the limit with OPTION (MAXRECURSION n) or remove it with OPTION (MAXRECURSION 0). The latter is risky on cyclic data.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Can a CTE be referenced more than once in the same query?</summary><div>Yes — that's one advantage over derived tables. All CTEs in the WITH block are in scope for the main query and for each other (each can reference any CTE defined before it). However, SQL Server may still re-evaluate the CTE once per reference unless it chooses to spool; if single-evaluation is essential, use a temp table.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How would you delete duplicate rows using a CTE?</summary><div>Assign row numbers with ROW_NUMBER() OVER (PARTITION BY key_cols ORDER BY ...) in a CTE, then DELETE FROM that CTE WHERE rn > 1. SQL Server allows DML against a CTE when the CTE references exactly one base table.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>CTE vs view: what's different?</summary><div>A CTE exists only for the duration of one statement; it cannot be reused by other queries or stored in the database. A view is a named persistent object others can query. Use a CTE for query-local clarity; use a view for a reusable, security-layer, or join shorthand needed across the codebase.</div></details>
+</section>
+<section class="day" id="day4"><div class="dayhead"><span class="num">DAY 4 · THU</span><h2>Window functions</h2><label><input type="checkbox" id="done4" data-done="4"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Use ROW_NUMBER, RANK, DENSE_RANK, NTILE, LAG, LEAD, running totals and moving averages without collapsing your rows.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Window function</dt><dd>A function applied over a 'window' of rows related to the current row. Unlike GROUP BY, it does not collapse rows.</dd></div><div class="def"><dt>OVER clause</dt><dd>Defines the window: PARTITION BY (grouping), ORDER BY (sorting within partition), and optional frame.</dd></div><div class="def"><dt>PARTITION BY</dt><dd>Resets the window calculation for each group, like GROUP BY but without collapsing rows.</dd></div><div class="def"><dt>ORDER BY (in OVER)</dt><dd>Determines the order within each partition for ranking and running calculations.</dd></div><div class="def"><dt>Frame clause</dt><dd>Specifies which rows of the partition are included in the calculation relative to the current row: ROWS BETWEEN / RANGE BETWEEN.</dd></div><div class="def"><dt>ROW_NUMBER()</dt><dd>Unique sequential number per row within the partition, based on ORDER BY.</dd></div><div class="def"><dt>RANK()</dt><dd>Same number for ties, then skips (1,1,3 for two ties at first).</dd></div><div class="def"><dt>DENSE_RANK()</dt><dd>Same number for ties, no skip (1,1,2 for two ties at first).</dd></div><div class="def"><dt>NTILE(n)</dt><dd>Divides rows into n equal buckets and assigns each row its bucket number.</dd></div><div class="def"><dt>LAG(col, n, default)</dt><dd>Value of col from n rows before the current row in the partition.</dd></div><div class="def"><dt>LEAD(col, n, default)</dt><dd>Value of col from n rows after the current row in the partition.</dd></div><div class="def"><dt>ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</dt><dd>Classic running total frame.</dd></div><div class="def"><dt>RANGE vs ROWS</dt><dd>RANGE groups ties into the same frame boundary; ROWS is strict position. ROWS is almost always what you want.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Window functions run after WHERE and GROUP BY but before SELECT expressions — they see aggregated rows.</li><li>You can use a window function in ORDER BY or in a derived table/CTE but not directly in WHERE or HAVING.</li><li>RANK leaves gaps; DENSE_RANK does not — pick based on how ties should read.</li><li>ROWS BETWEEN is strict (physical position); RANGE BETWEEN treats ties as a group (less predictable). Default when ORDER BY is specified: RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW.</li><li>LAG/LEAD default to NULL when there's no preceding/following row — supply a default if needed.</li><li>NTILE distributes rows as evenly as possible; with uneven distribution the first buckets get one extra row.</li></ul></div>
+
+<h3>1. ROW_NUMBER, RANK, DENSE_RANK</h3>
+<div class="code"><div class="fname">01_ranking.sql</div><pre><code class="language-sql">SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        d.department_name,
+        e.salary,
+        ROW_NUMBER()  OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS row_num,
+        RANK()        OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS rnk,
+        DENSE_RANK()  OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS dense_rnk
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+ORDER BY d.department_name, e.salary DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_name     department_name  salary   row_num  rnk  dense_rnk
+----------------  ---------------  -------  -------  ---  ---------
+Asha Joshi        Engineering      180000   1        1    1
+Vikram Nair       Engineering      145000   2        2    2
+Karan Mehta       Engineering      145000   3        2    2       ← tie: RANK skips 3, DENSE_RANK doesn't
+Priya Desai       Engineering      120000   4        4    3
+...
+(example output)</code></pre></div>
+<div class="tbl"><table><tr><th>Function</th><th>Ties</th><th>Gaps after tie</th><th>Use when</th></tr><tr><td>ROW_NUMBER()</td><td>Never</td><td>N/A</td><td>You need a truly unique number per row</td></tr><tr><td>RANK()</td><td>Yes</td><td>Yes (1,1,3)</td><td>Olympic-style ranking, OK with gaps</td></tr><tr><td>DENSE_RANK()</td><td>Yes</td><td>No (1,1,2)</td><td>Category leaderboards without gaps</td></tr></table></div>
+
+<h3>2. NTILE</h3>
+<div class="code"><div class="fname">02_ntile.sql</div><pre><code class="language-sql">-- Divide employees into 4 salary quartiles within each department
+SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        e.salary,
+        d.department_name,
+        NTILE(4) OVER (PARTITION BY e.department_id ORDER BY e.salary)  AS salary_quartile
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+ORDER BY d.department_name, e.salary;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_name     salary   department_name  salary_quartile
+----------------  -------  ---------------  ---------------
+Rohit Verma       62000    Engineering      1
+Anjali Singh      75000    Engineering      1
+Deepak Rao        82000    Engineering      1
+Nisha Kapoor      90000    Engineering      2
+Sunil Sharma      95000    Engineering      2
+...
+(example output)</code></pre></div>
+
+<h3>3. LAG and LEAD — accessing neighbouring rows</h3>
+<div class="code"><div class="fname">03_lag_lead.sql</div><pre><code class="language-sql">-- For each salary change in salary_history: show previous salary and % change
+SELECT  sh.employee_id,
+        e.first_name + ' ' + e.last_name  AS employee_name,
+        sh.change_date,
+        sh.new_salary,
+        LAG(sh.new_salary, 1, sh.old_salary)
+            OVER (PARTITION BY sh.employee_id ORDER BY sh.change_date)  AS prev_salary,
+        CAST(
+            (sh.new_salary - LAG(sh.new_salary, 1, sh.old_salary)
+                OVER (PARTITION BY sh.employee_id ORDER BY sh.change_date))
+            * 100.0 / NULLIF(LAG(sh.new_salary, 1, sh.old_salary)
+                OVER (PARTITION BY sh.employee_id ORDER BY sh.change_date), 0)
+        AS DECIMAL(6,2))  AS pct_change
+FROM    hr.salary_history AS sh
+JOIN    hr.employees      AS e ON e.employee_id = sh.employee_id
+ORDER BY sh.employee_id, sh.change_date;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_id  employee_name  change_date  new_salary  prev_salary  pct_change
+-----------  -------------  -----------  ----------  -----------  ----------
+3            Asha Joshi     2021-07-01   120000      95000        26.32
+3            Asha Joshi     2023-01-15   145000      120000       20.83
+3            Asha Joshi     2024-06-01   180000      145000       24.14
+(example output)</code></pre></div>
+
+<h3>4. Running totals and moving averages</h3>
+<div class="code"><div class="fname">04_running_total.sql</div><pre><code class="language-sql">-- Running payroll total by hire month, plus 3-month moving average
+WITH monthly AS (
+    SELECT  DATEFROMPARTS(YEAR(hire_date), MONTH(hire_date), 1)  AS hire_month,
+            SUM(salary)                                           AS monthly_payroll
+    FROM    hr.employees
+    GROUP BY DATEFROMPARTS(YEAR(hire_date), MONTH(hire_date), 1)
+)
+SELECT  hire_month,
+        monthly_payroll,
+        SUM(monthly_payroll)
+            OVER (ORDER BY hire_month
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)   AS running_total,
+        AVG(CAST(monthly_payroll AS DECIMAL(14,4)))
+            OVER (ORDER BY hire_month
+                  ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)           AS moving_avg_3m
+FROM    monthly
+ORDER BY hire_month;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">hire_month   monthly_payroll  running_total  moving_avg_3m
+-----------  ---------------  -------------  -------------
+2019-06-01   125000           125000         125000.0000
+2019-09-01    95000           220000         110000.0000
+2020-01-01   280000           500000         166666.6667
+2020-04-01   310000           810000         228333.3333
+(example output)</code></pre></div>
+<div class="note warn"><b>Important.</b> The default window frame when ORDER BY is specified inside OVER is RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW (not ROWS). RANGE groups tied ORDER BY values into the same boundary — always specify ROWS BETWEEN explicitly for running totals and moving averages.</div>
+
+<h3>5. Top-N per group and de-duplication</h3>
+<div class="code"><div class="fname">05_topn_dedupe.sql</div><pre><code class="language-sql">-- Top 3 earners per department (clean CTE + ROW_NUMBER pattern)
+WITH ranked AS (
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name  AS employee_name,
+            d.department_name,
+            e.salary,
+            ROW_NUMBER() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) AS rn
+    FROM    hr.employees   AS e
+    JOIN    hr.departments AS d ON d.department_id = e.department_id
+)
+SELECT department_name, employee_name, salary
+FROM   ranked
+WHERE  rn &lt;= 3
+ORDER BY department_name, salary DESC;
+
+-- De-duplicate: keep only the latest salary_history row per employee
+WITH dedupe AS (
+    SELECT *,
+           ROW_NUMBER() OVER (PARTITION BY employee_id ORDER BY change_date DESC) AS rn
+    FROM   hr.salary_history
+)
+DELETE FROM dedupe WHERE rn &gt; 1;   -- DML on a CTE works when it maps to one base table</code></pre></div>
+
+<h3>Common mistakes</h3><ul><li>Using a window function in WHERE directly — not allowed; wrap in a CTE or derived table.</li><li>Not specifying ROWS BETWEEN — default RANGE BETWEEN may produce unexpected results when rows tie on ORDER BY.</li><li>Confusing RANK and DENSE_RANK on leaderboards (do you want gaps or not?).</li><li>LAG/LEAD returning NULL on first/last row — always supply a default if downstream code expects a value.</li><li>Over-using window functions in a single SELECT — complex nested OVER clauses make them hard to read; use a CTE to stage them.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Write a query that shows each employee's salary alongside their department's min, max and average salary using window functions — without GROUP BY or subqueries.</li><li>Use LAG to calculate the number of days between consecutive salary changes for each employee.</li><li>Find employees who are in the top-10% of earners company-wide using NTILE(10) and show their names, salaries and ntile bucket.</li></ol>
+<h3>Self-check questions</h3><details><summary>RANK vs DENSE_RANK on a 5-row result where rows 2 and 3 tie?</summary>RANK: 1,2,2,4,5 (skips 3). DENSE_RANK: 1,2,2,3,4 (no skip). ROW_NUMBER would give 1,2,3,4,5 regardless of ties.</details><details><summary>Why can't a window function appear in WHERE?</summary>Window functions are computed after WHERE filters rows. If WHERE could reference a window function, the filter would need to run after the window, which is a logical cycle. Use a CTE or derived table to materialise the window result first.</details><details><summary>ROWS BETWEEN vs RANGE BETWEEN?</summary>ROWS BETWEEN counts physical rows. RANGE BETWEEN treats rows with equal ORDER BY values as a group at the same boundary. ROWS is predictable and almost always the right choice for running totals and moving averages.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What does PARTITION BY do in a window function?</summary><div>It divides the result set into partitions (like GROUP BY) so the window function resets its calculation for each partition. Rows from other partitions are not visible to the calculation. Unlike GROUP BY it doesn't collapse rows — every row is still returned.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between ROW_NUMBER, RANK and DENSE_RANK?</summary><div>ROW_NUMBER gives a unique sequential number regardless of ties. RANK gives the same number to ties but then skips numbers (1,1,3). DENSE_RANK gives the same number to ties but doesn't skip (1,1,2). Choose based on whether you want gaps in the sequence after ties.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What are LAG and LEAD used for?</summary><div>LAG accesses the value of a column from a previous row in the same partition (default: 1 row back). LEAD accesses a future row. Classic uses: calculating growth rates, finding gaps between events, comparing this row to the previous record.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you calculate a 7-day moving average?</summary><div>Use AVG(...) OVER (ORDER BY date_col ROWS BETWEEN 6 PRECEDING AND CURRENT ROW). The ROWS BETWEEN clause includes the current row and the 6 that come before it in ORDER BY sequence, giving you a 7-row window.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you get the second-highest salary without a subquery?</summary><div>Use DENSE_RANK() OVER (ORDER BY salary DESC) in a CTE, then filter WHERE dense_rnk = 2. This correctly handles ties — multiple employees may share second place.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Can you combine GROUP BY and window functions in one query?</summary><div>Yes. Window functions run after GROUP BY, so they see aggregated rows. Example: GROUP BY department to get a sum, then use a window function over those grouped rows to compute each department's percentage of the grand total. The window function sits in the SELECT list of a grouped query.</div></details>
+</section>
+<section class="day" id="day5"><div class="dayhead"><span class="num">DAY 5 · FRI</span><h2>Views, table-valued functions and APPLY</h2><label><input type="checkbox" id="done5" data-done="5"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Create views with SCHEMABINDING, compare inline vs multi-statement TVFs, understand scalar function cost and when SQL Server can inline them, and use CROSS/OUTER APPLY.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>View</dt><dd>A named stored SELECT query. Used as a table in queries; does not store data (unless indexed).</dd></div><div class="def"><dt>SCHEMABINDING</dt><dd>Prevents DROP or ALTER on any base object the view depends on. Required for indexed views.</dd></div><div class="def"><dt>Indexed view</dt><dd>A view with a unique clustered index physically materialising the result. Needs SCHEMABINDING and several restrictions.</dd></div><div class="def"><dt>Inline TVF (ITVF)</dt><dd>A table-valued function returning a single SELECT; equivalent to a parameterised view. Zero overhead — optimiser treats it as a macro.</dd></div><div class="def"><dt>Multi-statement TVF (MSTVF)</dt><dd>A TVF with BEGIN/END and multiple statements, populating a table variable and returning it. Costly — acts like a black box, row estimate always 1 (before SQL 2019).</dd></div><div class="def"><dt>Scalar UDF</dt><dd>A function returning one value. Pre-SQL Server 2019 it blocks parallelism and re-executes per row. Post-2019, SQL Server may inline it.</dd></div><div class="def"><dt>Scalar UDF inlining</dt><dd>SQL Server 2019+ automatically converts eligible scalar UDFs to inline expressions, restoring performance.</dd></div><div class="def"><dt>CROSS APPLY</dt><dd>Like CROSS JOIN but the right side can be a function or subquery that uses a column from the left side. Returns only rows where the right side returns a result.</dd></div><div class="def"><dt>OUTER APPLY</dt><dd>Like LEFT JOIN equivalent of CROSS APPLY — also keeps left rows where the right side returns nothing (NULL-padded).</dd></div><div class="def"><dt>TVF</dt><dd>Table-valued function: a function you can query in FROM.</dd></div><div class="def"><dt>Deterministic</dt><dd>A function that always returns the same result for the same inputs — required for use in computed columns and indexed views.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>SCHEMABINDING on a view prevents schema changes to its base tables without dropping the view first — a protection and a commitment.</li><li>Always prefer an ITVF over a scalar UDF when you need per-row calculation on a set of rows; the optimiser can reason about it.</li><li>MSTVF: think of it as a temp table returned — the row count estimate is usually wrong, leading to bad plans.</li><li>CROSS APPLY is the natural fit when calling a TVF once per row, or when a correlated derived table needs an alias.</li><li>OUTER APPLY preserves rows from the left side even when the right side returns nothing — mirrors LEFT JOIN.</li><li>Check sys.sql_modules or the Object Explorer for a view's definition; never rely on the view alone without verifying the base tables.</li></ul></div>
+
+<h3>1. Creating views with SCHEMABINDING</h3>
+<div class="code"><div class="fname">01_view.sql</div><pre><code class="language-sql">-- A view that centralises the employee-department join (commonly queried)
+CREATE OR ALTER VIEW hr.vw_employee_details
+WITH SCHEMABINDING
+AS
+SELECT  e.employee_id,
+        e.first_name,
+        e.last_name,
+        e.first_name + ' ' + e.last_name  AS full_name,
+        e.salary,
+        e.hire_date,
+        d.department_name,
+        j.job_title,
+        l.city                             AS work_city,
+        l.state                            AS work_state,
+        m.first_name + ' ' + m.last_name   AS manager_name
+FROM    hr.employees    AS e
+JOIN    hr.departments  AS d ON d.department_id  = e.department_id
+JOIN    hr.jobs         AS j ON j.job_id         = e.job_id
+JOIN    hr.locations    AS l ON l.location_id    = d.location_id
+LEFT JOIN hr.employees  AS m ON m.employee_id    = e.manager_id;
+GO
+-- Use it like a table:
+SELECT full_name, department_name, salary, manager_name
+FROM   hr.vw_employee_details
+WHERE  work_state = N'Karnataka'
+ORDER BY salary DESC;</code></pre></div>
+<div class="note tip"><b>Tip.</b> WITH SCHEMABINDING requires two-part names (hr.employees not just employees). Try dropping or renaming a base table column after creating this view — SQL Server refuses. This is the safety net that makes refactoring safe.</div>
+<div class="tbl"><table><tr><th>Scenario</th><th>Use a view</th><th>Use a CTE instead</th></tr><tr><td>Same join reused across many queries</td><td>Yes</td><td>No (single-query scope)</td></tr><tr><td>Need to grant SELECT to a report user without exposing base tables</td><td>Yes</td><td>No</td></tr><tr><td>Logic needed inside one complex query</td><td>No</td><td>Yes</td></tr><tr><td>Want indexed materialisation</td><td>Yes (indexed view)</td><td>No</td></tr><tr><td>Parameterised result (varies per input)</td><td>No — use a TVF</td><td>Yes (CTE)</td></tr></table></div>
+
+<h3>2. Inline TVF — parameterised view</h3>
+<div class="code"><div class="fname">02_itvf.sql</div><pre><code class="language-sql">-- ITVF: returns employees hired in a given year with their department details
+CREATE OR ALTER FUNCTION hr.fn_employees_hired_in_year (@year INT)
+RETURNS TABLE
+WITH SCHEMABINDING
+AS
+RETURN
+(
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name  AS full_name,
+            e.hire_date,
+            e.salary,
+            d.department_name,
+            j.job_title
+    FROM    hr.employees    AS e
+    JOIN    hr.departments  AS d ON d.department_id = e.department_id
+            JOIN    hr.jobs AS j ON j.job_id        = e.job_id
+    WHERE   YEAR(e.hire_date) = @year
+);
+GO
+-- Call it:
+SELECT * FROM hr.fn_employees_hired_in_year(2023) ORDER BY salary DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_id  full_name         hire_date   salary   department_name  job_title
+-----------  ----------------  ----------  -------  ---------------  ------------------
+7            Vikram Nair       2023-03-01  145000   Engineering      Senior Engineer
+14           Anjali Singh      2023-07-15   75000   HR               HR Specialist
+(example output)</code></pre></div>
+<div class="note warn"><b>Design rule.</b> An ITVF body is a single RETURN (...) with a single SELECT — no variables, no IF/ELSE. The moment you need control flow or multiple statements, it becomes an MSTVF (or a CTE).</div>
+
+<h3>3. Multi-statement TVF and scalar UDF cost</h3>
+<div class="code"><div class="fname">03_mstvf.sql</div><pre><code class="language-sql">-- MSTVF (use sparingly — bad row estimates before SQL 2019)
+CREATE OR ALTER FUNCTION hr.fn_dept_summary (@min_headcount INT)
+RETURNS @result TABLE (
+    department_name  NVARCHAR(100),
+    headcount        INT,
+    avg_salary       DECIMAL(10,2)
+)
+WITH SCHEMABINDING
+AS
+BEGIN
+    INSERT INTO @result
+    SELECT  d.department_name,
+            COUNT(*)                                            AS headcount,
+            AVG(CAST(e.salary AS DECIMAL(14,4)))               AS avg_salary
+    FROM    hr.employees   AS e
+    JOIN    hr.departments AS d ON d.department_id = e.department_id
+    GROUP BY d.department_name
+    HAVING  COUNT(*) &gt;= @min_headcount;
+    RETURN;
+END;
+GO
+SELECT * FROM hr.fn_dept_summary(3) ORDER BY avg_salary DESC;</code></pre></div>
+<div class="code"><div class="fname">04_scalar_udf.sql</div><pre><code class="language-sql">-- Scalar UDF (pre-SQL 2019 it runs per row and blocks parallelism):
+CREATE OR ALTER FUNCTION hr.fn_salary_band (@salary DECIMAL(10,2))
+RETURNS NVARCHAR(10)
+WITH SCHEMABINDING
+AS
+BEGIN
+    RETURN CASE
+        WHEN @salary &lt; 60000  THEN N'Band A'
+        WHEN @salary &lt; 90000  THEN N'Band B'
+        WHEN @salary &lt; 130000 THEN N'Band C'
+        ELSE N'Band D'
+    END;
+END;
+GO
+-- SQL Server 2019+ may inline this automatically (check with:
+-- SELECT is_inlineable FROM sys.sql_modules WHERE object_id = OBJECT_ID('hr.fn_salary_band'))
+-- If not inlineable: replace with an inline CASE expression in the query instead.
+SELECT full_name, salary, hr.fn_salary_band(salary) AS band
+FROM   hr.vw_employee_details;</code></pre></div>
+
+<h3>4. CROSS APPLY and OUTER APPLY</h3>
+<div class="code"><div class="fname">05_cross_apply.sql</div><pre><code class="language-sql">-- CROSS APPLY: for each department, call the TVF and get its top 2 earners
+SELECT  d.department_name,
+        top_earners.full_name,
+        top_earners.salary
+FROM    hr.departments AS d
+CROSS APPLY
+(
+    SELECT TOP(2)
+           e.first_name + ' ' + e.last_name  AS full_name,
+           e.salary
+    FROM   hr.employees AS e
+    WHERE  e.department_id = d.department_id   -- references the outer table
+    ORDER BY e.salary DESC
+) AS top_earners
+ORDER BY d.department_name, top_earners.salary DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  full_name        salary
+---------------  ---------------  -------
+Engineering      Asha Joshi       180000
+Engineering      Vikram Nair      145000
+Finance          Pooja Iyer       115000
+Finance          Rahul Gupta       98000
+HR               Tara Reddy        85000
+HR               Meena Pillai      72000
+(example output)</code></pre></div>
+<div class="code"><div class="fname">06_outer_apply.sql</div><pre><code class="language-sql">-- OUTER APPLY: also keeps departments that have NO employees (NULL-padded)
+SELECT  d.department_name,
+        top_earners.full_name,
+        top_earners.salary
+FROM    hr.departments AS d
+OUTER APPLY
+(
+    SELECT TOP(2)
+           e.first_name + ' ' + e.last_name  AS full_name,
+           e.salary
+    FROM   hr.employees AS e
+    WHERE  e.department_id = d.department_id
+    ORDER BY e.salary DESC
+) AS top_earners
+ORDER BY d.department_name;
+-- Departments with no employees appear with full_name = NULL, salary = NULL</code></pre></div>
+<div class="tbl"><table><tr><th></th><th>CROSS APPLY</th><th>OUTER APPLY</th></tr><tr><td>Rows kept when right side returns nothing</td><td>Dropped</td><td>Kept, right columns are NULL</td></tr><tr><td>JOIN equivalent</td><td>INNER JOIN</td><td>LEFT JOIN</td></tr><tr><td>Use when</td><td>You only care about matches</td><td>You need all left rows</td></tr></table></div>
+
+<h3>Common mistakes</h3><ul><li>Creating a view without SCHEMABINDING, then breaking it by altering a base table column.</li><li>Writing a scalar UDF that is called in a WHERE clause on millions of rows — force-disables parallelism on pre-2019 SQL Server.</li><li>Using an MSTVF where an ITVF would work — the row estimate of 1 leads to bad join strategies.</li><li>CROSS APPLY where OUTER APPLY was intended — silent loss of rows.</li><li>Forgetting the two-part schema-qualified names required by SCHEMABINDING.</li></ul>
+<h3>Exercise (40 min)</h3><ol class="ex"><li>Create <code>hr.vw_salary_bands</code> (a view with SCHEMABINDING) that shows each employee's name, salary, and band (< 60k = A, < 90k = B, < 130k = C, else D).</li><li>Write an ITVF <code>hr.fn_team(manager_id INT)</code> that returns all direct reports of a given manager.</li><li>Use CROSS APPLY with a subquery to show each department and the hire date of its most recently hired employee.</li></ol>
+<h3>Self-check questions</h3><details><summary>Why use SCHEMABINDING on a view?</summary>It binds the view to the schema of its base objects, preventing DROP or ALTER of any column, table or function the view depends on. It is required for creating an indexed view, and it's good practice on any view you depend on — it makes refactoring explicit.</details><details><summary>ITVF vs MSTVF: which performs better?</summary>An ITVF is treated as an inline macro by the optimiser — it can push predicates into it, estimate cardinality from base table statistics, and use parallelism. An MSTVF is a black box; before SQL 2019 the row estimate was always 1 or 100 regardless of data, leading to bad plans. Prefer ITVF whenever possible.</details><details><summary>What is scalar UDF inlining?</summary>SQL Server 2019+ can automatically convert eligible scalar UDFs to equivalent inline expressions during compilation. An inlineable UDF behaves like an ITVF — the optimiser sees through it. Check <code>sys.sql_modules.is_inlineable</code>. A UDF is not inlineable if it has side effects, recursion, or references non-deterministic functions.</details>
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is a view and why use one?</summary><div>A view is a named, stored SELECT query treated as a virtual table. Use views to: centralise a commonly reused join, restrict column visibility for security (grant SELECT on the view, not the base table), simplify complex queries for end users, and enforce a consistent query structure.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between CROSS APPLY and OUTER APPLY?</summary><div>Both call a right-side expression once per left-side row. CROSS APPLY drops left rows where the right side returns no rows (like INNER JOIN). OUTER APPLY keeps them with NULLs on the right (like LEFT JOIN). The key capability: the right side can reference columns from the left, which a plain JOIN cannot.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is a table-valued function?</summary><div>A user-defined function that returns a table result instead of a scalar value. It can be used in FROM, JOINed to other tables, and filtered with WHERE. Inline TVFs (single RETURN SELECT) have no performance overhead; multi-statement TVFs (BEGIN/END, table variable) have poor cardinality estimates.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Can you UPDATE through a view?</summary><div>Yes, with restrictions: the view must map each output row to exactly one base table row (no DISTINCT, no aggregates, no GROUP BY, no UNION). SQL Server traces the update back to the base table. With INSTEAD OF triggers you can make arbitrary views updatable.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is an indexed view and when would you create one?</summary><div>An indexed view has a unique clustered index physically storing the view's result. It updates automatically when base tables change (write overhead). Use it for large aggregation queries that run constantly and can tolerate the extra storage and write cost. Requirements include SCHEMABINDING, no non-deterministic functions, and two-part names.</div></details><details class="iq"><summary><span class="lvl advanced">Advanced</span>When would CROSS APPLY beat a correlated subquery?</summary><div>CROSS APPLY lets you use the full power of a FROM clause (JOINs, aggregates with ORDER BY, TOP n) in ways a correlated subquery can't express — particularly TOP n per group. Execution is similar (nested loops), but APPLY can reference TVFs that the optimiser can partially unfold.</div></details>
+</section>
+<section class="day" id="day6"><div class="dayhead"><span class="num">DAY 6 · SAT</span><h2>20 HR Practice Queries</h2><label><input type="checkbox" id="done6" data-done="6"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Work through 20 progressively harder T-SQL queries against the HR schema, covering everything from Week 11 and 12: joins, aggregates, subqueries, CTEs and window functions.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>HR schema</dt><dd>Five tables: hr.locations, hr.departments, hr.jobs, hr.employees (with manager_id self-ref), hr.salary_history.</dd></div><div class="def"><dt>Practice query structure</dt><dd>For each query: the question, the SQL solution, and example output — read the expected output before running.</dd></div><div class="def"><dt>Complexity progression</dt><dd>Q1–Q5 aggregate and GROUP BY, Q6–Q10 subqueries, Q11–Q15 CTEs, Q16–Q20 window functions and advanced.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>All 20 queries run on the HR schema created on Saturday of Week 11 (or use the seed in this day).</li><li>Try writing each query yourself before reading the solution.</li><li>Check your query returns the expected row count and spot-check a few values.</li></ul></div>
+
+<h3>Schema and seed data</h3>
+<div class="code"><div class="fname">hr_schema.sql</div><pre><code class="language-sql">-- Full HR schema (run once in CompanyDb)
+CREATE SCHEMA hr AUTHORIZATION dbo;
+GO
+
+CREATE TABLE hr.locations (
+    location_id    INT          IDENTITY(1,1) NOT NULL CONSTRAINT PK_locations  PRIMARY KEY,
+    city           NVARCHAR(50) NOT NULL,
+    state          NVARCHAR(50) NOT NULL,
+    country        NVARCHAR(50) NOT NULL CONSTRAINT DF_locations_country DEFAULT 'India'
+);
+
+CREATE TABLE hr.departments (
+    department_id   INT          IDENTITY(10,10) NOT NULL CONSTRAINT PK_departments PRIMARY KEY,
+    department_name NVARCHAR(60) NOT NULL,
+    manager_id      INT          NULL,   -- FK added after employees exist
+    location_id     INT          NOT NULL CONSTRAINT FK_dept_location REFERENCES hr.locations(location_id)
+);
+
+CREATE TABLE hr.jobs (
+    job_id      INT            IDENTITY(1,1)  NOT NULL CONSTRAINT PK_jobs PRIMARY KEY,
+    job_title   NVARCHAR(60)   NOT NULL,
+    min_salary  DECIMAL(10,2)  NOT NULL,
+    max_salary  DECIMAL(10,2)  NOT NULL,
+    CONSTRAINT CK_jobs_salary CHECK (min_salary &gt; 0 AND max_salary &gt;= min_salary)
+);
+
+CREATE TABLE hr.employees (
+    employee_id   INT            IDENTITY(1,1)  NOT NULL CONSTRAINT PK_employees PRIMARY KEY,
+    first_name    NVARCHAR(40)   NOT NULL,
+    last_name     NVARCHAR(40)   NOT NULL,
+    email         VARCHAR(100)   NOT NULL CONSTRAINT UQ_emp_email UNIQUE,
+    hire_date     DATE           NOT NULL,
+    job_id        INT            NOT NULL CONSTRAINT FK_emp_job  REFERENCES hr.jobs(job_id),
+    salary        DECIMAL(10,2)  NOT NULL,
+    manager_id    INT            NULL     CONSTRAINT FK_emp_mgr  REFERENCES hr.employees(employee_id),
+    department_id INT            NULL     CONSTRAINT FK_emp_dept REFERENCES hr.departments(department_id),
+    CONSTRAINT CK_emp_salary CHECK (salary &gt; 0)
+);
+
+CREATE TABLE hr.salary_history (
+    history_id   INT            IDENTITY(1,1)  NOT NULL CONSTRAINT PK_salary_history PRIMARY KEY,
+    employee_id  INT            NOT NULL CONSTRAINT FK_sh_emp REFERENCES hr.employees(employee_id),
+    old_salary   DECIMAL(10,2)  NOT NULL,
+    new_salary   DECIMAL(10,2)  NOT NULL,
+    change_date  DATE           NOT NULL,
+    changed_by   NVARCHAR(100)  NOT NULL
+);
+
+-- Add dept manager FK now that employees table exists
+ALTER TABLE hr.departments
+    ADD CONSTRAINT FK_dept_manager REFERENCES hr.employees(employee_id);</code></pre></div>
+<div class="code"><div class="fname">seed_data.sql</div><pre><code class="language-sql">-- Sample data (abbreviated — a full 30-row seed in the exercise repo)
+INSERT INTO hr.locations VALUES (N'Mumbai', N'Maharashtra', 'India'),
+(N'Bengaluru', N'Karnataka', 'India'), (N'Delhi', N'Delhi', 'India'),
+(N'Pune', N'Maharashtra', 'India'), (N'Hyderabad', N'Telangana', 'India');
+
+-- Departments (location_id references above):
+INSERT INTO hr.departments (department_name, location_id) VALUES
+(N'Engineering', 2), (N'Sales', 1), (N'Finance', 4), (N'HR', 1), (N'R&amp;D', 5);
+-- (insert jobs then employees similarly — full script in /exercises/week12_seed.sql)</code></pre></div>
+
+<h3>Q1 — Headcount and payroll per department</h3>
+<div class="code"><div class="fname">q01.sql</div><pre><code class="language-sql">SELECT  d.department_name,
+        COUNT(*)                                              AS headcount,
+        SUM(e.salary)                                        AS total_payroll,
+        CAST(AVG(CAST(e.salary AS DECIMAL(14,4))) AS DECIMAL(10,2))
+                                                             AS avg_salary
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+GROUP BY d.department_name
+ORDER BY total_payroll DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  headcount  total_payroll  avg_salary
+---------------  ---------  -------------  ----------
+Engineering      12         1140000        95000.00
+Sales             8          580000        72500.00
+Finance           5          440000        88000.00
+HR                4          272000        68000.00
+(example output)</code></pre></div>
+
+<h3>Q2 — Departments with more than 3 employees hired in 2023</h3>
+<div class="code"><div class="fname">q02.sql</div><pre><code class="language-sql">SELECT  d.department_name,
+        COUNT(*) AS new_hires_2023
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+WHERE   YEAR(e.hire_date) = 2023
+GROUP BY d.department_name
+HAVING  COUNT(*) &gt; 3;</code></pre></div>
+
+<h3>Q3 — Job titles with salary ranges outside the hr.jobs band</h3>
+<div class="code"><div class="fname">q03.sql</div><pre><code class="language-sql">-- Employees paid below their job's min_salary or above max_salary
+SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        j.job_title,
+        e.salary,
+        j.min_salary,
+        j.max_salary,
+        CASE
+            WHEN e.salary &lt; j.min_salary THEN 'Below band'
+            WHEN e.salary &gt; j.max_salary THEN 'Above band'
+        END AS status
+FROM    hr.employees AS e
+JOIN    hr.jobs      AS j ON j.job_id = e.job_id
+WHERE   e.salary NOT BETWEEN j.min_salary AND j.max_salary;</code></pre></div>
+
+<h3>Q4 — Hiring trend by year (COUNT DISTINCT job titles)</h3>
+<div class="code"><div class="fname">q04.sql</div><pre><code class="language-sql">SELECT  YEAR(hire_date)        AS hire_year,
+        COUNT(*)               AS new_hires,
+        COUNT(DISTINCT job_id) AS distinct_job_titles
+FROM    hr.employees
+GROUP BY YEAR(hire_date)
+ORDER BY hire_year;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">hire_year  new_hires  distinct_job_titles
+---------  ---------  -------------------
+2019       3          2
+2020       7          4
+2021       5          3
+2022       8          5
+2023       6          3
+(example output)</code></pre></div>
+
+<h3>Q5 — ROLLUP: payroll by state, department and grand total</h3>
+<div class="code"><div class="fname">q05.sql</div><pre><code class="language-sql">SELECT  COALESCE(l.state,            'ALL STATES')       AS state,
+        COALESCE(d.department_name,  'ALL DEPARTMENTS')  AS department,
+        SUM(e.salary)                                    AS payroll
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id  = e.department_id
+JOIN    hr.locations   AS l ON l.location_id    = d.location_id
+GROUP BY ROLLUP(l.state, d.department_name)
+ORDER BY l.state, d.department_name;</code></pre></div>
+
+<h3>Q6 — Second-highest salary company-wide (subquery)</h3>
+<div class="code"><div class="fname">q06.sql</div><pre><code class="language-sql">-- Classic interview question
+SELECT MAX(salary) AS second_highest_salary
+FROM   hr.employees
+WHERE  salary &lt; (SELECT MAX(salary) FROM hr.employees);</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">second_highest_salary
+---------------------
+145000.00
+(example output)</code></pre></div>
+
+<h3>Q7 — Employees earning more than their manager</h3>
+<div class="code"><div class="fname">q07.sql</div><pre><code class="language-sql">SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        e.salary                           AS employee_salary,
+        m.first_name + ' ' + m.last_name  AS manager_name,
+        m.salary                           AS manager_salary,
+        e.salary - m.salary                AS gap
+FROM    hr.employees AS e
+JOIN    hr.employees AS m ON m.employee_id = e.manager_id
+WHERE   e.salary &gt; m.salary
+ORDER BY gap DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_name   employee_salary  manager_name  manager_salary  gap
+--------------  ---------------  ------------  --------------  -----
+Asha Joshi       180000          Priya Sharma  175000          5000
+(example output)</code></pre></div>
+
+<h3>Q8 — Employees without direct reports (leaf nodes)</h3>
+<div class="code"><div class="fname">q08.sql</div><pre><code class="language-sql">-- NOT EXISTS: employees who don't appear as anyone's manager
+SELECT  e.employee_id,
+        e.first_name + ' ' + e.last_name  AS employee_name
+FROM    hr.employees AS e
+WHERE   NOT EXISTS
+        (SELECT 1 FROM hr.employees AS sub WHERE sub.manager_id = e.employee_id)
+ORDER BY e.last_name;</code></pre></div>
+
+<h3>Q9 — Departments with average salary above company average (subquery in HAVING)</h3>
+<div class="code"><div class="fname">q09.sql</div><pre><code class="language-sql">SELECT  d.department_name,
+        CAST(AVG(CAST(e.salary AS DECIMAL(14,4))) AS DECIMAL(10,2))  AS avg_sal
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+GROUP BY d.department_name
+HAVING  AVG(CAST(e.salary AS DECIMAL(14,4))) &gt;
+        (SELECT AVG(CAST(salary AS DECIMAL(14,4))) FROM hr.employees)
+ORDER BY avg_sal DESC;</code></pre></div>
+
+<h3>Q10 — Salary gap to manager (scalar subquery per row)</h3>
+<div class="code"><div class="fname">q10.sql</div><pre><code class="language-sql">SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        e.salary,
+        (
+            SELECT m.salary
+            FROM   hr.employees AS m
+            WHERE  m.employee_id = e.manager_id
+        )                                  AS manager_salary,
+        (
+            SELECT m.salary - e.salary
+            FROM   hr.employees AS m
+            WHERE  m.employee_id = e.manager_id
+        )                                  AS gap_to_manager
+FROM    hr.employees AS e
+WHERE   e.manager_id IS NOT NULL
+ORDER BY gap_to_manager DESC;</code></pre></div>
+
+<h3>Q11 — Full org chart with level and path (recursive CTE)</h3>
+<div class="code"><div class="fname">q11.sql</div><pre><code class="language-sql">WITH org AS (
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name  AS name,
+            e.manager_id,
+            0                                  AS lvl,
+            CAST(e.first_name + ' ' + e.last_name AS NVARCHAR(2000))
+                                               AS path
+    FROM    hr.employees AS e
+    WHERE   e.manager_id IS NULL
+    UNION ALL
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name,
+            e.manager_id,
+            o.lvl + 1,
+            CAST(o.path + N' &gt; ' + e.first_name + N' ' + e.last_name AS NVARCHAR(2000))
+    FROM    hr.employees AS e
+    JOIN    org          AS o ON o.employee_id = e.manager_id
+)
+SELECT  REPLICATE(N'    ', lvl) + name  AS indented_name,
+        lvl                             AS level,
+        path
+FROM    org
+ORDER BY path;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">indented_name                              level  path
+-----------------------------------------  -----  ------------------------------------------------
+Priya Sharma                               0      Priya Sharma
+    Asha Joshi                             1      Priya Sharma &gt; Asha Joshi
+        Karan Mehta                        2      Priya Sharma &gt; Asha Joshi &gt; Karan Mehta
+    Vikram Nair                            1      Priya Sharma &gt; Vikram Nair
+(example output)</code></pre></div>
+
+<h3>Q12 — Number of salary raises per employee (CTE + count)</h3>
+<div class="code"><div class="fname">q12.sql</div><pre><code class="language-sql">WITH raise_counts AS (
+    SELECT  employee_id,
+            COUNT(*) AS num_raises,
+            MIN(change_date) AS first_raise,
+            MAX(change_date) AS latest_raise
+    FROM    hr.salary_history
+    GROUP BY employee_id
+)
+SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        COALESCE(rc.num_raises, 0)         AS num_raises,
+        rc.first_raise,
+        rc.latest_raise
+FROM    hr.employees    AS e
+LEFT JOIN raise_counts  AS rc ON rc.employee_id = e.employee_id
+ORDER BY num_raises DESC, e.last_name;</code></pre></div>
+
+<h3>Q13 — PERCENTILE_CONT median salary per department (CTE + WITHIN GROUP)</h3>
+<div class="code"><div class="fname">q13.sql</div><pre><code class="language-sql">-- PERCENTILE_CONT is an ordered-set aggregate (not a window function)
+SELECT DISTINCT
+        d.department_name,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e.salary)
+            OVER (PARTITION BY e.department_id)   AS median_salary
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+ORDER BY department_name;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  median_salary
+---------------  -------------
+Engineering      95000.00
+Finance          88000.00
+HR               68500.00
+Sales            72000.00
+(example output)</code></pre></div>
+<div class="note tip"><b>Tip.</b> PERCENTILE_CONT returns the interpolated median (average of two middle values when count is even). PERCENTILE_DISC returns the nearest actual value from the data. Both are ordered-set aggregates — they appear in SELECT with OVER but cannot be used in a plain HAVING clause.</div>
+
+<h3>Q14 — Running headcount by hire month</h3>
+<div class="code"><div class="fname">q14.sql</div><pre><code class="language-sql">WITH monthly_hires AS (
+    SELECT  DATEFROMPARTS(YEAR(hire_date), MONTH(hire_date), 1)  AS hire_month,
+            COUNT(*)                                              AS new_hires
+    FROM    hr.employees
+    GROUP BY DATEFROMPARTS(YEAR(hire_date), MONTH(hire_date), 1)
+)
+SELECT  hire_month,
+        new_hires,
+        SUM(new_hires)
+            OVER (ORDER BY hire_month
+                  ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)  AS running_headcount
+FROM    monthly_hires
+ORDER BY hire_month;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">hire_month   new_hires  running_headcount
+-----------  ---------  -----------------
+2019-06-01   3          3
+2019-09-01   2          5
+2020-01-01   4          9
+2020-07-01   3          12
+(example output)</code></pre></div>
+
+<h3>Q15 — Employees with tenure over 5 years (CTE for readability)</h3>
+<div class="code"><div class="fname">q15.sql</div><pre><code class="language-sql">WITH tenure AS (
+    SELECT  employee_id,
+            first_name + ' ' + last_name  AS employee_name,
+            hire_date,
+            DATEDIFF(YEAR, hire_date, GETDATE())  AS tenure_years
+    FROM    hr.employees
+)
+SELECT employee_name, hire_date, tenure_years
+FROM   tenure
+WHERE  tenure_years &gt; 5
+ORDER BY tenure_years DESC;</code></pre></div>
+
+<h3>Q16 — Salary rank within department (ROW_NUMBER / RANK / DENSE_RANK)</h3>
+<div class="code"><div class="fname">q16.sql</div><pre><code class="language-sql">SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        d.department_name,
+        e.salary,
+        ROW_NUMBER()  OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS row_num,
+        RANK()        OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS rnk,
+        DENSE_RANK()  OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS dense_rnk
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+ORDER BY d.department_name, e.salary DESC;</code></pre></div>
+
+<h3>Q17 — Top 3 earners per department</h3>
+<div class="code"><div class="fname">q17.sql</div><pre><code class="language-sql">WITH ranked AS (
+    SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+            d.department_name,
+            e.salary,
+            DENSE_RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) AS dr
+    FROM    hr.employees   AS e
+    JOIN    hr.departments AS d ON d.department_id = e.department_id
+)
+SELECT department_name, employee_name, salary
+FROM   ranked
+WHERE  dr &lt;= 3
+ORDER BY department_name, salary DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">department_name  employee_name    salary
+---------------  ---------------  -------
+Engineering      Asha Joshi       180000
+Engineering      Vikram Nair      145000
+Engineering      Priya Desai      120000
+Finance          Pooja Iyer       115000
+Finance          Rahul Gupta       98000
+Finance          Suresh Kulkarni   88000
+(example output)</code></pre></div>
+
+<h3>Q18 — Salary trajectory per employee: LAG and % change</h3>
+<div class="code"><div class="fname">q18.sql</div><pre><code class="language-sql">SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        sh.change_date,
+        sh.old_salary,
+        sh.new_salary,
+        sh.new_salary - sh.old_salary       AS absolute_increase,
+        CAST((sh.new_salary - sh.old_salary) * 100.0 / NULLIF(sh.old_salary, 0)
+             AS DECIMAL(5,2))               AS pct_increase,
+        LAG(sh.new_salary) OVER (PARTITION BY sh.employee_id ORDER BY sh.change_date)
+                                            AS salary_before_this_raise
+FROM    hr.salary_history AS sh
+JOIN    hr.employees      AS e ON e.employee_id = sh.employee_id
+ORDER BY sh.employee_id, sh.change_date;</code></pre></div>
+
+<h3>Q19 — Salary band distribution using NTILE</h3>
+<div class="code"><div class="fname">q19.sql</div><pre><code class="language-sql">WITH bands AS (
+    SELECT  employee_id,
+            first_name + ' ' + last_name  AS employee_name,
+            salary,
+            NTILE(4) OVER (ORDER BY salary)  AS quartile
+    FROM    hr.employees
+)
+SELECT  quartile,
+        COUNT(*)                                                   AS headcount,
+        MIN(salary)                                                AS min_sal,
+        MAX(salary)                                                AS max_sal,
+        CAST(AVG(CAST(salary AS DECIMAL(14,4))) AS DECIMAL(10,2)) AS avg_sal
+FROM    bands
+GROUP BY quartile
+ORDER BY quartile;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">quartile  headcount  min_sal  max_sal  avg_sal
+--------  ---------  -------  -------  --------
+1         7          55000    68000    61142.86
+2         8          70000    82000    75250.00
+3         7          85000    98000    91142.86
+4         7          105000   180000   130857.14
+(example output)</code></pre></div>
+
+<h3>Q20 — Department-level median vs individual salary deviation</h3>
+<div class="code"><div class="fname">q20.sql</div><pre><code class="language-sql">-- How far is each employee from their department's median salary?
+SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        d.department_name,
+        e.salary,
+        CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e2.salary)
+            OVER (PARTITION BY e.department_id) AS DECIMAL(10,2))  AS dept_median,
+        e.salary - CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e2.salary)
+            OVER (PARTITION BY e.department_id) AS DECIMAL(10,2))  AS deviation_from_median
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d  ON d.department_id = e.department_id
+JOIN    hr.employees   AS e2 ON e2.department_id = e.department_id   -- self-join for PERCENTILE
+ORDER BY d.department_name, deviation_from_median DESC;</code></pre></div>
+<div class="code nofile"><pre><code class="language-text">employee_name     department_name  salary   dept_median  deviation_from_median
+----------------  ---------------  -------  -----------  ---------------------
+Asha Joshi        Engineering      180000   95000.00     85000.00
+Vikram Nair       Engineering      145000   95000.00     50000.00
+...
+Rohit Verma       Engineering       62000   95000.00    -33000.00
+(example output)</code></pre></div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between WHERE and HAVING?</summary><div>WHERE filters rows before grouping; HAVING filters groups after aggregation. HAVING can reference aggregate functions; WHERE cannot. For performance, use WHERE whenever the condition doesn't involve an aggregate.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>Explain the NOT IN NULL trap with an example.</summary><div>If the subquery inside NOT IN returns any NULL value, the predicate becomes UNKNOWN for every row (NULL <> x is UNKNOWN, not FALSE), so NOT IN returns zero rows. Fix: use NOT EXISTS, or add WHERE col IS NOT NULL to the inner SELECT.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>What is PERCENTILE_CONT and how is it different from AVG?</summary><div>PERCENTILE_CONT computes the interpolated median (or any percentile) of a column. For an even count it averages the two middle values. AVG sums all values and divides by count — it is sensitive to outliers. For skewed salary distributions, median (PERCENTILE_CONT(0.5)) is a more representative 'typical' salary.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How does ROW_NUMBER differ from RANK when there are salary ties?</summary><div>ROW_NUMBER gives every row a unique number regardless of ties (1,2,3,4). RANK gives tied rows the same number and skips subsequent numbers (1,2,2,4). DENSE_RANK doesn't skip (1,2,2,3). For top-N filtering DENSE_RANK ensures ties at boundary position are all included.</div></details>
+</section>
+<section class="day" id="day7"><div class="dayhead"><span class="num">DAY 7 · SUN</span><h2>Revise and redo the hardest queries</h2><label><input type="checkbox" id="done7" data-done="7"> Done</label></div>
+<div class="goal"><strong>Goal</strong>Redo the 5 hardest queries from yesterday's set entirely from memory using only the hints, then take the 5-question quiz.</div>
+<h3>Key definitions</h3><dl class="defs"><div class="def"><dt>Active recall</dt><dd>Writing a query from memory, then checking against the reference — far more effective than re-reading.</dd></div><div class="def"><dt>Derivation</dt><dd>Working from first principles: what table, what join, what clause?</dd></div><div class="def"><dt>Query decomposition</dt><dd>Breaking a hard query into its parts: group first, then window, then filter.</dd></div></dl>
+<div class="notes"><strong>Quick notes</strong><ul><li>Close yesterday's notes before attempting each query.</li><li>Use only the hint for each query.</li><li>If you get stuck, re-read only the concept section for that technique, then try again.</li></ul></div>
+
+<h3>Revision plan (≈4 hours)</h3>
+<div class="tbl"><table><tr><th>Time</th><th>Task</th></tr><tr><td>45 min</td><td>Redo Q6, Q11, Q13, Q17, Q20 from memory using only the hints below</td></tr><tr><td>30 min</td><td>Compare your solutions with yesterday's; note every difference</td></tr><tr><td>45 min</td><td>Re-read the parts of Days 1–5 that your solutions missed</td></tr><tr><td>45 min</td><td>Quiz (below) — write answers on paper first</td></tr><tr><td>45 min</td><td>Run all 20 queries against your SQL Server; fix any that differ from expected output</td></tr><tr><td>30 min</td><td>Write 3 real-world variations of Q17 (top-3 per month, per job title, per manager)</td></tr></table></div>
+
+<h3>Hints for the 5 hardest queries</h3>
+<h4>Q6 — Second-highest salary</h4>
+<details><summary>Hint</summary>
+<p>Find the MAX salary where that salary is less than the overall MAX. Use a scalar subquery.</p>
+</details>
+<details><summary>Solution</summary>
+<div class="code nofile"><pre><code class="language-sql">SELECT MAX(salary) AS second_highest_salary
+FROM   hr.employees
+WHERE  salary &lt; (SELECT MAX(salary) FROM hr.employees);</code></pre></div>
+</details>
+
+<h4>Q11 — Recursive org chart</h4>
+<details><summary>Hint</summary>
+<p>Anchor: employees where manager_id IS NULL. Recursive member: JOIN hr.employees to the CTE on employee_id = manager_id. Carry a path string using CAST to NVARCHAR(2000).</p>
+</details>
+<details><summary>Solution</summary>
+<div class="code nofile"><pre><code class="language-sql">WITH org AS (
+    SELECT  employee_id,
+            first_name + ' ' + last_name  AS name,
+            0                              AS lvl,
+            CAST(first_name + ' ' + last_name AS NVARCHAR(2000))  AS path
+    FROM    hr.employees WHERE manager_id IS NULL
+    UNION ALL
+    SELECT  e.employee_id,
+            e.first_name + ' ' + e.last_name,
+            o.lvl + 1,
+            CAST(o.path + N' &gt; ' + e.first_name + N' ' + e.last_name AS NVARCHAR(2000))
+    FROM    hr.employees AS e JOIN org AS o ON o.employee_id = e.manager_id
+)
+SELECT  REPLICATE(N'  ', lvl) + name  AS indented_name, lvl, path
+FROM    org ORDER BY path;</code></pre></div>
+</details>
+
+<h4>Q13 — PERCENTILE_CONT median per department</h4>
+<details><summary>Hint</summary>
+<p>Use PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary) OVER (PARTITION BY department_id). Wrap in SELECT DISTINCT to collapse the per-row repetition.</p>
+</details>
+<details><summary>Solution</summary>
+<div class="code nofile"><pre><code class="language-sql">SELECT DISTINCT
+        d.department_name,
+        PERCENTILE_CONT(0.5)
+            WITHIN GROUP (ORDER BY e.salary)
+            OVER  (PARTITION BY e.department_id)   AS median_salary
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d ON d.department_id = e.department_id
+ORDER BY department_name;</code></pre></div>
+</details>
+
+<h4>Q17 — Top 3 per department using DENSE_RANK</h4>
+<details><summary>Hint</summary>
+<p>CTE with DENSE_RANK() OVER (PARTITION BY department_id ORDER BY salary DESC) AS dr. Outer query: WHERE dr &lt;= 3.</p>
+</details>
+<details><summary>Solution</summary>
+<div class="code nofile"><pre><code class="language-sql">WITH ranked AS (
+    SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+            d.department_name,
+            e.salary,
+            DENSE_RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC)  AS dr
+    FROM    hr.employees   AS e
+    JOIN    hr.departments AS d ON d.department_id = e.department_id
+)
+SELECT department_name, employee_name, salary
+FROM   ranked WHERE dr &lt;= 3
+ORDER BY department_name, salary DESC;</code></pre></div>
+</details>
+
+<h4>Q20 — Deviation from department median</h4>
+<details><summary>Hint</summary>
+<p>Self-join hr.employees to itself on department_id so PERCENTILE_CONT can aggregate over the department's salaries. The salary deviation is e.salary minus the PERCENTILE_CONT result.</p>
+</details>
+<details><summary>Solution</summary>
+<div class="code nofile"><pre><code class="language-sql">SELECT  e.first_name + ' ' + e.last_name  AS employee_name,
+        d.department_name,
+        e.salary,
+        CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e2.salary)
+            OVER (PARTITION BY e.department_id) AS DECIMAL(10,2))  AS dept_median,
+        e.salary - CAST(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e2.salary)
+            OVER (PARTITION BY e.department_id) AS DECIMAL(10,2))  AS deviation
+FROM    hr.employees   AS e
+JOIN    hr.departments AS d  ON d.department_id = e.department_id
+JOIN    hr.employees   AS e2 ON e2.department_id = e.department_id
+ORDER BY d.department_name, deviation DESC;</code></pre></div>
+</details>
+
+<h3>5-question quiz</h3>
+<details><summary>Q1. What does DENSE_RANK() OVER (ORDER BY salary DESC) return for salaries 180000, 145000, 145000, 120000?</summary>
+<div class="code nofile"><pre><code class="language-sql">-- Predict before reading:
+SELECT salary,
+       DENSE_RANK() OVER (ORDER BY salary DESC) AS dr
+FROM (VALUES (180000),(145000),(145000),(120000)) AS t(salary);</code></pre></div>
+<b>1, 2, 2, 3.</b> DENSE_RANK gives tied rows the same rank and does not skip the next number.</details>
+
+<details><summary>Q2. How many rows does this return?</summary>
+<div class="code nofile"><pre><code class="language-sql">SELECT department_id
+FROM   hr.employees
+WHERE  department_id NOT IN (SELECT manager_id FROM hr.employees);</code></pre></div>
+<b>0 rows</b> (if any employee has manager_id = NULL). NOT IN with a NULL in the list produces UNKNOWN for every comparison, so no rows pass the WHERE filter. Use NOT EXISTS instead.</details>
+
+<details><summary>Q3. Which FRAME clause gives a strict 3-row moving average regardless of ties?</summary>
+<b>ROWS BETWEEN 2 PRECEDING AND CURRENT ROW.</b> ROWS counts physical row positions. RANGE would group tied ORDER BY values together, possibly including more than 3 rows at a boundary.</details>
+
+<details><summary>Q4. What is the maximum recursion depth for a recursive CTE by default, and how do you change it?</summary>
+<b>100 levels.</b> Change it with the query hint at the end of the statement: <code>OPTION (MAXRECURSION 500)</code>. Set to 0 for unlimited (risk on cyclic data).</details>
+
+<details><summary>Q5. A CROSS APPLY returned fewer rows than the FROM table. Why?</summary>
+<b>Because CROSS APPLY drops rows from the left side when the right side returns no rows</b> — the same behaviour as INNER JOIN. Use OUTER APPLY to keep all left rows with NULLs when the right side is empty.</details>
+
+<div class="note tip"><b>Next week:</b> Week 13 — Programmability and transactions: stored procedures, variables, control flow (IF/WHILE/TRY-CATCH), transactions (BEGIN/COMMIT/ROLLBACK), isolation levels and the sales order micro-project.</div>
+
+
+<h3>Interview questions</h3><p class="muted">Answer out loud first, then open each one to compare.</p><details class="iq"><summary><span class="lvl basic">Basic</span>What is the difference between ROW_NUMBER and DENSE_RANK?</summary><div>ROW_NUMBER gives each row a unique sequential number, never ties. DENSE_RANK gives tied rows the same number and does not skip the next number (1,1,2 for a two-way tie). Use ROW_NUMBER for de-duplication, DENSE_RANK for leaderboards where ties should share a position.</div></details><details class="iq"><summary><span class="lvl basic">Basic</span>What is PERCENTILE_CONT and when is it more useful than AVG?</summary><div>PERCENTILE_CONT computes the interpolated value at a given percentile (0.5 for median). Unlike AVG it is not distorted by extreme outliers — a CEO salary at ₹1.8 crore barely moves the median but triples the average. Use it when reporting 'typical' values in skewed distributions like salaries.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>Explain when you would use a CTE vs a temp table.</summary><div>CTE: single-statement scope, great for readability and recursive queries, no indexing. Temp table: persists for the session, can be indexed, has statistics, ideal for large intermediate results used multiple times. When a CTE is referenced twice in a query and the intermediate result is expensive to compute, materialise it in a temp table first.</div></details><details class="iq"><summary><span class="lvl intermediate">Intermediate</span>How do you calculate the second-highest value without a window function?</summary><div>SELECT MAX(col) FROM table WHERE col < (SELECT MAX(col) FROM table). The inner subquery finds the maximum; the outer query finds the maximum among all values strictly less than it, which is the second-highest. Using DENSE_RANK = 2 in a CTE handles ties more cleanly.</div></details>
+</section>
+
+<div class="pager"><button id="prev" type="button">← Previous day</button><button id="next" type="button">Next day →</button></div>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+(function(){
+  try { window.hljs && hljs.highlightAll(); } catch(e){}
+
+  // Copy buttons
+  document.querySelectorAll('.code').forEach(function(box){
+    var btn = document.createElement('button');
+    btn.type='button'; btn.className='copy'; btn.textContent='Copy';
+    btn.addEventListener('click', function(){
+      var text = box.querySelector('pre').innerText;
+      var done = function(){ btn.textContent='Copied'; setTimeout(function(){btn.textContent='Copy'},1200); };
+      try {
+        navigator.clipboard.writeText(text).then(done, function(){ select(box); });
+      } catch(e){ select(box); }
+    });
+    box.appendChild(btn);
+  });
+  function select(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector('pre')); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+  // Day routing: one day visible at a time
+  var days = Array.prototype.slice.call(document.querySelectorAll('section.day'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail a'));
+  var current = 1;
+  var pager = document.querySelector('.pager');
+  function show(n){
+    n = Math.min(Math.max(n,0),7); current = n;
+    days.forEach(function(d){ d.hidden = d.id !== (n===0 ? 'home' : 'day'+n); });
+    links.forEach(function(a){ a.classList.toggle('on', +a.dataset.day===n); });
+    pager.hidden = n===0;
+    document.getElementById('prev').textContent = n===1 ? '← Week overview' : '← Previous day';
+    document.getElementById('next').disabled = n===7;
+  }
+  function fromHash(){ var m=/^#day([1-7])$/.exec(location.hash); show(m?+m[1]:0); }
+  window.addEventListener('hashchange', function(){ fromHash(); window.scrollTo(0,0); });
+  document.getElementById('prev').onclick=function(){ location.hash = current<=1 ? 'home' : 'day'+(current-1); };
+  document.getElementById('next').onclick=function(){ location.hash='day'+(current+1); };
+  fromHash();
+
+  // Per-viewer progress
+  var KEY='dotnet-week12-done';
+  var state={};
+  try { state = JSON.parse(localStorage.getItem(KEY)||'{}'); } catch(e){}
+  function render(){
+    var n=0;
+    document.querySelectorAll('[data-done]').forEach(function(cb){
+      var d=cb.dataset.done; cb.checked=!!state[d]; if(state[d]) n++;
+      var link=document.querySelector('.rail a[data-day="'+d+'"]'); if(link) link.classList.toggle('done', !!state[d]); var ok=document.querySelector('[data-ok="'+d+'"]'); if(ok) ok.textContent = state[d] ? '✓ done' : '';
+    });
+    document.getElementById('pcount').textContent = n+' of 7 days done';
+    document.getElementById('pbar').style.width = (n/7*100)+'%';
+  }
+  document.querySelectorAll('[data-done]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      state[cb.dataset.done]=cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+      render();
+    });
+  });
+  render();
+
+  // Local-file extras: link back to the weeks hub, render mermaid diagrams
+  if (location.protocol === 'file:') {
+    var aw = document.getElementById('allweeks'); if (aw) aw.hidden = false;
+    if (document.querySelector('pre.mermaid')) {
+      var ms = document.createElement('script');
+      ms.src = 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js';
+      ms.onload = function(){ try { mermaid.initialize({ startOnLoad:false, theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default' }); mermaid.run(); } catch(e){} };
+      document.head.appendChild(ms);
+    }
+  }
+})();
+</script>
